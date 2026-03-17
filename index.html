@@ -698,8 +698,18 @@ async function carregarPropostas(){
       return{...d,di,urg};
     }).sort((a,b)=>b.di-a.di);
 
+    // Filtra por status usando nome do estágio
+    // No RD Station do Marcos: perdidas têm estágio "Perdido", ganhas têm win=true
+    let filtradosSt = com;
+    if(status==='aberta'){
+      filtradosSt = com.filter(d=>!(d.deal_stage?.name||'').toLowerCase().includes('perdid'));
+    } else if(status==='perdida'){
+      filtradosSt = com.filter(d=>(d.deal_stage?.name||'').toLowerCase().includes('perdid'));
+    }
+    // 'all' e 'ganha' já filtrados pela API
+
     // Filtra por urgência
-    const filtrados=urgFiltro==='all'?com:com.filter(d=>d.urg===urgFiltro);
+    const filtrados=urgFiltro==='all'?filtradosSt:filtradosSt.filter(d=>d.urg===urgFiltro);
 
     if(!filtrados.length){
       document.getElementById('cards-p').innerHTML='<div class="empty">Nenhuma proposta encontrada com os filtros selecionados.</div>';
