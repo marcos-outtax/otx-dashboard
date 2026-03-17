@@ -188,12 +188,25 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   </div>
   <div class="filtros">
     <div class="fg">
-      <label>📅 Data das reuniões</label>
-      <input type="date" id="f-data-r"/>
+      <label>📅 De</label>
+      <input type="date" id="r-de"/>
+    </div>
+    <div class="fg">
+      <label>📅 Até</label>
+      <input type="date" id="r-ate"/>
+    </div>
+    <div class="fg">
+      <label>Origem</label>
+      <select id="r-origem">
+        <option value="all">Todas</option>
+        <option value="marketing">📣 Marketing</option>
+        <option value="direto">🤝 Direto</option>
+      </select>
     </div>
     <div class="fa">
       <button class="btn btn-p" onclick="buscarReunioes()">🔍 Buscar</button>
       <button class="btn" onclick="irHoje()">Hoje</button>
+      <button class="btn" onclick="limparFiltrosR()">Limpar</button>
     </div>
   </div>
   <div class="sec-hdr">
@@ -512,13 +525,34 @@ function irHoje(){
   buscarReunioes();
 }
 
+function limparFiltrosR(){
+  document.getElementById('r-de').value='';
+  document.getElementById('r-ate').value='';
+  document.getElementById('r-origem').value='all';
+}
 function buscarReunioes(){
-  const data=document.getElementById('f-data-r').value;
-  if(!data){alert('Selecione uma data.');return;}
-  const isHoje=data===dataHoje();
-  const label=fmtData(data);
-  document.getElementById('dl').innerHTML=label.charAt(0).toUpperCase()+label.slice(1)+(isHoje?' <span style="font-size:10px;background:#E6F1FB;color:#185FA5;padding:2px 8px;border-radius:20px;font-weight:500;margin-left:6px;">Hoje</span>':'');
-  const reunioes=AGENDA[data]||[];
+  const rDe=document.getElementById('r-de').value;
+  const rAte=document.getElementById('r-ate').value;
+  const rOrigem=document.getElementById('r-origem').value;
+  if(!rDe&&!rAte){alert('Selecione ao menos uma data.');return;}
+  // Monta o label do período
+  const de=rDe?fmtData(rDe):'';
+  const ate=rAte?fmtData(rAte):'';
+  const isHoje=rDe===dataHoje()&&rAte===dataHoje();
+  const labelPeriodo=rDe===rAte||(!rDe||!rAte)?
+    (rDe||rAte?fmtData(rDe||rAte):''):
+    de+' → '+ate;
+  document.getElementById('dl').innerHTML=labelPeriodo.charAt(0).toUpperCase()+labelPeriodo.slice(1)+(isHoje?' <span style="font-size:10px;background:#E6F1FB;color:#185FA5;padding:2px 8px;border-radius:20px;font-weight:500;margin-left:6px;">Hoje</span>':'');
+  // Coleta reuniões do intervalo
+  let reunioes=[];
+  const todasDatas=Object.keys(AGENDA).sort();
+  for(const d of todasDatas){
+    if(rDe&&d<rDe) continue;
+    if(rAte&&d>rAte) continue;
+    reunioes=[...reunioes,...(AGENDA[d]||[]).map(r=>({...r,_data:d}))];
+  }
+  // Filtra por origem
+  if(rOrigem!=='all') reunioes=reunioes.filter(r=>r.origem===rOrigem);
   if(!reunioes.length){
     document.getElementById('s-tot').textContent='0';
     document.getElementById('s-mkt').textContent='0';
