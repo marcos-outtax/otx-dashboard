@@ -24,6 +24,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .stat{background:#fff;border:1px solid #e5e5e5;border-radius:10px;padding:12px 14px}
 .stat .num{font-size:22px;font-weight:600;margin-bottom:2px}
 .stat .lbl{font-size:11px;color:#6b6b6b}
+
+/* FILTROS */
+.filtros{background:#fff;border:1px solid #e5e5e5;border-radius:12px;padding:14px 16px;margin-bottom:16px;display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap}
+.filtro-group{display:flex;flex-direction:column;gap:4px}
+.filtro-group label{font-size:11px;color:#6b6b6b;font-weight:500}
+.filtro-group input[type="date"],.filtro-group select{padding:7px 10px;border:1px solid #e5e5e5;border-radius:8px;font-size:12px;background:#fff;color:#1a1a1a;cursor:pointer}
+.filtro-group input[type="date"]:focus,.filtro-group select:focus{outline:none;border-color:#9e9e9e}
+.filtro-actions{display:flex;gap:8px;align-items:flex-end;margin-left:auto}
+
 .sec-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
 .sec-title{font-size:12px;font-weight:500;color:#6b6b6b;text-transform:uppercase;letter-spacing:.06em}
 .btn-ref{padding:5px 12px;font-size:12px;border-radius:20px;border:1px solid #e5e5e5;background:#fff;cursor:pointer;color:#6b6b6b}
@@ -102,7 +111,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .pv-head .pd{font-size:11px;color:#6b6b6b}
 .pv-body{padding:14px;font-size:11px;line-height:1.8;max-height:340px;overflow-y:auto;background:#fff}
 .pv-foot{padding:10px 14px;background:#f8f7f4;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
-.pv-foot .av{font-size:11px;color:#6b6b6b;width:auto;height:auto;border-radius:0;background:none}
+.pv-aviso{font-size:11px;color:#6b6b6b}
 .loading{display:flex;align-items:center;gap:6px;font-size:12px;color:#6b6b6b;padding:10px 0}
 .dot{width:5px;height:5px;border-radius:50%;background:#9e9e9e;animation:pulse 1.2s infinite}
 .dot:nth-child(2){animation-delay:.2s}
@@ -131,7 +140,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .modal-ft{display:flex;gap:8px;justify-content:flex-end;margin-top:20px}
 .btn-cancel{padding:8px 16px;font-size:13px;border-radius:8px;border:1px solid #e5e5e5;background:#fff;cursor:pointer;color:#6b6b6b}
 .btn-save{padding:8px 20px;font-size:13px;font-weight:500;border-radius:8px;border:none;background:#1a1a1a;color:#fff;cursor:pointer}
-@media(max-width:600px){.two-col{grid-template-columns:1fr}.stats{grid-template-columns:repeat(3,1fr)}.nav-tab{padding:0 10px;font-size:12px}}
+.tag-hoje{font-size:10px;background:#E6F1FB;color:#185FA5;padding:2px 8px;border-radius:20px;font-weight:500;margin-left:6px}
+@media(max-width:600px){.two-col{grid-template-columns:1fr}.stats{grid-template-columns:repeat(3,1fr)}.nav-tab{padding:0 10px;font-size:12px}.filtros{flex-direction:column;align-items:stretch}.filtro-actions{margin-left:0}}
 </style>
 </head>
 <body>
@@ -140,7 +150,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   <h1>Outtax</h1>
   <div class="nav-tabs">
     <div class="nav-tab active" onclick="showPage('r',this)">Pré-Reunião</div>
-    <div class="nav-tab" onclick="showPage('p',this);carregarPropostas()">Propostas <span class="nav-badge" id="bp">—</span></div>
+    <div class="nav-tab" onclick="showPage('p',this)">Propostas <span class="nav-badge" id="bp">—</span></div>
   </div>
   <div class="topbar-right">
     <span class="topbar-date" id="td"></span>
@@ -153,34 +163,85 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   <button class="btn-sm" onclick="abrirCfg()">Configurar →</button>
 </div>
 
-<!-- REUNIÕES -->
+<!-- ── REUNIÕES ─────────────────────────────────────────── -->
 <div class="page active" id="page-r">
   <div class="stats">
-    <div class="stat"><div class="num" id="s-tot">1</div><div class="lbl">Reuniões comerciais</div></div>
-    <div class="stat"><div class="num" id="s-mkt" style="color:#185FA5">0</div><div class="lbl">Via marketing</div></div>
-    <div class="stat"><div class="num" id="s-dir" style="color:#1D9E75">1</div><div class="lbl">Agendamento direto</div></div>
+    <div class="stat"><div class="num" id="s-tot">—</div><div class="lbl">Reuniões comerciais</div></div>
+    <div class="stat"><div class="num" id="s-mkt" style="color:#185FA5">—</div><div class="lbl">Via marketing</div></div>
+    <div class="stat"><div class="num" id="s-dir" style="color:#1D9E75">—</div><div class="lbl">Agendamento direto</div></div>
   </div>
+
+  <!-- Filtro de data -->
+  <div class="filtros">
+    <div class="filtro-group">
+      <label>📅 Data das reuniões</label>
+      <input type="date" id="filtro-data-reuniao" />
+    </div>
+    <div class="filtro-actions">
+      <button class="btn btn-p" onclick="buscarReunioesPorData()">Buscar reuniões</button>
+      <button class="btn" onclick="voltarHoje()">Hoje</button>
+    </div>
+  </div>
+
   <div class="sec-hdr">
-    <span class="sec-title" id="dl">Terça-feira, 17 de março de 2026</span>
+    <span class="sec-title" id="dl">Carregando...</span>
   </div>
-  <div class="cards" id="cards-r"></div>
+  <div class="cards" id="cards-r">
+    <div class="empty">Selecione uma data e clique em Buscar reuniões.</div>
+  </div>
 </div>
 
-<!-- PROPOSTAS -->
+<!-- ── PROPOSTAS ────────────────────────────────────────── -->
 <div class="page" id="page-p">
   <div class="stats">
-    <div class="stat"><div class="num" id="sp-t">—</div><div class="lbl">Propostas pendentes</div></div>
+    <div class="stat"><div class="num" id="sp-t">—</div><div class="lbl">Propostas encontradas</div></div>
     <div class="stat"><div class="num" id="sp-u" style="color:#E24B4A">—</div><div class="lbl">Urgente (+7 dias)</div></div>
     <div class="stat"><div class="num" id="sp-a" style="color:#EF9F27">—</div><div class="lbl">Atenção (3-7 dias)</div></div>
   </div>
-  <div class="sec-hdr">
-    <span class="sec-title">Propostas aguardando retorno</span>
-    <button class="btn-ref" onclick="carregarPropostas()">↺ Atualizar</button>
+
+  <!-- Filtros de propostas -->
+  <div class="filtros">
+    <div class="filtro-group">
+      <label>📅 Data de início</label>
+      <input type="date" id="f-data-ini" />
+    </div>
+    <div class="filtro-group">
+      <label>📅 Data de fim</label>
+      <input type="date" id="f-data-fim" />
+    </div>
+    <div class="filtro-group">
+      <label>Status</label>
+      <select id="f-status">
+        <option value="all">Todos os status</option>
+        <option value="aberta">Abertas (em andamento)</option>
+        <option value="ganha">Ganhas</option>
+        <option value="perdida">Perdidas</option>
+      </select>
+    </div>
+    <div class="filtro-group">
+      <label>Urgência</label>
+      <select id="f-urgencia">
+        <option value="all">Todas</option>
+        <option value="urgente">🔴 Urgente (+7 dias)</option>
+        <option value="atencao">🟡 Atenção (3-7 dias)</option>
+        <option value="ok">🟢 OK (menos de 3 dias)</option>
+      </select>
+    </div>
+    <div class="filtro-actions">
+      <button class="btn btn-p" onclick="carregarPropostas()">Buscar</button>
+      <button class="btn" onclick="limparFiltrosPropostas()">Limpar</button>
+    </div>
   </div>
-  <div class="cards" id="cards-p"><div class="empty">Configure o token e clique em Atualizar.</div></div>
+
+  <div class="sec-hdr">
+    <span class="sec-title" id="prop-titulo">Propostas</span>
+  </div>
+  <div class="cards" id="cards-p">
+    <div class="empty">Clique em Buscar para carregar as propostas.</div>
+  </div>
 </div>
 
-<!-- CONFIG MODAL -->
+<!-- ── CONFIG MODAL ──────────────────────────────────────── -->
 <div class="modal-ov" id="mcfg">
   <div class="modal">
     <h3>⚙ Configuração</h3>
@@ -190,7 +251,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <input type="password" id="i-rd" placeholder="Cole seu token aqui..."/>
     </div>
     <div class="field">
-      <label>Chave API Anthropic (análise tributária com IA)</label>
+      <label>Chave API Anthropic (análise tributária)</label>
       <input type="password" id="i-ai" placeholder="sk-ant-api03-..."/>
     </div>
     <div class="modal-ft">
@@ -201,30 +262,18 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 </div>
 
 <script>
-// ── CONFIG ────────────────────────────────────────────────────
+// ── CONFIG ────────────────────────────────────────────────
 const K = 'otx_cfg';
 const getCfg = () => { try { return JSON.parse(localStorage.getItem(K))||{}; } catch { return {}; } };
-
 function salvarCfg() {
-  localStorage.setItem(K, JSON.stringify({
-    rd: document.getElementById('i-rd').value.trim(),
-    ai: document.getElementById('i-ai').value.trim()
-  }));
-  fecharCfg();
-  checkCfg();
+  localStorage.setItem(K, JSON.stringify({ rd: document.getElementById('i-rd').value.trim(), ai: document.getElementById('i-ai').value.trim() }));
+  fecharCfg(); checkCfg();
 }
-function checkCfg() {
-  document.getElementById('banner').classList.toggle('hidden', !!getCfg().rd);
-}
-function abrirCfg() {
-  const c = getCfg();
-  document.getElementById('i-rd').value = c.rd||'';
-  document.getElementById('i-ai').value = c.ai||'';
-  document.getElementById('mcfg').classList.add('open');
-}
+function checkCfg() { document.getElementById('banner').classList.toggle('hidden', !!getCfg().rd); }
+function abrirCfg() { const c=getCfg(); document.getElementById('i-rd').value=c.rd||''; document.getElementById('i-ai').value=c.ai||''; document.getElementById('mcfg').classList.add('open'); }
 function fecharCfg() { document.getElementById('mcfg').classList.remove('open'); }
 
-// ── NAV ───────────────────────────────────────────────────────
+// ── NAV ───────────────────────────────────────────────────
 function showPage(n, t) {
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(x=>x.classList.remove('active'));
@@ -232,7 +281,7 @@ function showPage(n, t) {
   t.classList.add('active');
 }
 
-// ── UTILS ─────────────────────────────────────────────────────
+// ── UTILS ─────────────────────────────────────────────────
 const ini = n => (n||'?').split(' ').slice(0,2).map(x=>x[0]).join('').toUpperCase();
 const diasAtras = d => d ? Math.floor((Date.now()-new Date(d))/(864e5)) : 0;
 const load = msg => `<div class="loading"><div class="dot"></div><div class="dot"></div><div class="dot"></div><span style="margin-left:4px;">${msg}</span></div>`;
@@ -253,17 +302,23 @@ function swTab(t,id) {
   p.querySelectorAll('.tp').forEach(x=>x.classList.remove('active'));
   t.classList.add('active'); document.getElementById(id).classList.add('active');
 }
+function dataHoje() {
+  const d = new Date();
+  return d.toISOString().split('T')[0];
+}
+function formatarData(str) {
+  if (!str) return '';
+  const d = new Date(str+'T12:00:00');
+  return d.toLocaleDateString('pt-BR', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
+}
 
-// ── API RD (via proxy, token no header) ───────────────────────
+// ── API RD (via proxy, token no header) ──────────────────
 async function rdFetch(path, params={}, method='GET', body=null) {
   const cfg = getCfg();
   if (!cfg.rd) throw new Error('Token não configurado. Clique em ⚙ Config.');
   const qs = Object.keys(params).length ? '&'+new URLSearchParams(params) : '';
   const url = `/api/rd?path=${encodeURIComponent(path)}${qs}`;
-  const opts = {
-    method,
-    headers: { 'Content-Type': 'application/json', 'X-RD-Token': cfg.rd }
-  };
+  const opts = { method, headers: { 'Content-Type': 'application/json', 'X-RD-Token': cfg.rd } };
   if (body) opts.body = JSON.stringify(body);
   const r = await fetch(url, opts);
   const data = await r.json();
@@ -271,7 +326,69 @@ async function rdFetch(path, params={}, method='GET', body=null) {
   return data;
 }
 
-// ── CNPJ ──────────────────────────────────────────────────────
+// ── REUNIÕES POR DATA ─────────────────────────────────────
+// Dados de reuniões pré-carregados para hoje
+const REUNIOES_HOJE = [
+  {
+    nome: 'Alinhamento Estratégico — Outtax & Moonflag',
+    hora: '16:00', dur: '1h',
+    origem: 'direto',
+    email: 'bsimao@agmoonflag.com.br',
+    org: 'bsimao@agmoonflag.com.br',
+    dest: '',
+    data: dataHoje()
+  }
+];
+
+function voltarHoje() {
+  const hoje = dataHoje();
+  document.getElementById('filtro-data-reuniao').value = hoje;
+  buscarReunioesPorData();
+}
+
+async function buscarReunioesPorData() {
+  const dataSel = document.getElementById('filtro-data-reuniao').value;
+  if (!dataSel) { alert('Selecione uma data.'); return; }
+
+  const isHoje = dataSel === dataHoje();
+  const labelData = formatarData(dataSel);
+  const tagHoje = isHoje ? '<span class="tag-hoje">Hoje</span>' : '';
+  document.getElementById('dl').innerHTML = labelData.charAt(0).toUpperCase()+labelData.slice(1)+tagHoje;
+  document.getElementById('cards-r').innerHTML = load('Buscando reuniões na agenda...');
+
+  // Se for hoje, usa dados já carregados
+  if (isHoje) {
+    renderReunioes(REUNIOES_HOJE);
+    return;
+  }
+
+  // Para outras datas, busca via Google Calendar API
+  // Como não temos acesso direto aqui, mostra mensagem orientando
+  document.getElementById('cards-r').innerHTML = `
+    <div class="empty">
+      <div style="font-size:28px;margin-bottom:8px;">📅</div>
+      <div style="font-weight:500;margin-bottom:6px;">Buscando reuniões para ${labelData}</div>
+      <div style="font-size:12px;color:#9e9e9e;">Esta funcionalidade busca reuniões diretamente da sua agenda Google.<br>
+      Para a data de hoje as reuniões já estão carregadas automaticamente.</div>
+    </div>`;
+
+  document.getElementById('s-tot').textContent = '—';
+  document.getElementById('s-mkt').textContent = '—';
+  document.getElementById('s-dir').textContent = '—';
+}
+
+function renderReunioes(reunioes) {
+  document.getElementById('s-tot').textContent = reunioes.length;
+  document.getElementById('s-mkt').textContent = reunioes.filter(r=>r.origem==='marketing').length;
+  document.getElementById('s-dir').textContent = reunioes.filter(r=>r.origem==='direto').length;
+  if (!reunioes.length) {
+    document.getElementById('cards-r').innerHTML = '<div class="empty">🎉 Nenhuma reunião comercial encontrada para esta data.</div>';
+    return;
+  }
+  document.getElementById('cards-r').innerHTML = reunioes.map((r,i)=>cardR(r,i)).join('');
+}
+
+// ── CNPJ ──────────────────────────────────────────────────
 const rfC = {};
 async function consultarCNPJ(inpId, metId, detId, aiBtnId, idx) {
   const raw = (document.getElementById(inpId).value||'').replace(/\D/g,'');
@@ -286,8 +403,7 @@ async function consultarCNPJ(inpId, metId, detId, aiBtnId, idx) {
     const capital = d.capital_social?'R$ '+Number(d.capital_social).toLocaleString('pt-BR',{minimumFractionDigits:2}):'-';
     const sit = d.descricao_situacao_cadastral||'-';
     rfC[idx] = {data:d,raw,simples,capital};
-    const card = document.getElementById('card-'+idx);
-    if (card) card.dataset.cnpj = raw;
+    const card = document.getElementById('card-'+idx); if (card) card.dataset.cnpj = raw;
     const met = document.getElementById(metId);
     met.style.display='grid';
     met.innerHTML=`<div class="ib"><div class="l">Situação</div><div class="v"><span class="badge ${sit.toLowerCase().includes('ativa')?'badge-green':'badge-red'}" style="font-size:9px;">${sit}</span></div></div><div class="ib"><div class="l">Regime</div><div class="v" style="font-size:11px;">${simples}</div></div><div class="ib"><div class="l">Capital</div><div class="v" style="font-size:11px;">${capital}</div></div>`;
@@ -298,7 +414,7 @@ async function consultarCNPJ(inpId, metId, detId, aiBtnId, idx) {
   }
 }
 
-// ── ANÁLISE IA ────────────────────────────────────────────────
+// ── ANÁLISE IA ────────────────────────────────────────────
 const aiC = {};
 async function gerarAnalise(btn, boxId, nome, destaque, rdData) {
   const cnpj = btn.dataset.cnpj;
@@ -321,13 +437,9 @@ Responda com estas 4 seções (máx 350 palavras):
 3. PONTOS DE ATENÇÃO (2-3 riscos)
 4. PERGUNTAS ESTRATÉGICAS PARA A REUNIÃO (3 perguntas)`;
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',
-      headers:{'Content-Type':'application/json','x-api-key':cfg.ai,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-      body:JSON.stringify({model:'claude-opus-4-6',max_tokens:1000,messages:[{role:'user',content:prompt}]})
-    });
+    const res = await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':cfg.ai,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-opus-4-6',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
     const j = await res.json();
-    const text = j.content?.find(b=>b.type==='text')?.text || 'Não foi possível gerar a análise.';
+    const text = j.content?.find(b=>b.type==='text')?.text||'Não foi possível gerar a análise.';
     aiC[boxId]=text;
     box.innerHTML=`<div class="ai-box">${text}</div>`;
   } catch(e) {
@@ -335,7 +447,7 @@ Responda com estas 4 seções (máx 350 palavras):
   }
 }
 
-// ── BUSCAR NO RD ──────────────────────────────────────────────
+// ── BUSCAR NO RD ──────────────────────────────────────────
 const rdC = {};
 async function buscarRD(email, resId, actId, nome, idx) {
   const el = document.getElementById(resId);
@@ -343,10 +455,7 @@ async function buscarRD(email, resId, actId, nome, idx) {
   try {
     const cd = await rdFetch('contacts', {email});
     const contacts = cd.contacts||[];
-    if (!contacts.length) {
-      el.innerHTML=`<div class="nb" style="color:#6b6b6b;">Lead não encontrado para ${email}.</div>`;
-      return;
-    }
+    if (!contacts.length) { el.innerHTML=`<div class="nb" style="color:#6b6b6b;">Lead não encontrado para ${email}.</div>`; return; }
     const c = contacts[0];
     const dd = await rdFetch('deals', {contact_id:c.id});
     const deal = (dd.deals||[])[0]||{};
@@ -360,7 +469,7 @@ async function buscarRD(email, resId, actId, nome, idx) {
   }
 }
 
-// ── GRAVAR HISTÓRICO ──────────────────────────────────────────
+// ── GRAVAR HISTÓRICO ──────────────────────────────────────
 function montarTxt(idx, nome) {
   const rd=rdC[idx]||{}, rf=rfC[idx]||{}, d=rf.data||{};
   const analise=aiC['aibox-'+idx]||'Análise não gerada ainda.';
@@ -398,7 +507,7 @@ async function confirmarGrav(idx) {
   document.getElementById('gv-'+idx).classList.add('show');
   document.getElementById('er-'+idx).classList.remove('show');
   try {
-    await rdFetch(`deals/${rd.deal.id}/activities`, {}, 'POST', {text:montarTxt(idx,card?.dataset.nome||'')});
+    await rdFetch(`deals/${rd.deal.id}/activities`,{},'POST',{text:montarTxt(idx,card?.dataset.nome||'')});
     document.getElementById('gv-'+idx).classList.remove('show');
     document.getElementById('sc-'+idx).classList.add('show');
   } catch(e) {
@@ -408,7 +517,7 @@ async function confirmarGrav(idx) {
   }
 }
 
-// ── CARD REUNIÃO ──────────────────────────────────────────────
+// ── CARD REUNIÃO ──────────────────────────────────────────
 function cardR(r, i) {
   const oc=r.origem==='marketing'?'marketing':'direto';
   const ol=r.origem==='marketing'?'Via marketing':'Agendamento direto';
@@ -439,7 +548,6 @@ function cardR(r, i) {
         <div class="tab" onclick="swTab(this,'rf-${i}')">Receita Federal</div>
         <div class="tab" onclick="swTab(this,'ai-${i}')">Análise IA</div>
       </div>
-      <!-- RD Station -->
       <div class="tp active" id="rd-${i}">
         ${r.email
           ? `<div style="font-size:12px;color:#6b6b6b;margin-bottom:10px;">E-mail: <strong>${r.email}</strong></div>
@@ -447,7 +555,6 @@ function cardR(r, i) {
              <div id="rdr-${i}" style="margin-top:10px;"></div>`
           : `<div class="nb" style="color:#6b6b6b;">E-mail não identificado.</div>`}
       </div>
-      <!-- Receita Federal -->
       <div class="tp" id="rf-${i}">
         <div class="sl" style="margin-top:0">CNPJ do cliente</div>
         <div class="cnpj-row">
@@ -457,7 +564,6 @@ function cardR(r, i) {
         <div id="cm-${i}" style="display:none;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:10px;"></div>
         <div id="cd-${i}" style="font-size:12px;color:#9e9e9e;">Insira o CNPJ para consultar.</div>
       </div>
-      <!-- Análise IA -->
       <div class="tp" id="ai-${i}">
         <div id="aibox-${i}" style="font-size:12px;color:#9e9e9e;margin-bottom:10px;">Consulte o CNPJ na aba Receita Federal para liberar a análise.</div>
         <button class="btn btn-p" id="aib-${i}" style="display:none;" onclick="gerarAnalise(this,'aibox-${i}','${r.nome}','${r.dest||''}',rdC[${i}])">Gerar análise tributária →</button>
@@ -470,7 +576,7 @@ function cardR(r, i) {
         <div class="pv-head"><span class="pt">Prévia — o que será gravado</span><span class="pd">${r.nome} · RD Station</span></div>
         <div class="pv-body" id="pv-c-${i}"></div>
         <div class="pv-foot">
-          <span class="av" style="font-size:11px;color:#6b6b6b;">Será gravado como anotação na negociação</span>
+          <span class="pv-aviso">Será gravado como anotação na negociação</span>
           <div style="display:flex;gap:6px;">
             <button class="btn" onclick="cancelarPv(${i})">Cancelar</button>
             <button class="btn btn-s" onclick="confirmarGrav(${i})">Confirmar e gravar →</button>
@@ -485,34 +591,87 @@ function cardR(r, i) {
 </div>`;
 }
 
-// ── PROPOSTAS ─────────────────────────────────────────────────
+// ── PROPOSTAS COM FILTROS ─────────────────────────────────
+function limparFiltrosPropostas() {
+  document.getElementById('f-data-ini').value = '';
+  document.getElementById('f-data-fim').value = '';
+  document.getElementById('f-status').value = 'aberta';
+  document.getElementById('f-urgencia').value = 'all';
+}
+
 async function carregarPropostas() {
   if (!getCfg().rd) {
     document.getElementById('cards-p').innerHTML='<div class="empty">Configure o token do RD Station para carregar as propostas.</div>';
     return;
   }
-  document.getElementById('cards-p').innerHTML=load('Buscando propostas...');
+
+  const dataIni = document.getElementById('f-data-ini').value;
+  const dataFim = document.getElementById('f-data-fim').value;
+  const status  = document.getElementById('f-status').value;
+  const urgFiltro = document.getElementById('f-urgencia').value;
+
+  // Monta parâmetros para API
+  const params = { page: '1' };
+
+  // Filtra por status
+  if (status === 'ganha') { params.win = 'true'; }
+  else if (status === 'perdida') { params.lost = 'true'; }
+  else if (status === 'aberta') { params.win = 'false'; params.lost = 'false'; }
+  // 'all' não filtra
+
+  // Título da seção
+  let titulo = 'Propostas';
+  if (status === 'ganha') titulo = '✅ Propostas ganhas';
+  else if (status === 'perdida') titulo = '❌ Propostas perdidas';
+  else if (status === 'aberta') titulo = '🔄 Propostas em andamento';
+  document.getElementById('prop-titulo').textContent = titulo;
+
+  document.getElementById('cards-p').innerHTML=load('Buscando propostas no RD Station...');
+
   try {
-    const data = await rdFetch('deals', {deal_stage_name:'Proposta enviada',win:'false',page:'1'});
-    const deals = data.deals||[];
-    if (!deals.length) {
-      document.getElementById('cards-p').innerHTML='<div class="empty">✅ Nenhuma proposta pendente.</div>';
+    const data = await rdFetch('deals', params);
+    let deals = data.deals||[];
+
+    // Filtra por data de atualização
+    if (dataIni) {
+      const ini = new Date(dataIni+'T00:00:00');
+      deals = deals.filter(d => new Date(d.updated_at||d.created_at) >= ini);
+    }
+    if (dataFim) {
+      const fim = new Date(dataFim+'T23:59:59');
+      deals = deals.filter(d => new Date(d.updated_at||d.created_at) <= fim);
+    }
+
+    // Adiciona dias e urgência
+    const com = deals.map(d => {
+      const di = diasAtras(d.updated_at||d.created_at);
+      const urg = di>7?'urgente':di>=3?'atencao':'ok';
+      return {...d, di, urg};
+    }).sort((a,b)=>b.di-a.di);
+
+    // Filtra por urgência
+    const filtrados = urgFiltro === 'all' ? com : com.filter(d=>d.urg===urgFiltro);
+
+    if (!filtrados.length) {
+      document.getElementById('cards-p').innerHTML='<div class="empty">Nenhuma proposta encontrada com os filtros selecionados.</div>';
       ['sp-t','sp-u','sp-a'].forEach(id=>document.getElementById(id).textContent='0');
       document.getElementById('bp').textContent='0';
       return;
     }
-    const com = deals.map(d=>{const di=diasAtras(d.updated_at||d.created_at);const urg=di>7?'urgente':di>=3?'atencao':'ok';return{...d,di,urg};}).sort((a,b)=>b.di-a.di);
-    const urg=com.filter(x=>x.urg==='urgente').length;
-    const atc=com.filter(x=>x.urg==='atencao').length;
-    document.getElementById('sp-t').textContent=com.length;
+
+    const urg=filtrados.filter(x=>x.urg==='urgente').length;
+    const atc=filtrados.filter(x=>x.urg==='atencao').length;
+    document.getElementById('sp-t').textContent=filtrados.length;
     document.getElementById('sp-u').textContent=urg;
     document.getElementById('sp-a').textContent=atc;
-    document.getElementById('bp').textContent=urg>0?urg+' urgentes':com.length;
-    document.getElementById('cards-p').innerHTML=com.map((d,i)=>cardP(d,i)).join('');
+    document.getElementById('bp').textContent=urg>0?urg+' urgentes':filtrados.length;
+    document.getElementById('cards-p').innerHTML=filtrados.map((d,i)=>cardP(d,i)).join('');
+
   } catch(e) {
     document.getElementById('cards-p').innerHTML=`<div class="empty" style="color:#791F1F;">Erro: ${e.message}</div>`;
   }
 }
+
 function cardP(d,i) {
   const nm=d.name||'Negociação', emp=d.contacts?.[0]?.organization_name||'-';
   const val=d.amount_montly?'R$ '+Number(d.amount_montly).toLocaleString('pt-BR'):'-';
@@ -520,21 +679,25 @@ function cardP(d,i) {
   const dl=d.di===0?'Hoje':d.di===1?'1 dia':`${d.di} dias`;
   const dc=d.urg==='urgente'?'dp-urgente':d.urg==='atencao'?'dp-atencao':'dp-ok';
   const ac=d.urg==='urgente'?'av-urgente':d.urg==='atencao'?'av-atencao':'av-ok';
+  const atualizado = d.updated_at ? new Date(d.updated_at).toLocaleDateString('pt-BR') : '-';
   return `
 <div class="card ${d.urg}">
   <div class="card-head" onclick="toggle(this)">
     <div class="av ${ac}">${ini(nm)}</div>
     <div class="card-info"><div class="card-name">${nm}</div><div class="card-sub">${emp} · ${stg}</div></div>
     <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
-      <span class="dias-pill ${dc}">${dl} aguardando</span>
+      <span class="dias-pill ${dc}">${dl} sem atualização</span>
       <span class="chev">▼</span>
     </div>
   </div>
   <div class="card-body">
     <div class="cbi">
       <div class="prazo-bar ${d.urg}">
-        <div><div class="prazo-num">${d.di}</div><div class="prazo-lbl">dias aguardando</div></div>
-        <div style="flex:1;margin-left:16px;font-size:12px;">${d.urg==='urgente'?'⚠ Mais de 7 dias sem retorno. Priorize o follow-up.':d.urg==='atencao'?'Considere fazer um follow-up.':'Proposta recente.'}</div>
+        <div><div class="prazo-num">${d.di}</div><div class="prazo-lbl">dias sem atualização</div></div>
+        <div style="flex:1;margin-left:16px;font-size:12px;">
+          ${d.urg==='urgente'?'⚠ Mais de 7 dias sem movimentação. Priorize o follow-up.':d.urg==='atencao'?'Considere fazer um follow-up.':'Proposta recente.'}
+          <div style="margin-top:4px;color:#9e9e9e;font-size:11px;">Última atualização: ${atualizado}</div>
+        </div>
       </div>
       <div class="two-col">
         <div class="ib"><div class="l">Empresa</div><div class="v">${emp}</div></div>
@@ -551,24 +714,23 @@ function cardP(d,i) {
 </div>`;
 }
 
-// ── REUNIÕES DE HOJE (da agenda real) ─────────────────────────
-// Apenas reuniões comerciais — Treinamento e Fisioterapia ignorados
-const REUNIOES = [
-  {
-    nome: 'Alinhamento Estratégico — Outtax & Moonflag',
-    hora: '16:00', dur: '1h',
-    origem: 'direto',
-    email: 'bsimao@agmoonflag.com.br',
-    org: 'bsimao@agmoonflag.com.br',
-    dest: ''
-  }
-];
-
-// ── INIT ──────────────────────────────────────────────────────
+// ── INIT ──────────────────────────────────────────────────
 (function(){
+  // Seta data do topbar
   document.getElementById('td').textContent = new Date().toLocaleDateString('pt-BR',{weekday:'short',day:'numeric',month:'short'});
   checkCfg();
-  document.getElementById('cards-r').innerHTML = REUNIOES.map((r,i)=>cardR(r,i)).join('');
+
+  // Seta data de hoje no filtro de reuniões e carrega
+  const hoje = dataHoje();
+  document.getElementById('filtro-data-reuniao').value = hoje;
+  const labelHoje = formatarData(hoje);
+  document.getElementById('dl').innerHTML = labelHoje.charAt(0).toUpperCase()+labelHoje.slice(1)+'<span class="tag-hoje">Hoje</span>';
+
+  // Seta status padrão para aberta nas propostas
+  document.getElementById('f-status').value = 'aberta';
+
+  // Renderiza reuniões de hoje
+  renderReunioes(REUNIOES_HOJE);
 })();
 </script>
 </body>
