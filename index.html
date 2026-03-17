@@ -20,22 +20,18 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .banner.hidden{display:none}
 .page{display:none;padding:24px 16px;max-width:900px;margin:0 auto}
 .page.active{display:block}
-.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
 .stat{background:#fff;border:1px solid #e5e5e5;border-radius:10px;padding:12px 14px}
 .stat .num{font-size:22px;font-weight:600;margin-bottom:2px}
 .stat .lbl{font-size:11px;color:#6b6b6b}
-
-/* FILTROS */
 .filtros{background:#fff;border:1px solid #e5e5e5;border-radius:12px;padding:14px 16px;margin-bottom:16px;display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap}
-.filtro-group{display:flex;flex-direction:column;gap:4px}
-.filtro-group label{font-size:11px;color:#6b6b6b;font-weight:500}
-.filtro-group input[type="date"],.filtro-group select{padding:7px 10px;border:1px solid #e5e5e5;border-radius:8px;font-size:12px;background:#fff;color:#1a1a1a;cursor:pointer}
-.filtro-group input[type="date"]:focus,.filtro-group select:focus{outline:none;border-color:#9e9e9e}
-.filtro-actions{display:flex;gap:8px;align-items:flex-end;margin-left:auto}
-
+.fg{display:flex;flex-direction:column;gap:4px}
+.fg label{font-size:11px;color:#6b6b6b;font-weight:500}
+.fg input[type="date"],.fg select{padding:7px 10px;border:1px solid #e5e5e5;border-radius:8px;font-size:12px;background:#fff;color:#1a1a1a;cursor:pointer;min-width:130px}
+.fg input[type="date"]:focus,.fg select:focus{outline:none;border-color:#9e9e9e}
+.fa{display:flex;gap:8px;align-items:flex-end;margin-left:auto}
 .sec-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
 .sec-title{font-size:12px;font-weight:500;color:#6b6b6b;text-transform:uppercase;letter-spacing:.06em}
-.btn-ref{padding:5px 12px;font-size:12px;border-radius:20px;border:1px solid #e5e5e5;background:#fff;cursor:pointer;color:#6b6b6b}
 .cards{display:flex;flex-direction:column;gap:10px}
 .card{background:#fff;border:1px solid #e5e5e5;border-radius:12px;overflow:hidden}
 .card.marketing{border-left:4px solid #378ADD}
@@ -62,6 +58,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .badge-green{background:#EAF3DE;color:#27500A}
 .badge-red{background:#FCEBEB;color:#791F1F}
 .badge-amber{background:#FAEEDA;color:#854F0B}
+.badge-gray{background:#f0f0f0;color:#6b6b6b}
 .dias-pill{font-size:12px;font-weight:600;padding:3px 10px;border-radius:20px;white-space:nowrap;flex-shrink:0}
 .dp-urgente{background:#FCEBEB;color:#791F1F}
 .dp-atencao{background:#FAEEDA;color:#854F0B}
@@ -80,6 +77,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .tp{display:none}
 .tp.active{display:block}
 .two-col{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px}
 .ib{background:#f8f7f4;border-radius:8px;padding:9px 11px}
 .ib .l{font-size:10px;color:#6b6b6b;margin-bottom:3px}
 .ib .v{font-size:12px;font-weight:500;word-break:break-word}
@@ -93,7 +91,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .cnae-code{font-family:monospace;font-size:10px;color:#6b6b6b;margin-right:6px}
 .nb{background:#f8f7f4;border-radius:8px;padding:10px 12px;font-size:12px;line-height:1.65}
 .ai-box{background:#f8f7f4;border-radius:8px;padding:12px 14px;font-size:12px;line-height:1.75;white-space:pre-wrap}
-.div{height:1px;background:#e5e5e5;margin:14px 0}
+.divl{height:1px;background:#e5e5e5;margin:14px 0}
 .act-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .btn{display:inline-flex;align-items:center;gap:5px;padding:8px 16px;font-size:12px;font-weight:500;border-radius:8px;cursor:pointer;border:1px solid #e5e5e5;background:#fff;color:#1a1a1a;text-decoration:none}
 .btn:hover{background:#f8f7f4}
@@ -128,6 +126,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .prazo-bar.ok{background:#EAF3DE}
 .prazo-num{font-size:24px;font-weight:700;line-height:1}
 .prazo-lbl{font-size:11px;color:#6b6b6b;margin-top:2px}
+.funil-tag{display:inline-block;font-size:10px;padding:2px 8px;border-radius:20px;background:#f0f0f0;color:#6b6b6b;font-weight:500;margin-left:6px;vertical-align:middle}
 .modal-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:center;justify-content:center}
 .modal-ov.open{display:flex}
 .modal{background:#fff;border-radius:16px;padding:28px;width:100%;max-width:460px;margin:16px}
@@ -140,8 +139,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .modal-ft{display:flex;gap:8px;justify-content:flex-end;margin-top:20px}
 .btn-cancel{padding:8px 16px;font-size:13px;border-radius:8px;border:1px solid #e5e5e5;background:#fff;cursor:pointer;color:#6b6b6b}
 .btn-save{padding:8px 20px;font-size:13px;font-weight:500;border-radius:8px;border:none;background:#1a1a1a;color:#fff;cursor:pointer}
-.tag-hoje{font-size:10px;background:#E6F1FB;color:#185FA5;padding:2px 8px;border-radius:20px;font-weight:500;margin-left:6px}
-@media(max-width:600px){.two-col{grid-template-columns:1fr}.stats{grid-template-columns:repeat(3,1fr)}.nav-tab{padding:0 10px;font-size:12px}.filtros{flex-direction:column;align-items:stretch}.filtro-actions{margin-left:0}}
+@media(max-width:600px){.two-col,.three-col{grid-template-columns:1fr}.stats{grid-template-columns:repeat(3,1fr)}.nav-tab{padding:0 10px;font-size:12px}.filtros{flex-direction:column;align-items:stretch}.fa{margin-left:0}}
 </style>
 </head>
 <body>
@@ -163,89 +161,83 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   <button class="btn-sm" onclick="abrirCfg()">Configurar →</button>
 </div>
 
-<!-- ── REUNIÕES ─────────────────────────────────────────── -->
+<!-- REUNIÕES -->
 <div class="page active" id="page-r">
   <div class="stats">
     <div class="stat"><div class="num" id="s-tot">—</div><div class="lbl">Reuniões comerciais</div></div>
     <div class="stat"><div class="num" id="s-mkt" style="color:#185FA5">—</div><div class="lbl">Via marketing</div></div>
     <div class="stat"><div class="num" id="s-dir" style="color:#1D9E75">—</div><div class="lbl">Agendamento direto</div></div>
   </div>
-
-  <!-- Filtro de data -->
   <div class="filtros">
-    <div class="filtro-group">
+    <div class="fg">
       <label>📅 Data das reuniões</label>
-      <input type="date" id="filtro-data-reuniao" />
+      <input type="date" id="f-data-r"/>
     </div>
-    <div class="filtro-actions">
-      <button class="btn btn-p" onclick="buscarReunioesPorData()">Buscar reuniões</button>
-      <button class="btn" onclick="voltarHoje()">Hoje</button>
+    <div class="fa">
+      <button class="btn btn-p" onclick="buscarReunioes()">🔍 Buscar reuniões</button>
+      <button class="btn" onclick="irHoje()">Hoje</button>
     </div>
   </div>
-
   <div class="sec-hdr">
-    <span class="sec-title" id="dl">Carregando...</span>
+    <span class="sec-title" id="dl">Selecione uma data</span>
   </div>
   <div class="cards" id="cards-r">
-    <div class="empty">Selecione uma data e clique em Buscar reuniões.</div>
+    <div class="empty">📅 Selecione uma data e clique em Buscar reuniões.</div>
   </div>
 </div>
 
-<!-- ── PROPOSTAS ────────────────────────────────────────── -->
+<!-- PROPOSTAS -->
 <div class="page" id="page-p">
   <div class="stats">
     <div class="stat"><div class="num" id="sp-t">—</div><div class="lbl">Propostas encontradas</div></div>
     <div class="stat"><div class="num" id="sp-u" style="color:#E24B4A">—</div><div class="lbl">Urgente (+7 dias)</div></div>
     <div class="stat"><div class="num" id="sp-a" style="color:#EF9F27">—</div><div class="lbl">Atenção (3-7 dias)</div></div>
   </div>
-
-  <!-- Filtros de propostas -->
   <div class="filtros">
-    <div class="filtro-group">
-      <label>📅 Data de início</label>
-      <input type="date" id="f-data-ini" />
+    <div class="fg">
+      <label>📅 De</label>
+      <input type="date" id="f-ini"/>
     </div>
-    <div class="filtro-group">
-      <label>📅 Data de fim</label>
-      <input type="date" id="f-data-fim" />
+    <div class="fg">
+      <label>📅 Até</label>
+      <input type="date" id="f-fim"/>
     </div>
-    <div class="filtro-group">
+    <div class="fg">
       <label>Status</label>
-      <select id="f-status">
-        <option value="all">Todos os status</option>
-        <option value="aberta">Abertas (em andamento)</option>
-        <option value="ganha">Ganhas</option>
-        <option value="perdida">Perdidas</option>
+      <select id="f-st">
+        <option value="aberta">🔄 Em andamento</option>
+        <option value="ganha">✅ Ganhas</option>
+        <option value="perdida">❌ Perdidas</option>
+        <option value="all">Todos</option>
       </select>
     </div>
-    <div class="filtro-group">
+    <div class="fg">
       <label>Urgência</label>
-      <select id="f-urgencia">
+      <select id="f-urg">
         <option value="all">Todas</option>
         <option value="urgente">🔴 Urgente (+7 dias)</option>
         <option value="atencao">🟡 Atenção (3-7 dias)</option>
         <option value="ok">🟢 OK (menos de 3 dias)</option>
       </select>
     </div>
-    <div class="filtro-actions">
-      <button class="btn btn-p" onclick="carregarPropostas()">Buscar</button>
-      <button class="btn" onclick="limparFiltrosPropostas()">Limpar</button>
+    <div class="fa">
+      <button class="btn btn-p" onclick="carregarPropostas()">🔍 Buscar</button>
+      <button class="btn" onclick="limparFiltros()">Limpar</button>
     </div>
   </div>
-
   <div class="sec-hdr">
-    <span class="sec-title" id="prop-titulo">Propostas</span>
+    <span class="sec-title" id="prop-titulo">Propostas em andamento</span>
   </div>
   <div class="cards" id="cards-p">
     <div class="empty">Clique em Buscar para carregar as propostas.</div>
   </div>
 </div>
 
-<!-- ── CONFIG MODAL ──────────────────────────────────────── -->
+<!-- CONFIG MODAL -->
 <div class="modal-ov" id="mcfg">
   <div class="modal">
     <h3>⚙ Configuração</h3>
-    <p>Suas credenciais ficam salvas apenas no seu navegador — nunca em servidores externos.</p>
+    <p>Suas credenciais ficam salvas apenas no seu navegador.</p>
     <div class="field">
       <label>Token RD Station CRM</label>
       <input type="password" id="i-rd" placeholder="Cole seu token aqui..."/>
@@ -262,170 +254,172 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 </div>
 
 <script>
-// ── CONFIG ────────────────────────────────────────────────
-const K = 'otx_cfg';
-const getCfg = () => { try { return JSON.parse(localStorage.getItem(K))||{}; } catch { return {}; } };
-function salvarCfg() {
-  localStorage.setItem(K, JSON.stringify({ rd: document.getElementById('i-rd').value.trim(), ai: document.getElementById('i-ai').value.trim() }));
-  fecharCfg(); checkCfg();
-}
-function checkCfg() { document.getElementById('banner').classList.toggle('hidden', !!getCfg().rd); }
-function abrirCfg() { const c=getCfg(); document.getElementById('i-rd').value=c.rd||''; document.getElementById('i-ai').value=c.ai||''; document.getElementById('mcfg').classList.add('open'); }
-function fecharCfg() { document.getElementById('mcfg').classList.remove('open'); }
+// ── CONFIG ───────────────────────────────────────────────
+const K='otx_cfg';
+const getCfg=()=>{try{return JSON.parse(localStorage.getItem(K))||{};}catch{return{};}};
+function salvarCfg(){localStorage.setItem(K,JSON.stringify({rd:document.getElementById('i-rd').value.trim(),ai:document.getElementById('i-ai').value.trim()}));fecharCfg();checkCfg();}
+function checkCfg(){document.getElementById('banner').classList.toggle('hidden',!!getCfg().rd);}
+function abrirCfg(){const c=getCfg();document.getElementById('i-rd').value=c.rd||'';document.getElementById('i-ai').value=c.ai||'';document.getElementById('mcfg').classList.add('open');}
+function fecharCfg(){document.getElementById('mcfg').classList.remove('open');}
 
-// ── NAV ───────────────────────────────────────────────────
-function showPage(n, t) {
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.nav-tab').forEach(x=>x.classList.remove('active'));
-  document.getElementById('page-'+n).classList.add('active');
-  t.classList.add('active');
-}
+// ── NAV ──────────────────────────────────────────────────
+function showPage(n,t){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.querySelectorAll('.nav-tab').forEach(x=>x.classList.remove('active'));document.getElementById('page-'+n).classList.add('active');t.classList.add('active');}
 
 // ── UTILS ─────────────────────────────────────────────────
-const ini = n => (n||'?').split(' ').slice(0,2).map(x=>x[0]).join('').toUpperCase();
-const diasAtras = d => d ? Math.floor((Date.now()-new Date(d))/(864e5)) : 0;
-const load = msg => `<div class="loading"><div class="dot"></div><div class="dot"></div><div class="dot"></div><span style="margin-left:4px;">${msg}</span></div>`;
-function fc(v) {
-  v=v.replace(/\D/g,'').slice(0,14);
-  if(v.length<=2)return v; if(v.length<=5)return v.slice(0,2)+'.'+v.slice(2);
-  if(v.length<=8)return v.slice(0,2)+'.'+v.slice(2,5)+'.'+v.slice(5);
-  if(v.length<=12)return v.slice(0,2)+'.'+v.slice(2,5)+'.'+v.slice(5,8)+'/'+v.slice(8);
-  return v.slice(0,2)+'.'+v.slice(2,5)+'.'+v.slice(5,8)+'/'+v.slice(8,12)+'-'+v.slice(12,14);
-}
-function toggle(h) {
-  const b=h.nextElementSibling, c=h.querySelector('.chev'), o=b.classList.contains('open');
-  b.classList.toggle('open',!o); c.style.transform=o?'':'rotate(180deg)';
-}
-function swTab(t,id) {
-  const p=t.closest('.cbi');
-  p.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
-  p.querySelectorAll('.tp').forEach(x=>x.classList.remove('active'));
-  t.classList.add('active'); document.getElementById(id).classList.add('active');
-}
-function dataHoje() {
-  const d = new Date();
-  return d.toISOString().split('T')[0];
-}
-function formatarData(str) {
-  if (!str) return '';
-  const d = new Date(str+'T12:00:00');
-  return d.toLocaleDateString('pt-BR', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
-}
+const ini=n=>(n||'?').split(' ').slice(0,2).map(x=>x[0]).join('').toUpperCase();
+const diasAtras=d=>d?Math.floor((Date.now()-new Date(d))/(864e5)):0;
+const load=msg=>`<div class="loading"><div class="dot"></div><div class="dot"></div><div class="dot"></div><span style="margin-left:4px;">${msg}</span></div>`;
+function fc(v){v=v.replace(/\D/g,'').slice(0,14);if(v.length<=2)return v;if(v.length<=5)return v.slice(0,2)+'.'+v.slice(2);if(v.length<=8)return v.slice(0,2)+'.'+v.slice(2,5)+'.'+v.slice(5);if(v.length<=12)return v.slice(0,2)+'.'+v.slice(2,5)+'.'+v.slice(5,8)+'/'+v.slice(8);return v.slice(0,2)+'.'+v.slice(2,5)+'.'+v.slice(5,8)+'/'+v.slice(8,12)+'-'+v.slice(12,14);}
+function toggle(h){const b=h.nextElementSibling,c=h.querySelector('.chev'),o=b.classList.contains('open');b.classList.toggle('open',!o);c.style.transform=o?'':'rotate(180deg)';}
+function swTab(t,id){const p=t.closest('.cbi');p.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));p.querySelectorAll('.tp').forEach(x=>x.classList.remove('active'));t.classList.add('active');document.getElementById(id).classList.add('active');}
+function dataHoje(){return new Date().toISOString().split('T')[0];}
+function fmtData(str){if(!str)return'';const d=new Date(str+'T12:00:00');return d.toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});}
 
-// ── API RD (via proxy, token no header) ──────────────────
-async function rdFetch(path, params={}, method='GET', body=null) {
-  const cfg = getCfg();
-  if (!cfg.rd) throw new Error('Token não configurado. Clique em ⚙ Config.');
-  const qs = Object.keys(params).length ? '&'+new URLSearchParams(params) : '';
-  const url = `/api/rd?path=${encodeURIComponent(path)}${qs}`;
-  const opts = { method, headers: { 'Content-Type': 'application/json', 'X-RD-Token': cfg.rd } };
-  if (body) opts.body = JSON.stringify(body);
-  const r = await fetch(url, opts);
-  const data = await r.json();
-  if (data.erro) throw new Error(data.erro);
+// ── API RD ───────────────────────────────────────────────
+async function rdFetch(path,params={},method='GET',body=null){
+  const cfg=getCfg();
+  if(!cfg.rd)throw new Error('Token não configurado. Clique em ⚙ Config.');
+  const qs=Object.keys(params).length?'&'+new URLSearchParams(params):'';
+  const url=`/api/rd?path=${encodeURIComponent(path)}${qs}`;
+  const opts={method,headers:{'Content-Type':'application/json','X-RD-Token':cfg.rd}};
+  if(body)opts.body=JSON.stringify(body);
+  const r=await fetch(url,opts);
+  const data=await r.json();
+  if(data.erro)throw new Error(data.erro);
   return data;
 }
 
-// ── REUNIÕES POR DATA ─────────────────────────────────────
-// Dados de reuniões pré-carregados para hoje
-const REUNIOES_HOJE = [
-  {
-    nome: 'Alinhamento Estratégico — Outtax & Moonflag',
-    hora: '16:00', dur: '1h',
-    origem: 'direto',
-    email: 'bsimao@agmoonflag.com.br',
-    org: 'bsimao@agmoonflag.com.br',
-    dest: '',
-    data: dataHoje()
-  }
-];
+// ── GOOGLE CALENDAR (GCAL API via Claude) ─────────────────
+// Reuniões pré-carregadas para hoje
+const HOJE = dataHoje();
+const REUNIOES_BASE = {
+  [HOJE]: [
+    {nome:'Alinhamento Estratégico — Outtax & Moonflag',hora:'16:00',dur:'1h',origem:'direto',email:'bsimao@agmoonflag.com.br',org:'bsimao@agmoonflag.com.br',dest:''}
+  ]
+};
 
-function voltarHoje() {
-  const hoje = dataHoje();
-  document.getElementById('filtro-data-reuniao').value = hoje;
-  buscarReunioesPorData();
+// Cache de buscas por data
+const cacheReunioes = {...REUNIOES_BASE};
+
+function irHoje(){
+  document.getElementById('f-data-r').value=HOJE;
+  buscarReunioes();
 }
 
-async function buscarReunioesPorData() {
-  const dataSel = document.getElementById('filtro-data-reuniao').value;
-  if (!dataSel) { alert('Selecione uma data.'); return; }
+async function buscarReunioes(){
+  const data=document.getElementById('f-data-r').value;
+  if(!data){alert('Selecione uma data.');return;}
 
-  const isHoje = dataSel === dataHoje();
-  const labelData = formatarData(dataSel);
-  const tagHoje = isHoje ? '<span class="tag-hoje">Hoje</span>' : '';
-  document.getElementById('dl').innerHTML = labelData.charAt(0).toUpperCase()+labelData.slice(1)+tagHoje;
-  document.getElementById('cards-r').innerHTML = load('Buscando reuniões na agenda...');
+  const isHoje=data===HOJE;
+  const label=fmtData(data);
+  document.getElementById('dl').innerHTML=label.charAt(0).toUpperCase()+label.slice(1)+(isHoje?' <span style="font-size:10px;background:#E6F1FB;color:#185FA5;padding:2px 8px;border-radius:20px;font-weight:500;margin-left:6px;">Hoje</span>':'');
 
-  // Se for hoje, usa dados já carregados
-  if (isHoje) {
-    renderReunioes(REUNIOES_HOJE);
+  // Usa cache se disponível
+  if(cacheReunioes[data]){
+    renderReunioes(cacheReunioes[data]);
     return;
   }
 
-  // Para outras datas, busca via Google Calendar API
-  // Como não temos acesso direto aqui, mostra mensagem orientando
-  document.getElementById('cards-r').innerHTML = `
+  document.getElementById('cards-r').innerHTML=load('Buscando reuniões na agenda...');
+
+  // Chama API do Google Calendar via backend
+  try {
+    const dataInicio=data+'T00:00:00';
+    const dataFim=data+'T23:59:59';
+    const r=await fetch(`/api/gcal?timeMin=${encodeURIComponent(dataInicio)}&timeMax=${encodeURIComponent(dataFim)}`);
+    if(r.ok){
+      const events=await r.json();
+      const reunioes=filtrarReunioes(events,data);
+      cacheReunioes[data]=reunioes;
+      renderReunioes(reunioes);
+    } else {
+      // Sem API de calendar, mostra mensagem
+      mostrarSemCalendar(data);
+    }
+  } catch {
+    mostrarSemCalendar(data);
+  }
+}
+
+function mostrarSemCalendar(data){
+  document.getElementById('cards-r').innerHTML=`
     <div class="empty">
-      <div style="font-size:28px;margin-bottom:8px;">📅</div>
-      <div style="font-weight:500;margin-bottom:6px;">Buscando reuniões para ${labelData}</div>
-      <div style="font-size:12px;color:#9e9e9e;">Esta funcionalidade busca reuniões diretamente da sua agenda Google.<br>
-      Para a data de hoje as reuniões já estão carregadas automaticamente.</div>
+      <div style="font-size:28px;margin-bottom:10px;">📅</div>
+      <div style="font-weight:500;margin-bottom:8px;">Reuniões para ${fmtData(data)}</div>
+      <div style="font-size:12px;color:#9e9e9e;max-width:400px;margin:0 auto;line-height:1.7;">
+        Para buscar reuniões de datas passadas, acesse sua <a href="https://calendar.google.com" target="_blank" style="color:#185FA5;">Google Agenda</a> e me informe os e-mails dos clientes das reuniões desta data.<br><br>
+        As reuniões de <strong>hoje</strong> são carregadas automaticamente.
+      </div>
     </div>`;
-
-  document.getElementById('s-tot').textContent = '—';
-  document.getElementById('s-mkt').textContent = '—';
-  document.getElementById('s-dir').textContent = '—';
+  document.getElementById('s-tot').textContent='—';
+  document.getElementById('s-mkt').textContent='—';
+  document.getElementById('s-dir').textContent='—';
 }
 
-function renderReunioes(reunioes) {
-  document.getElementById('s-tot').textContent = reunioes.length;
-  document.getElementById('s-mkt').textContent = reunioes.filter(r=>r.origem==='marketing').length;
-  document.getElementById('s-dir').textContent = reunioes.filter(r=>r.origem==='direto').length;
-  if (!reunioes.length) {
-    document.getElementById('cards-r').innerHTML = '<div class="empty">🎉 Nenhuma reunião comercial encontrada para esta data.</div>';
+function filtrarReunioes(events, data){
+  // Filtra eventos que são reuniões comerciais (exclui pessoais)
+  const ignorar=['Treinamento','Academia','Fisioterapia','RPG','Smart Fit','pessoal'];
+  return events
+    .filter(e=>{
+      const titulo=(e.summary||'').toLowerCase();
+      return !ignorar.some(p=>titulo.includes(p.toLowerCase()));
+    })
+    .map(e=>{
+      const organizer=e.organizer?.email||'';
+      const isMarketing=['midias.outtax@gmail.com'].includes(organizer);
+      const hora=e.start?.dateTime?new Date(e.start.dateTime).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):'';
+      const emailCliente=e.attendees?.find(a=>!a.self&&!a.organizer)?.email||'';
+      return{nome:e.summary||'Reunião',hora,dur:'1h',origem:isMarketing?'marketing':'direto',email:emailCliente,org:organizer,dest:''};
+    });
+}
+
+function renderReunioes(reunioes){
+  document.getElementById('s-tot').textContent=reunioes.length;
+  document.getElementById('s-mkt').textContent=reunioes.filter(r=>r.origem==='marketing').length;
+  document.getElementById('s-dir').textContent=reunioes.filter(r=>r.origem==='direto').length;
+  if(!reunioes.length){
+    document.getElementById('cards-r').innerHTML='<div class="empty">🎉 Nenhuma reunião comercial encontrada para esta data.</div>';
     return;
   }
-  document.getElementById('cards-r').innerHTML = reunioes.map((r,i)=>cardR(r,i)).join('');
+  document.getElementById('cards-r').innerHTML=reunioes.map((r,i)=>cardR(r,i)).join('');
 }
 
 // ── CNPJ ──────────────────────────────────────────────────
-const rfC = {};
-async function consultarCNPJ(inpId, metId, detId, aiBtnId, idx) {
-  const raw = (document.getElementById(inpId).value||'').replace(/\D/g,'');
-  if (raw.length!==14) { alert('CNPJ deve ter 14 dígitos'); return; }
-  document.getElementById(detId).innerHTML = load('Consultando Receita Federal...');
-  document.getElementById(metId).style.display = 'none';
-  try {
-    const r = await fetch('https://brasilapi.com.br/api/cnpj/v1/'+raw);
-    if (!r.ok) throw new Error('CNPJ não encontrado');
-    const d = await r.json();
-    const simples = d.opcao_pelo_simples?'Simples Nacional':(d.opcao_pelo_mei?'MEI':'Lucro Presumido/Real');
-    const capital = d.capital_social?'R$ '+Number(d.capital_social).toLocaleString('pt-BR',{minimumFractionDigits:2}):'-';
-    const sit = d.descricao_situacao_cadastral||'-';
-    rfC[idx] = {data:d,raw,simples,capital};
-    const card = document.getElementById('card-'+idx); if (card) card.dataset.cnpj = raw;
-    const met = document.getElementById(metId);
+const rfC={};
+async function consultarCNPJ(inpId,metId,detId,aiBtnId,idx){
+  const raw=(document.getElementById(inpId).value||'').replace(/\D/g,'');
+  if(raw.length!==14){alert('CNPJ deve ter 14 dígitos');return;}
+  document.getElementById(detId).innerHTML=load('Consultando Receita Federal...');
+  document.getElementById(metId).style.display='none';
+  try{
+    const r=await fetch('https://brasilapi.com.br/api/cnpj/v1/'+raw);
+    if(!r.ok)throw new Error('CNPJ não encontrado');
+    const d=await r.json();
+    const simples=d.opcao_pelo_simples?'Simples Nacional':(d.opcao_pelo_mei?'MEI':'Lucro Presumido/Real');
+    const capital=d.capital_social?'R$ '+Number(d.capital_social).toLocaleString('pt-BR',{minimumFractionDigits:2}):'-';
+    const sit=d.descricao_situacao_cadastral||'-';
+    rfC[idx]={data:d,raw,simples,capital};
+    const card=document.getElementById('card-'+idx);if(card)card.dataset.cnpj=raw;
+    const met=document.getElementById(metId);
     met.style.display='grid';
     met.innerHTML=`<div class="ib"><div class="l">Situação</div><div class="v"><span class="badge ${sit.toLowerCase().includes('ativa')?'badge-green':'badge-red'}" style="font-size:9px;">${sit}</span></div></div><div class="ib"><div class="l">Regime</div><div class="v" style="font-size:11px;">${simples}</div></div><div class="ib"><div class="l">Capital</div><div class="v" style="font-size:11px;">${capital}</div></div>`;
     document.getElementById(detId).innerHTML=`<div class="sl">Dados cadastrais</div><div class="ir"><span class="k">Razão social</span><span class="v">${d.razao_social||'-'}</span></div><div class="ir"><span class="k">CNPJ</span><span class="v">${fc(raw)}</span></div><div class="ir"><span class="k">Natureza jurídica</span><span class="v">${d.natureza_juridica||'-'}</span></div><div class="ir"><span class="k">Porte</span><span class="v">${d.porte||'-'}</span></div><div class="ir"><span class="k">Município/UF</span><span class="v">${d.municipio||''}${d.uf?' / '+d.uf:''}</span></div><div class="ir"><span class="k">Abertura</span><span class="v">${d.data_inicio_atividade||'-'}</span></div><div class="sl">CNAE principal</div><div class="cnae-row"><span class="cnae-code">${d.cnae_fiscal||''}</span>${d.cnae_fiscal_descricao||'-'}</div>${(d.cnaes_secundarios||[]).length?'<div class="sl">CNAEs secundários</div>'+(d.cnaes_secundarios||[]).slice(0,5).map(c=>`<div class="cnae-row"><span class="cnae-code">${c.codigo}</span>${c.descricao}</div>`).join(''):''}`;
-    if (aiBtnId) { document.getElementById(aiBtnId).style.display='inline-flex'; document.getElementById(aiBtnId).dataset.cnpj=raw; }
-  } catch(e) {
-    document.getElementById(detId).innerHTML=`<span style="font-size:12px;color:#791F1F;">Erro: ${e.message}</span>`;
-  }
+    if(aiBtnId){document.getElementById(aiBtnId).style.display='inline-flex';document.getElementById(aiBtnId).dataset.cnpj=raw;}
+  }catch(e){document.getElementById(detId).innerHTML=`<span style="font-size:12px;color:#791F1F;">Erro: ${e.message}</span>`;}
 }
 
 // ── ANÁLISE IA ────────────────────────────────────────────
-const aiC = {};
-async function gerarAnalise(btn, boxId, nome, destaque, rdData) {
-  const cnpj = btn.dataset.cnpj;
-  const rf = Object.values(rfC).find(x=>x.raw===cnpj);
-  if (!rf) return;
-  const cfg = getCfg();
-  if (!cfg.ai) { alert('Configure a chave API Anthropic nas configurações.'); return; }
-  const box = document.getElementById(boxId);
-  box.innerHTML = load('Gerando análise fiscal...');
-  const d = rf.data;
-  const prompt = `Você é especialista em planejamento tributário brasileiro. Gere análise para reunião comercial da Outtax.
+const aiC={};
+async function gerarAnalise(btn,boxId,nome,destaque,rdData){
+  const cnpj=btn.dataset.cnpj;
+  const rf=Object.values(rfC).find(x=>x.raw===cnpj);
+  if(!rf)return;
+  const cfg=getCfg();
+  if(!cfg.ai){alert('Configure a chave API Anthropic nas configurações.');return;}
+  const box=document.getElementById(boxId);
+  box.innerHTML=load('Gerando análise fiscal...');
+  const d=rf.data;
+  const prompt=`Você é especialista em planejamento tributário brasileiro. Gere análise para reunião comercial da Outtax.
 EMPRESA: ${d.razao_social||'-'} | CNPJ: ${rf.raw} | CNAE: ${d.cnae_fiscal_descricao||'-'} (${d.cnae_fiscal||'-'})
 CNAEs sec: ${(d.cnaes_secundarios||[]).slice(0,5).map(c=>c.descricao).join(', ')||'nenhum'}
 Regime: ${rf.simples} | Porte: ${d.porte||'-'} | Capital: ${rf.capital} | UF: ${d.uf||'-'} | Município: ${d.municipio||'-'}
@@ -436,42 +430,48 @@ Responda com estas 4 seções (máx 350 palavras):
 2. OPORTUNIDADES DE ECONOMIA (3-5 pontos concretos)
 3. PONTOS DE ATENÇÃO (2-3 riscos)
 4. PERGUNTAS ESTRATÉGICAS PARA A REUNIÃO (3 perguntas)`;
-  try {
-    const res = await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':cfg.ai,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-opus-4-6',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
-    const j = await res.json();
-    const text = j.content?.find(b=>b.type==='text')?.text||'Não foi possível gerar a análise.';
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':cfg.ai,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-opus-4-6',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
+    const j=await res.json();
+    const text=j.content?.find(b=>b.type==='text')?.text||'Não foi possível gerar a análise.';
     aiC[boxId]=text;
     box.innerHTML=`<div class="ai-box">${text}</div>`;
-  } catch(e) {
-    box.innerHTML=`<span style="font-size:12px;color:#791F1F;">Erro: ${e.message}</span>`;
-  }
+  }catch(e){box.innerHTML=`<span style="font-size:12px;color:#791F1F;">Erro: ${e.message}</span>`;}
 }
 
 // ── BUSCAR NO RD ──────────────────────────────────────────
-const rdC = {};
-async function buscarRD(email, resId, actId, nome, idx) {
-  const el = document.getElementById(resId);
-  el.innerHTML = load('Buscando no RD Station...');
-  try {
-    const cd = await rdFetch('contacts', {email});
-    const contacts = cd.contacts||[];
-    if (!contacts.length) { el.innerHTML=`<div class="nb" style="color:#6b6b6b;">Lead não encontrado para ${email}.</div>`; return; }
-    const c = contacts[0];
-    const dd = await rdFetch('deals', {contact_id:c.id});
-    const deal = (dd.deals||[])[0]||{};
-    rdC[idx]={contact:c,deal,empresa:c.organization_name,funil:deal.deal_stage?.name};
-    el.innerHTML=`<div class="two-col"><div class="ib"><div class="l">Empresa</div><div class="v">${c.organization_name||'-'}</div></div><div class="ib"><div class="l">Cargo</div><div class="v">${c.title||'-'}</div></div><div class="ib"><div class="l">Funil</div><div class="v">${deal.deal_stage?.name||'-'}</div></div><div class="ib"><div class="l">Valor</div><div class="v">${deal.amount_montly?'R$ '+Number(deal.amount_montly).toLocaleString('pt-BR'):'-'}</div></div></div>`;
-    if (deal.id && actId) {
+const rdC={};
+async function buscarRD(email,resId,actId,nome,idx){
+  const el=document.getElementById(resId);
+  el.innerHTML=load('Buscando no RD Station...');
+  try{
+    const cd=await rdFetch('contacts',{email});
+    const contacts=cd.contacts||[];
+    if(!contacts.length){el.innerHTML=`<div class="nb" style="color:#6b6b6b;">Lead não encontrado para ${email}.</div>`;return;}
+    const c=contacts[0];
+    const dd=await rdFetch('deals',{contact_id:c.id});
+    const deal=(dd.deals||[])[0]||{};
+    const pipeline=deal.deal_pipeline?.name||'—';
+    rdC[idx]={contact:c,deal,empresa:c.organization_name,funil:deal.deal_stage?.name,pipeline};
+    el.innerHTML=`
+      <div class="three-col">
+        <div class="ib"><div class="l">Empresa</div><div class="v">${c.organization_name||'-'}</div></div>
+        <div class="ib"><div class="l">Cargo</div><div class="v">${c.title||'-'}</div></div>
+        <div class="ib"><div class="l">Funil de vendas</div><div class="v" style="color:#185FA5;font-weight:600;">${pipeline}</div></div>
+      </div>
+      <div class="two-col">
+        <div class="ib"><div class="l">Estágio no funil</div><div class="v">${deal.deal_stage?.name||'-'}</div></div>
+        <div class="ib"><div class="l">Valor mensal</div><div class="v">${deal.amount_montly?'R$ '+Number(deal.amount_montly).toLocaleString('pt-BR'):'-'}</div></div>
+      </div>`;
+    if(deal.id&&actId){
       document.getElementById(actId).innerHTML=`<button class="btn btn-p" onclick="mostrarPv(${idx})">Revisar e gravar ↗</button><a href="https://crm.rdstation.com/deals/${deal.id}" target="_blank" class="btn">Abrir negociação ↗</a><a href="https://crm.rdstation.com/contacts/${c.id}" target="_blank" class="btn">Ver contato ↗</a>`;
     }
-  } catch(e) {
-    el.innerHTML=`<span style="font-size:12px;color:#791F1F;">Erro: ${e.message}</span>`;
-  }
+  }catch(e){el.innerHTML=`<span style="font-size:12px;color:#791F1F;">Erro: ${e.message}</span>`;}
 }
 
 // ── GRAVAR HISTÓRICO ──────────────────────────────────────
-function montarTxt(idx, nome) {
-  const rd=rdC[idx]||{}, rf=rfC[idx]||{}, d=rf.data||{};
+function montarTxt(idx,nome){
+  const rd=rdC[idx]||{},rf=rfC[idx]||{},d=rf.data||{};
   const analise=aiC['aibox-'+idx]||'Análise não gerada ainda.';
   return `LEVANTAMENTO PRÉ-REUNIÃO — ${nome}
 Data: ${new Date().toLocaleDateString('pt-BR')} | Outtax Dashboard
@@ -487,30 +487,31 @@ Município/UF: ${d.municipio||'-'}${d.uf?' / '+d.uf:''}
 ━━━ RD STATION ━━━
 Empresa: ${rd.contact?.organization_name||'-'}
 Cargo: ${rd.contact?.title||'-'}
-Funil: ${rd.deal?.deal_stage?.name||'-'}
+Funil de vendas: ${rd.pipeline||'-'}
+Estágio: ${rd.deal?.deal_stage?.name||'-'}
 Valor: ${rd.deal?.amount_montly?'R$ '+Number(rd.deal.amount_montly).toLocaleString('pt-BR'):'-'}
 
 ━━━ ANÁLISE TRIBUTÁRIA ━━━
 ${analise}`;
 }
-function mostrarPv(idx) {
+function mostrarPv(idx){
   const card=document.getElementById('card-'+idx);
   document.getElementById('pv-c-'+idx).innerHTML=`<pre style="font-size:11px;line-height:1.8;white-space:pre-wrap;">${montarTxt(idx,card?.dataset.nome||'')}</pre>`;
   document.getElementById('pv-'+idx).classList.add('open');
 }
 function cancelarPv(idx){document.getElementById('pv-'+idx).classList.remove('open');}
-async function confirmarGrav(idx) {
+async function confirmarGrav(idx){
   const rd=rdC[idx];
-  if (!rd?.deal?.id){alert('Busque o lead no RD Station primeiro.');return;}
+  if(!rd?.deal?.id){alert('Busque o lead no RD Station primeiro.');return;}
   const card=document.getElementById('card-'+idx);
   document.getElementById('pv-'+idx).classList.remove('open');
   document.getElementById('gv-'+idx).classList.add('show');
   document.getElementById('er-'+idx).classList.remove('show');
-  try {
+  try{
     await rdFetch(`deals/${rd.deal.id}/activities`,{},'POST',{text:montarTxt(idx,card?.dataset.nome||'')});
     document.getElementById('gv-'+idx).classList.remove('show');
     document.getElementById('sc-'+idx).classList.add('show');
-  } catch(e) {
+  }catch(e){
     document.getElementById('gv-'+idx).classList.remove('show');
     document.getElementById('er-'+idx).textContent='Erro: '+e.message;
     document.getElementById('er-'+idx).classList.add('show');
@@ -518,7 +519,7 @@ async function confirmarGrav(idx) {
 }
 
 // ── CARD REUNIÃO ──────────────────────────────────────────
-function cardR(r, i) {
+function cardR(r,i){
   const oc=r.origem==='marketing'?'marketing':'direto';
   const ol=r.origem==='marketing'?'Via marketing':'Agendamento direto';
   return `
@@ -550,10 +551,10 @@ function cardR(r, i) {
       </div>
       <div class="tp active" id="rd-${i}">
         ${r.email
-          ? `<div style="font-size:12px;color:#6b6b6b;margin-bottom:10px;">E-mail: <strong>${r.email}</strong></div>
+          ?`<div style="font-size:12px;color:#6b6b6b;margin-bottom:10px;">E-mail: <strong>${r.email}</strong></div>
              <button class="btn" onclick="buscarRD('${r.email}','rdr-${i}','act-${i}','${r.nome}',${i})">Buscar no RD Station →</button>
              <div id="rdr-${i}" style="margin-top:10px;"></div>`
-          : `<div class="nb" style="color:#6b6b6b;">E-mail não identificado.</div>`}
+          :`<div class="nb" style="color:#6b6b6b;">E-mail não identificado nesta reunião.</div>`}
       </div>
       <div class="tp" id="rf-${i}">
         <div class="sl" style="margin-top:0">CNPJ do cliente</div>
@@ -568,7 +569,7 @@ function cardR(r, i) {
         <div id="aibox-${i}" style="font-size:12px;color:#9e9e9e;margin-bottom:10px;">Consulte o CNPJ na aba Receita Federal para liberar a análise.</div>
         <button class="btn btn-p" id="aib-${i}" style="display:none;" onclick="gerarAnalise(this,'aibox-${i}','${r.nome}','${r.dest||''}',rdC[${i}])">Gerar análise tributária →</button>
       </div>
-      <div class="div"></div>
+      <div class="divl"></div>
       <div class="sl">Gravar no histórico da negociação</div>
       <div style="font-size:12px;color:#6b6b6b;margin-bottom:10px;">Dados da empresa + contexto comercial + análise tributária.</div>
       <div id="act-${i}" class="act-row"><div style="font-size:12px;color:#9e9e9e;">Busque o lead no RD Station para habilitar a gravação.</div></div>
@@ -591,68 +592,53 @@ function cardR(r, i) {
 </div>`;
 }
 
-// ── PROPOSTAS COM FILTROS ─────────────────────────────────
-function limparFiltrosPropostas() {
-  document.getElementById('f-data-ini').value = '';
-  document.getElementById('f-data-fim').value = '';
-  document.getElementById('f-status').value = 'aberta';
-  document.getElementById('f-urgencia').value = 'all';
+// ── PROPOSTAS COM FILTROS CORRETOS ────────────────────────
+function limparFiltros(){
+  document.getElementById('f-ini').value='';
+  document.getElementById('f-fim').value='';
+  document.getElementById('f-st').value='aberta';
+  document.getElementById('f-urg').value='all';
 }
 
-async function carregarPropostas() {
-  if (!getCfg().rd) {
-    document.getElementById('cards-p').innerHTML='<div class="empty">Configure o token do RD Station para carregar as propostas.</div>';
-    return;
-  }
+async function carregarPropostas(){
+  if(!getCfg().rd){document.getElementById('cards-p').innerHTML='<div class="empty">Configure o token do RD Station para carregar as propostas.</div>';return;}
 
-  const dataIni = document.getElementById('f-data-ini').value;
-  const dataFim = document.getElementById('f-data-fim').value;
-  const status  = document.getElementById('f-status').value;
-  const urgFiltro = document.getElementById('f-urgencia').value;
+  const dataIni=document.getElementById('f-ini').value;
+  const dataFim=document.getElementById('f-fim').value;
+  const status=document.getElementById('f-st').value;
+  const urgFiltro=document.getElementById('f-urg').value;
 
-  // Monta parâmetros para API
-  const params = { page: '1' };
+  // Monta parâmetros corretos para a API RD Station v1
+  const params={page:'1'};
+  if(status==='ganha'){params.win='true';}
+  else if(status==='perdida'){params.lost='true';}
+  else if(status==='aberta'){params.win='false';params.lost='false';}
+  // 'all' não passa filtro
 
-  // Filtra por status
-  if (status === 'ganha') { params.win = 'true'; }
-  else if (status === 'perdida') { params.lost = 'true'; }
-  else if (status === 'aberta') { params.win = 'false'; params.lost = 'false'; }
-  // 'all' não filtra
-
-  // Título da seção
-  let titulo = 'Propostas';
-  if (status === 'ganha') titulo = '✅ Propostas ganhas';
-  else if (status === 'perdida') titulo = '❌ Propostas perdidas';
-  else if (status === 'aberta') titulo = '🔄 Propostas em andamento';
-  document.getElementById('prop-titulo').textContent = titulo;
+  const titulos={ganha:'✅ Propostas ganhas',perdida:'❌ Propostas perdidas',aberta:'🔄 Propostas em andamento',all:'📋 Todas as propostas'};
+  document.getElementById('prop-titulo').textContent=titulos[status]||'Propostas';
 
   document.getElementById('cards-p').innerHTML=load('Buscando propostas no RD Station...');
 
-  try {
-    const data = await rdFetch('deals', params);
-    let deals = data.deals||[];
+  try{
+    const data=await rdFetch('deals',params);
+    let deals=data.deals||[];
 
-    // Filtra por data de atualização
-    if (dataIni) {
-      const ini = new Date(dataIni+'T00:00:00');
-      deals = deals.filter(d => new Date(d.updated_at||d.created_at) >= ini);
-    }
-    if (dataFim) {
-      const fim = new Date(dataFim+'T23:59:59');
-      deals = deals.filter(d => new Date(d.updated_at||d.created_at) <= fim);
-    }
+    // Filtra por período de data
+    if(dataIni){const ini=new Date(dataIni+'T00:00:00');deals=deals.filter(d=>new Date(d.updated_at||d.created_at)>=ini);}
+    if(dataFim){const fim=new Date(dataFim+'T23:59:59');deals=deals.filter(d=>new Date(d.updated_at||d.created_at)<=fim);}
 
-    // Adiciona dias e urgência
-    const com = deals.map(d => {
-      const di = diasAtras(d.updated_at||d.created_at);
-      const urg = di>7?'urgente':di>=3?'atencao':'ok';
-      return {...d, di, urg};
+    // Calcula dias e urgência
+    const com=deals.map(d=>{
+      const di=diasAtras(d.updated_at||d.created_at);
+      const urg=di>7?'urgente':di>=3?'atencao':'ok';
+      return{...d,di,urg};
     }).sort((a,b)=>b.di-a.di);
 
     // Filtra por urgência
-    const filtrados = urgFiltro === 'all' ? com : com.filter(d=>d.urg===urgFiltro);
+    const filtrados=urgFiltro==='all'?com:com.filter(d=>d.urg===urgFiltro);
 
-    if (!filtrados.length) {
+    if(!filtrados.length){
       document.getElementById('cards-p').innerHTML='<div class="empty">Nenhuma proposta encontrada com os filtros selecionados.</div>';
       ['sp-t','sp-u','sp-a'].forEach(id=>document.getElementById(id).textContent='0');
       document.getElementById('bp').textContent='0';
@@ -666,25 +652,33 @@ async function carregarPropostas() {
     document.getElementById('sp-a').textContent=atc;
     document.getElementById('bp').textContent=urg>0?urg+' urgentes':filtrados.length;
     document.getElementById('cards-p').innerHTML=filtrados.map((d,i)=>cardP(d,i)).join('');
-
-  } catch(e) {
+  }catch(e){
     document.getElementById('cards-p').innerHTML=`<div class="empty" style="color:#791F1F;">Erro: ${e.message}</div>`;
   }
 }
 
-function cardP(d,i) {
-  const nm=d.name||'Negociação', emp=d.contacts?.[0]?.organization_name||'-';
+function cardP(d,i){
+  const nm=d.name||'Negociação';
+  const emp=d.contacts?.[0]?.organization_name||'-';
   const val=d.amount_montly?'R$ '+Number(d.amount_montly).toLocaleString('pt-BR'):'-';
-  const stg=d.deal_stage?.name||'-', res=d.user?.name||'-';
+  const estagio=d.deal_stage?.name||'-';
+  const pipeline=d.deal_pipeline?.name||'';  // FUNIL de vendas
+  const resp=d.user?.name||'-';
   const dl=d.di===0?'Hoje':d.di===1?'1 dia':`${d.di} dias`;
   const dc=d.urg==='urgente'?'dp-urgente':d.urg==='atencao'?'dp-atencao':'dp-ok';
   const ac=d.urg==='urgente'?'av-urgente':d.urg==='atencao'?'av-atencao':'av-ok';
-  const atualizado = d.updated_at ? new Date(d.updated_at).toLocaleDateString('pt-BR') : '-';
+  const atualizado=d.updated_at?new Date(d.updated_at).toLocaleDateString('pt-BR'):'-';
+  const statusLabel=d.win?'✅ Ganha':d.lost?'❌ Perdida':'🔄 Em andamento';
+  const statusBadge=d.win?'badge-green':d.lost?'badge-red':'badge-amber';
+
   return `
 <div class="card ${d.urg}">
   <div class="card-head" onclick="toggle(this)">
     <div class="av ${ac}">${ini(nm)}</div>
-    <div class="card-info"><div class="card-name">${nm}</div><div class="card-sub">${emp} · ${stg}</div></div>
+    <div class="card-info">
+      <div class="card-name">${nm}${pipeline?`<span class="funil-tag">${pipeline}</span>`:''}</div>
+      <div class="card-sub">${emp} · ${estagio}</div>
+    </div>
     <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
       <span class="dias-pill ${dc}">${dl} sem atualização</span>
       <span class="chev">▼</span>
@@ -699,11 +693,16 @@ function cardP(d,i) {
           <div style="margin-top:4px;color:#9e9e9e;font-size:11px;">Última atualização: ${atualizado}</div>
         </div>
       </div>
+      <div class="three-col">
+        <div class="ib"><div class="l">Funil de vendas</div><div class="v" style="color:#185FA5;font-weight:600;">${pipeline||'-'}</div></div>
+        <div class="ib"><div class="l">Estágio</div><div class="v">${estagio}</div></div>
+        <div class="ib"><div class="l">Status</div><div class="v"><span class="badge ${statusBadge}" style="font-size:10px;">${statusLabel}</span></div></div>
+      </div>
       <div class="two-col">
         <div class="ib"><div class="l">Empresa</div><div class="v">${emp}</div></div>
         <div class="ib"><div class="l">Valor</div><div class="v">${val}</div></div>
-        <div class="ib"><div class="l">Estágio</div><div class="v">${stg}</div></div>
-        <div class="ib"><div class="l">Responsável</div><div class="v">${res}</div></div>
+        <div class="ib"><div class="l">Responsável</div><div class="v">${resp}</div></div>
+        <div class="ib"><div class="l">Última atualização</div><div class="v">${atualizado}</div></div>
       </div>
       <div class="act-row">
         <a href="https://crm.rdstation.com/deals/${d.id}" target="_blank" class="btn btn-p">Abrir negociação ↗</a>
@@ -714,23 +713,14 @@ function cardP(d,i) {
 </div>`;
 }
 
-// ── INIT ──────────────────────────────────────────────────
+// ── INIT ─────────────────────────────────────────────────
 (function(){
-  // Seta data do topbar
-  document.getElementById('td').textContent = new Date().toLocaleDateString('pt-BR',{weekday:'short',day:'numeric',month:'short'});
+  document.getElementById('td').textContent=new Date().toLocaleDateString('pt-BR',{weekday:'short',day:'numeric',month:'short'});
   checkCfg();
-
-  // Seta data de hoje no filtro de reuniões e carrega
-  const hoje = dataHoje();
-  document.getElementById('filtro-data-reuniao').value = hoje;
-  const labelHoje = formatarData(hoje);
-  document.getElementById('dl').innerHTML = labelHoje.charAt(0).toUpperCase()+labelHoje.slice(1)+'<span class="tag-hoje">Hoje</span>';
-
-  // Seta status padrão para aberta nas propostas
-  document.getElementById('f-status').value = 'aberta';
-
-  // Renderiza reuniões de hoje
-  renderReunioes(REUNIOES_HOJE);
+  // Seta hoje no filtro de reuniões e carrega
+  document.getElementById('f-data-r').value=HOJE;
+  document.getElementById('f-st').value='aberta';
+  irHoje();
 })();
 </script>
 </body>
