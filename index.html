@@ -165,7 +165,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   <h1>Outtax</h1>
   <div class="nav-tabs">
     <div class="nav-tab active" onclick="showPage('r',this)">Pré-Reunião</div>
-    <div class="nav-tab" onclick="showPage('p',this)">Propostas <span class="nav-badge" id="bp">—</span></div>
+    <div class="nav-tab" onclick="showPage('p',this)">Leads <span class="nav-badge" id="bp">—</span></div>
     <div class="nav-tab" onclick="showPage('t',this);carregarTarefas()">Tarefas <span class="nav-badge" id="bt">—</span></div>
   </div>
   <div class="topbar-right">
@@ -207,9 +207,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 <!-- PROPOSTAS -->
 <div class="page" id="page-p">
   <div class="stats">
-    <div class="stat"><div class="num" id="sp-t">—</div><div class="lbl">Propostas encontradas</div></div>
+    <div class="stat"><div class="num" id="sp-t">—</div><div class="lbl">Leads encontrados</div></div>
     <div class="stat"><div class="num" id="sp-u" style="color:#E24B4A">—</div><div class="lbl">Urgente (+7 dias)</div></div>
     <div class="stat"><div class="num" id="sp-a" style="color:#EF9F27">—</div><div class="lbl">Atenção (3-7 dias)</div></div>
+  </div>
+  <div id="bloco-estagios" style="display:none;background:#fff;border:1px solid #e5e5e5;border-radius:12px;padding:14px 16px;margin-bottom:16px;">
+    <div style="font-size:11px;font-weight:500;color:#6b6b6b;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;">Distribuição por estágio</div>
+    <div id="barras-estagios"></div>
   </div>
   <div class="filtros">
     <div class="fg">
@@ -227,6 +231,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <option value="ganha">✅ Ganhas</option>
         <option value="perdida">❌ Perdidas</option>
         <option value="all">Todos</option>
+      </select>
+    </div>
+    <div class="fg">
+      <label>Estágio</label>
+      <select id="f-estagio">
+        <option value="all">Todos os estágios</option>
+        <option value="Sem Contato">Sem Contato</option>
+        <option value="Contato feito">Contato feito</option>
+        <option value="Em atendimento">Em atendimento</option>
+        <option value="Reagendamento">Reagendamento</option>
+        <option value="Perdido">Perdido</option>
       </select>
     </div>
     <div class="fg">
@@ -775,8 +790,33 @@ async function carregarPropostas(){
     }
     // 'all' e 'ganha' já filtrados pela API
 
+    // Filtra por estágio
+    const estagioFiltro=document.getElementById('f-estagio')?.value||'all';
+    const filtradosEst=estagioFiltro==='all'?filtradosSt:filtradosSt.filter(d=>(d.deal_stage?.name||'')=== estagioFiltro);
+
+    // Monta estatísticas por estágio
+    const contEstagio={};
+    filtradosSt.forEach(d=>{const e=d.deal_stage?.name||'Sem estágio';contEstagio[e]=(contEstagio[e]||0)+1;});
+    const totalEst=filtradosSt.length;
+    document.getElementById('bloco-estagios').style.display=totalEst>0?'block':'none';
+    document.getElementById('barras-estagios').innerHTML=Object.entries(contEstagio)
+      .sort((a,b)=>b[1]-a[1])
+      .map(([nome,qtd])=>{
+        const pct=Math.round(qtd/totalEst*100);
+        const cor=nome==='Perdido'?'#E24B4A':nome==='Em atendimento'?'#1D9E75':nome==='Contato feito'?'#378ADD':nome==='Reagendamento'?'#EF9F27':'#9e9e9e';
+        return `<div style="margin-bottom:8px;">
+          <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;">
+            <span style="font-weight:500;">${nome}</span>
+            <span style="color:#6b6b6b;">${qtd} (${pct}%)</span>
+          </div>
+          <div style="background:#f0f0f0;border-radius:4px;height:6px;">
+            <div style="background:${cor};width:${pct}%;height:6px;border-radius:4px;transition:width .4s;"></div>
+          </div>
+        </div>`;
+      }).join('');
+
     // Filtra por urgência
-    const filtrados=urgFiltro==='all'?filtradosSt:filtradosSt.filter(d=>d.urg===urgFiltro);
+    const filtrados=urgFiltro==='all'?filtradosEst:filtradosEst.filter(d=>d.urg===urgFiltro);
 
     if(!filtrados.length){
       document.getElementById('cards-p').innerHTML='<div class="empty">Nenhuma proposta encontrada com os filtros selecionados.</div>';
