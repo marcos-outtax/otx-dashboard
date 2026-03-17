@@ -617,7 +617,7 @@ async function buscarRD(email,resId,actId,nome,idx){
         <div class="ib"><div class="l">Valor mensal</div><div class="v">${deal.amount_montly?'R$ '+Number(deal.amount_montly).toLocaleString('pt-BR'):'-'}</div></div>
       </div>`;
     if(deal.id&&actId){
-      document.getElementById(actId).innerHTML=`<button class="btn btn-p" onclick="mostrarPv(${idx})">Revisar e gravar ↗</button><a href="https://crm.rdstation.com/deals/${deal.id}" target="_blank" class="btn">Abrir negociação ↗</a><a href="https://crm.rdstation.com/contacts/${c.id}" target="_blank" class="btn">Ver contato ↗</a>`;
+      document.getElementById(actId).innerHTML=`<button class="btn btn-p" onclick="mostrarPv(${idx})">Revisar e gravar ↗</button><a href="https://crm.rdstation.com/app/deals/${deal.id}" target="_blank" class="btn">Abrir negociação ↗</a><a href="https://crm.rdstation.com/contacts/${c.id}" target="_blank" class="btn">Ver contato ↗</a>`;
     }
   }catch(e){el.innerHTML=`<span style="font-size:12px;color:#791F1F;">Erro: ${e.message}</span>`;}
 }
@@ -792,17 +792,17 @@ async function carregarPropostas(){
 
     // Filtra por estágio
     const estagioFiltro=document.getElementById('f-estagio')?.value||'all';
-    const filtradosEst=estagioFiltro==='all'?filtradosSt:filtradosSt.filter(d=>(d.deal_stage?.name||'')=== estagioFiltro);
+    const filtradosEst=estagioFiltro==='all'?filtradosSt:filtradosSt.filter(d=>(d.deal_stage?.name||'')===estagioFiltro);
 
-    // Monta estatísticas por estágio
-    const contEstagio={};
-    filtradosSt.forEach(d=>{const e=d.deal_stage?.name||'Sem estágio';contEstagio[e]=(contEstagio[e]||0)+1;});
-    const totalEst=filtradosSt.length;
-    document.getElementById('bloco-estagios').style.display=totalEst>0?'block':'none';
-    document.getElementById('barras-estagios').innerHTML=Object.entries(contEstagio)
+    // Estatísticas por estágio (barra visual)
+    const contEst={};
+    filtradosSt.forEach(d=>{const e=d.deal_stage?.name||'Sem estágio';contEst[e]=(contEst[e]||0)+1;});
+    const totEst=filtradosSt.length;
+    document.getElementById('bloco-estagios').style.display=totEst>0?'block':'none';
+    document.getElementById('barras-estagios').innerHTML=Object.entries(contEst)
       .sort((a,b)=>b[1]-a[1])
       .map(([nome,qtd])=>{
-        const pct=Math.round(qtd/totalEst*100);
+        const pct=Math.round(qtd/totEst*100);
         const cor=nome==='Perdido'?'#E24B4A':nome==='Em atendimento'?'#1D9E75':nome==='Contato feito'?'#378ADD':nome==='Reagendamento'?'#EF9F27':'#9e9e9e';
         return `<div style="margin-bottom:8px;">
           <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;">
@@ -810,9 +810,8 @@ async function carregarPropostas(){
             <span style="color:#6b6b6b;">${qtd} (${pct}%)</span>
           </div>
           <div style="background:#f0f0f0;border-radius:4px;height:6px;">
-            <div style="background:${cor};width:${pct}%;height:6px;border-radius:4px;transition:width .4s;"></div>
-          </div>
-        </div>`;
+            <div style="background:${cor};width:${pct}%;height:6px;border-radius:4px;"></div>
+          </div></div>`;
       }).join('');
 
     // Filtra por urgência
@@ -884,7 +883,7 @@ function cardP(d,i){
         <div class="ib"><div class="l">Última atualização</div><div class="v">${atualizado}</div></div>
       </div>
       <div class="act-row">
-        <a href="https://crm.rdstation.com/deals/${d.id}" target="_blank" class="btn btn-p">Abrir negociação ↗</a>
+        <a href="https://crm.rdstation.com/app/deals/${d.id}" target="_blank" class="btn btn-p">Abrir negociação ↗</a>
         ${d.contacts?.[0]?.id?`<a href="https://crm.rdstation.com/contacts/${d.contacts[0].id}" target="_blank" class="btn">Ver contato ↗</a>`:''}
       </div>
     </div>
@@ -1002,7 +1001,7 @@ function cardTarefa(t){
   </div>
   <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0;">
     <span class="tarefa-data ${t.urg}">${urgLabel[t.urg]}</span>
-    ${dealId?`<a href="https://crm.rdstation.com/deals/${dealId}" target="_blank" class="btn" style="font-size:11px;padding:4px 10px;">Abrir lead ↗</a>`:''}
+    ${dealId?`<a href="https://crm.rdstation.com/app/deals/${dealId}" target="_blank" class="btn" style="font-size:11px;padding:4px 10px;">Abrir lead ↗</a>`:''}
   </div>
 </div>`;
 }
