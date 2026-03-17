@@ -27,7 +27,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .filtros{background:#fff;border:1px solid #e5e5e5;border-radius:12px;padding:14px 16px;margin-bottom:16px;display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap}
 .fg{display:flex;flex-direction:column;gap:4px}
 .fg label{font-size:11px;color:#6b6b6b;font-weight:500}
-.fg input[type="date"],.fg select{padding:7px 10px;border:1px solid #e5e5e5;border-radius:8px;font-size:12px;background:#fff;color:#1a1a1a;cursor:pointer;min-width:130px}
+.fg input[type="date"],.fg select{padding:7px 10px;border:1px solid #e5e5e5;border-radius:8px;font-size:12px;background:#fff;color:#1a1a1a;cursor:pointer;min-width:140px}
 .fg input[type="date"]:focus,.fg select:focus{outline:none;border-color:#9e9e9e}
 .fa{display:flex;gap:8px;align-items:flex-end;margin-left:auto}
 .sec-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
@@ -58,7 +58,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .badge-green{background:#EAF3DE;color:#27500A}
 .badge-red{background:#FCEBEB;color:#791F1F}
 .badge-amber{background:#FAEEDA;color:#854F0B}
-.badge-gray{background:#f0f0f0;color:#6b6b6b}
 .dias-pill{font-size:12px;font-weight:600;padding:3px 10px;border-radius:20px;white-space:nowrap;flex-shrink:0}
 .dp-urgente{background:#FCEBEB;color:#791F1F}
 .dp-atencao{background:#FAEEDA;color:#854F0B}
@@ -126,7 +125,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .prazo-bar.ok{background:#EAF3DE}
 .prazo-num{font-size:24px;font-weight:700;line-height:1}
 .prazo-lbl{font-size:11px;color:#6b6b6b;margin-top:2px}
-.funil-tag{display:inline-block;font-size:10px;padding:2px 8px;border-radius:20px;background:#f0f0f0;color:#6b6b6b;font-weight:500;margin-left:6px;vertical-align:middle}
+.funil-tag{display:inline-block;font-size:10px;padding:2px 8px;border-radius:20px;background:#E6F1FB;color:#185FA5;font-weight:500;margin-left:6px;vertical-align:middle}
 .modal-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:center;justify-content:center}
 .modal-ov.open{display:flex}
 .modal{background:#fff;border-radius:16px;padding:28px;width:100%;max-width:460px;margin:16px}
@@ -174,7 +173,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <input type="date" id="f-data-r"/>
     </div>
     <div class="fa">
-      <button class="btn btn-p" onclick="buscarReunioes()">🔍 Buscar reuniões</button>
+      <button class="btn btn-p" onclick="buscarReunioes()">🔍 Buscar</button>
       <button class="btn" onclick="irHoje()">Hoje</button>
     </div>
   </div>
@@ -182,7 +181,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <span class="sec-title" id="dl">Selecione uma data</span>
   </div>
   <div class="cards" id="cards-r">
-    <div class="empty">📅 Selecione uma data e clique em Buscar reuniões.</div>
+    <div class="empty">📅 Selecione uma data e clique em Buscar.</div>
   </div>
 </div>
 
@@ -233,7 +232,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   </div>
 </div>
 
-<!-- CONFIG MODAL -->
+<!-- CONFIG -->
 <div class="modal-ov" id="mcfg">
   <div class="modal">
     <h3>⚙ Configuração</h3>
@@ -289,98 +288,170 @@ async function rdFetch(path,params={},method='GET',body=null){
   return data;
 }
 
-// ── GOOGLE CALENDAR (GCAL API via Claude) ─────────────────
-// Reuniões pré-carregadas para hoje
-const HOJE = dataHoje();
-const REUNIOES_BASE = {
-  [HOJE]: [
-    {nome:'Alinhamento Estratégico — Outtax & Moonflag',hora:'16:00',dur:'1h',origem:'direto',email:'bsimao@agmoonflag.com.br',org:'bsimao@agmoonflag.com.br',dest:''}
-  ]
+const AGENDA = {
+  '2026-01-05': [
+    {nome:'Leandro Barbosa',hora:'17:00',dur:'1h',origem:'marketing',email:'leobarbosa89@hotmail.com',org:'midias.outtax@gmail.com',dest:''},
+  ],
+  '2026-01-08': [
+    {nome:'Fábio',hora:'14:00',dur:'1h',origem:'marketing',email:'desejoreceber@whatsapp.com',org:'midias.outtax@gmail.com',dest:''},
+    {nome:'José Silva',hora:'17:30',dur:'1h',origem:'marketing',email:'pynoba@gmail.com',org:'midias.outtax@gmail.com',dest:''},
+  ],
+  '2026-01-09': [
+    {nome:'Indira Frugis',hora:'14:00',dur:'1h',origem:'marketing',email:'cozinhadadonagal@gmail.com',org:'midias.outtax@gmail.com',dest:''},
+  ],
+  '2026-01-12': [
+    {nome:'Mel Rodrigues',hora:'10:30',dur:'1h',origem:'marketing',email:'marielletrajano@outlook.com',org:'midias.outtax@gmail.com',dest:''},
+    {nome:'José Silva',hora:'14:00',dur:'1h',origem:'marketing',email:'pynoba@gmail.com',org:'midias.outtax@gmail.com',dest:''},
+    {nome:'Sídnei Cunha',hora:'16:00',dur:'1h',origem:'marketing',email:'sidnei_scunha@hotmail.com',org:'midias.outtax@gmail.com',dest:''},
+  ],
+  '2026-01-13': [
+    {nome:'João Pedro Oliva',hora:'13:00',dur:'1h',origem:'direto',email:'joaopedroolivaribeiro@gmail.com',org:'marcos@outtax.com.br',dest:''},
+  ],
+  '2026-01-14': [
+    {nome:'Hermann Albert',hora:'11:00',dur:'1h',origem:'marketing',email:'hermannbmondl@gmail.com',org:'midias.outtax@gmail.com',dest:''},
+    {nome:'Robson Araújo',hora:'16:45',dur:'1h',origem:'marketing',email:'robsonalfametais@gmail.com',org:'midias.outtax@gmail.com',dest:''},
+  ],
+  '2026-01-15': [
+    {nome:'Ernani Lazzarini',hora:'13:30',dur:'1h',origem:'marketing',email:'ernani.lazzarini@gmail.com',org:'midias.outtax@gmail.com',dest:''},
+    {nome:'Roberto Rodrigues',hora:'15:00',dur:'1h',origem:'marketing',email:'manurrp@hotmail.com',org:'midias.outtax@gmail.com',dest:''},
+  ],
+  '2026-01-19': [
+    {nome:'Pedro Dias',hora:'16:00',dur:'1h',origem:'marketing',email:'pedrormdias@gmail.com',org:'midias.outtax@gmail.com',dest:''},
+  ],
+  '2026-01-21': [
+    {nome:'Fábio Braga Castro',hora:'13:00',dur:'1h',origem:'marketing',email:'fabiobcastro@hotmail.com',org:'midias.outtax@gmail.com',dest:''},
+  ],
+  '2026-01-26': [
+    {nome:'Eduardo Ferreira',hora:'16:00',dur:'1h',origem:'marketing',email:'adm@ferreiracomercio.com',org:'midias.outtax@gmail.com',dest:''},
+  ],
+  '2026-01-28': [
+    {nome:'Peixaria Liberdade',hora:'16:00',dur:'1h',origem:'marketing',email:'elotrindade@gmail.com',org:'midias.outtax@gmail.com',dest:''},
+  ],
+  '2026-01-29': [
+    {nome:'Israel Nascimento',hora:'16:00',dur:'1h',origem:'marketing',email:'israelsnascimento@hotmail.com',org:'midias.outtax@gmail.com',dest:''},
+  ],
+  '2026-02-03': [
+    {nome:'Dra. Janaina Moraes',hora:'10:00',dur:'1h',origem:'marketing',email:'laclinicjr@gmail.com',org:'midias.outtax@gmail.com',dest:''},
+  ],
+  '2026-02-04': [
+    {nome:'Josué Carvalho',hora:'14:00',dur:'1h',origem:'marketing',email:'comercialdinairconcret@gmail.com',org:'midias.outtax@gmail.com',dest:''},
+    {nome:'Brunna Mussel',hora:'15:00',dur:'1h',origem:'direto',email:'brunnamussel@gmail.com',org:'marcos@outtax.com.br',dest:''},
+    {nome:'Vanessa Rainho',hora:'17:00',dur:'1h',origem:'marketing',email:'vanessa@lvreventos.com.br',org:'midias.outtax@gmail.com',dest:''},
+    {nome:'Fabyola',hora:'18:00',dur:'1h',origem:'marketing',email:'fabyolabunim@bol.com.br',org:'midias.outtax@gmail.com',dest:''},
+  ],
+  '2026-02-05': [
+    {nome:'Bruna Bezerra Mendonça',hora:'09:00',dur:'1h',origem:'marketing',email:'brunabezzerra@gmail.com',org:'midias.outtax@gmail.com',dest:''},
+    {nome:'Vinicius Quintanilha',hora:'10:00',dur:'1h',origem:'marketing',email:'vinicius_qs@hotmail.com',org:'midias.outtax@gmail.com',dest:''},
+    {nome:'Antonio',hora:'16:30',dur:'1h',origem:'marketing',email:'gouveiajr@live.com',org:'midias.outtax@gmail.com',dest:''},
+  ],
+  '2026-02-06': [
+    {nome:'Marcela Martineli',hora:'10:00',dur:'1h',origem:'marketing',email:'marcela@centroattivare.com.br',org:'midias.outtax@gmail.com',dest:''},
+  ],
+  '2026-02-09': [
+    {nome:'Elielson Gonçalves',hora:'14:00',dur:'1h',origem:'direto',email:'lielsongon@hotmail.com',org:'marcos@outtax.com.br',dest:''},
+  ],
+  '2026-02-10': [
+    {nome:'Igor Pereira Alves',hora:'11:00',dur:'1h',origem:'marketing',email:'mundoartificialcursojor0nada@gmail.com',org:'midias.outtax@gmail.com',dest:''},
+    {nome:'Lucas Esdras Santos',hora:'13:00',dur:'1h',origem:'marketing',email:'info@xlrsomeluz.com.br',org:'midias.outtax@gmail.com',dest:''},
+    {nome:'Josué Carvalho',hora:'14:00',dur:'1h',origem:'marketing',email:'comercialdinairconcret@gmail.com',org:'midias.outtax@gmail.com',dest:''},
+  ],
+  '2026-02-11': [
+    {nome:'Isaque Teixeira',hora:'14:00',dur:'1h',origem:'marketing',email:'ijedicoesfotograficas@gmail.com',org:'midias.outtax@gmail.com',dest:''},
+  ],
+  '2026-02-12': [
+    {nome:'Dr. Maycon Benicio',hora:'11:00',dur:'1h',origem:'marketing',email:'maayresbenicio@gmail.com',org:'midias.outtax@gmail.com',dest:''},
+    {nome:'Sergio Silva',hora:'16:00',dur:'1h',origem:'marketing',email:'sergio21994131035@gmail.com',org:'midias.outtax@gmail.com',dest:''},
+    {nome:'William Cesar',hora:'17:00',dur:'1h',origem:'marketing',email:'william.plena@gmail.com',org:'midias.outtax@gmail.com',dest:''},
+  ],
+  '2026-02-13': [
+    {nome:'Dr. Maycon Benicio',hora:'14:00',dur:'1h',origem:'direto',email:'maayresbenicio@gmail.com',org:'marcos@outtax.com.br',dest:'Fechamento'},
+  ],
+  '2026-02-18': [
+    {nome:'Rodrigo Osorio',hora:'16:00',dur:'1h',origem:'marketing',email:'rodrigoosorio.eng@gmail.com',org:'midias.outtax@gmail.com',dest:''},
+    {nome:'Tallisom Queiroz',hora:'17:00',dur:'1h',origem:'marketing',email:'atendimento@insidecomunicacao.com.br',org:'midias.outtax@gmail.com',dest:''},
+  ],
+  '2026-02-19': [
+    {nome:'Prosa Nova EduCultTech',hora:'10:00',dur:'1h',origem:'marketing',email:'luiz@grupoprosanova.com.br',org:'midias.outtax@gmail.com',dest:''},
+    {nome:'Gabriel Neves',hora:'13:00',dur:'1h',origem:'marketing',email:'gabrielneves1109@gmail.com',org:'midias.outtax@gmail.com',dest:''},
+    {nome:'Alexndro Ribeiro',hora:'14:00',dur:'1h',origem:'marketing',email:'audioway95@gmail.com',org:'midias.outtax@gmail.com',dest:''},
+  ],
+  '2026-02-24': [
+    {nome:'Sergio Silva',hora:'16:00',dur:'1h',origem:'marketing',email:'sergio21994131035@gmail.com',org:'midias.outtax@gmail.com',dest:''},
+  ],
+  '2026-02-25': [
+    {nome:'Nadai',hora:'10:00',dur:'1h',origem:'marketing',email:'gerencia@ndisolucoes.com.br',org:'midias.outtax@gmail.com',dest:''},
+    {nome:'Leonildo Filho',hora:'16:00',dur:'1h',origem:'marketing',email:'leonildo_filho@yahoo.com.br',org:'midias.outtax@gmail.com',dest:''},
+  ],
+  '2026-02-26': [
+    {nome:'Marcus Vinicius Ribeiro Marcelino',hora:'17:30',dur:'1h',origem:'marketing',email:'marcusmarcelino@gmail.com',org:'midias.outtax@gmail.com',dest:''},
+  ],
+  '2026-02-27': [
+    {nome:'Aldo Siguemura',hora:'09:00',dur:'1h',origem:'marketing',email:'alahockaldo@gmail.com',org:'midias.outtax@gmail.com',dest:''},
+    {nome:'Vitor',hora:'16:00',dur:'1h',origem:'marketing',email:'vitorsouzasil2605@gmail.com',org:'midias.outtax@gmail.com',dest:''},
+  ],
+  '2026-03-02': [
+    {nome:'Debora',hora:'10:00',dur:'1h',origem:'marketing',email:'debora.mesquita@pontoonlinetech.com.br',org:'midias.outtax@gmail.com',dest:''},
+    {nome:'Felipe Schwert',hora:'13:00',dur:'1h',origem:'marketing',email:'felipesgutierrez@gmail.com',org:'midias.outtax@gmail.com',dest:''},
+  ],
+  '2026-03-03': [
+    {nome:'Debora',hora:'10:00',dur:'1h',origem:'direto',email:'debora.mesquita@pontoonlinetech.com.br',org:'marcos@outtax.com.br',dest:''},
+  ],
+  '2026-03-04': [
+    {nome:'Hugo Leo Freitas',hora:'15:30',dur:'1h',origem:'marketing',email:'hugoleofreitas@me.com',org:'midias.outtax@gmail.com',dest:''},
+    {nome:'DH Utility',hora:'17:00',dur:'1h',origem:'marketing',email:'d2h2comercio@gmail.com',org:'midias.outtax@gmail.com',dest:''},
+  ],
+  '2026-03-06': [
+    {nome:'DH Utility',hora:'11:00',dur:'1h',origem:'direto',email:'d2h2comercio@gmail.com',org:'maiccon@outtax.com.br',dest:'Fechamento'},
+  ],
+  '2026-03-09': [
+    {nome:'Sara',hora:'09:00',dur:'1h',origem:'marketing',email:'kenjimotorsfilial@gmail.com',org:'midias.outtax@gmail.com',dest:''},
+    {nome:'Renata Morisso',hora:'16:00',dur:'1h',origem:'marketing',email:'renata_morisso@hotmail.com',org:'midias.outtax@gmail.com',dest:''},
+  ],
+  '2026-03-10': [
+    {nome:'Dieine Dhedhe',hora:'09:00',dur:'1h',origem:'marketing',email:'dieine@souzaebraga.com.br',org:'midias.outtax@gmail.com',dest:''},
+    {nome:'Vando Henrique',hora:'16:00',dur:'1h',origem:'marketing',email:'wandohenrique357@gmail.com',org:'midias.outtax@gmail.com',dest:''},
+  ],
+  '2026-03-12': [
+    {nome:'Bruno Costa',hora:'16:00',dur:'1h',origem:'marketing',email:'bruno@lodes.studio',org:'midias.outtax@gmail.com',dest:''},
+    {nome:'Peixaria Liberdade',hora:'17:00',dur:'1h',origem:'marketing',email:'elotrindade@gmail.com',org:'midias.outtax@gmail.com',dest:''},
+  ],
+  '2026-03-16': [
+    {nome:'Juan Pablo Morais Lucas',hora:'11:00',dur:'1h',origem:'marketing',email:'pablolucas55@gmail.com',org:'midias.outtax@gmail.com',dest:''},
+    {nome:'Jorge Ornellas Junior',hora:'16:00',dur:'1h',origem:'marketing',email:'jorgejr@outlook.com.br',org:'midias.outtax@gmail.com',dest:'Fechamento'},
+    {nome:'Diogo — SVN Engenharia',hora:'17:00',dur:'1h',origem:'marketing',email:'diogo@svnengenharia.com.br',org:'midias.outtax@gmail.com',dest:''},
+  ],
+  '2026-03-17': [
+    {nome:'Alinhamento Estratégico — Outtax & Moonflag',hora:'16:00',dur:'1h',origem:'direto',email:'bsimao@agmoonflag.com.br',org:'bsimao@agmoonflag.com.br',dest:''},
+  ],
 };
 
-// Cache de buscas por data
-const cacheReunioes = {...REUNIOES_BASE};
-
 function irHoje(){
-  document.getElementById('f-data-r').value=HOJE;
+  document.getElementById('f-data-r').value=dataHoje();
   buscarReunioes();
 }
 
-async function buscarReunioes(){
+function buscarReunioes(){
   const data=document.getElementById('f-data-r').value;
   if(!data){alert('Selecione uma data.');return;}
-
-  const isHoje=data===HOJE;
+  const isHoje=data===dataHoje();
   const label=fmtData(data);
   document.getElementById('dl').innerHTML=label.charAt(0).toUpperCase()+label.slice(1)+(isHoje?' <span style="font-size:10px;background:#E6F1FB;color:#185FA5;padding:2px 8px;border-radius:20px;font-weight:500;margin-left:6px;">Hoje</span>':'');
-
-  // Usa cache se disponível
-  if(cacheReunioes[data]){
-    renderReunioes(cacheReunioes[data]);
+  const reunioes=AGENDA[data]||[];
+  if(!reunioes.length){
+    document.getElementById('s-tot').textContent='0';
+    document.getElementById('s-mkt').textContent='0';
+    document.getElementById('s-dir').textContent='0';
+    document.getElementById('cards-r').innerHTML=`
+      <div class="empty">
+        <div style="font-size:28px;margin-bottom:10px;">📅</div>
+        <div style="font-weight:500;margin-bottom:8px;">Nenhuma reunião comercial encontrada para esta data</div>
+        <div style="font-size:12px;color:#9e9e9e;">Se você tiver reuniões nesta data, informe ao Claude para que ele atualize o dashboard.</div>
+      </div>`;
     return;
   }
-
-  document.getElementById('cards-r').innerHTML=load('Buscando reuniões na agenda...');
-
-  // Chama API do Google Calendar via backend
-  try {
-    const dataInicio=data+'T00:00:00';
-    const dataFim=data+'T23:59:59';
-    const r=await fetch(`/api/gcal?timeMin=${encodeURIComponent(dataInicio)}&timeMax=${encodeURIComponent(dataFim)}`);
-    if(r.ok){
-      const events=await r.json();
-      const reunioes=filtrarReunioes(events,data);
-      cacheReunioes[data]=reunioes;
-      renderReunioes(reunioes);
-    } else {
-      // Sem API de calendar, mostra mensagem
-      mostrarSemCalendar(data);
-    }
-  } catch {
-    mostrarSemCalendar(data);
-  }
-}
-
-function mostrarSemCalendar(data){
-  document.getElementById('cards-r').innerHTML=`
-    <div class="empty">
-      <div style="font-size:28px;margin-bottom:10px;">📅</div>
-      <div style="font-weight:500;margin-bottom:8px;">Reuniões para ${fmtData(data)}</div>
-      <div style="font-size:12px;color:#9e9e9e;max-width:400px;margin:0 auto;line-height:1.7;">
-        Para buscar reuniões de datas passadas, acesse sua <a href="https://calendar.google.com" target="_blank" style="color:#185FA5;">Google Agenda</a> e me informe os e-mails dos clientes das reuniões desta data.<br><br>
-        As reuniões de <strong>hoje</strong> são carregadas automaticamente.
-      </div>
-    </div>`;
-  document.getElementById('s-tot').textContent='—';
-  document.getElementById('s-mkt').textContent='—';
-  document.getElementById('s-dir').textContent='—';
-}
-
-function filtrarReunioes(events, data){
-  // Filtra eventos que são reuniões comerciais (exclui pessoais)
-  const ignorar=['Treinamento','Academia','Fisioterapia','RPG','Smart Fit','pessoal'];
-  return events
-    .filter(e=>{
-      const titulo=(e.summary||'').toLowerCase();
-      return !ignorar.some(p=>titulo.includes(p.toLowerCase()));
-    })
-    .map(e=>{
-      const organizer=e.organizer?.email||'';
-      const isMarketing=['midias.outtax@gmail.com'].includes(organizer);
-      const hora=e.start?.dateTime?new Date(e.start.dateTime).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):'';
-      const emailCliente=e.attendees?.find(a=>!a.self&&!a.organizer)?.email||'';
-      return{nome:e.summary||'Reunião',hora,dur:'1h',origem:isMarketing?'marketing':'direto',email:emailCliente,org:organizer,dest:''};
-    });
-}
-
-function renderReunioes(reunioes){
   document.getElementById('s-tot').textContent=reunioes.length;
   document.getElementById('s-mkt').textContent=reunioes.filter(r=>r.origem==='marketing').length;
   document.getElementById('s-dir').textContent=reunioes.filter(r=>r.origem==='direto').length;
-  if(!reunioes.length){
-    document.getElementById('cards-r').innerHTML='<div class="empty">🎉 Nenhuma reunião comercial encontrada para esta data.</div>';
-    return;
-  }
   document.getElementById('cards-r').innerHTML=reunioes.map((r,i)=>cardR(r,i)).join('');
 }
 
@@ -415,7 +486,7 @@ async function gerarAnalise(btn,boxId,nome,destaque,rdData){
   const rf=Object.values(rfC).find(x=>x.raw===cnpj);
   if(!rf)return;
   const cfg=getCfg();
-  if(!cfg.ai){alert('Configure a chave API Anthropic nas configurações.');return;}
+  if(!cfg.ai){alert('Configure a chave API Anthropic.');return;}
   const box=document.getElementById(boxId);
   box.innerHTML=load('Gerando análise fiscal...');
   const d=rf.data;
@@ -451,7 +522,7 @@ async function buscarRD(email,resId,actId,nome,idx){
     const c=contacts[0];
     const dd=await rdFetch('deals',{contact_id:c.id});
     const deal=(dd.deals||[])[0]||{};
-    const pipeline=deal.deal_pipeline?.name||'—';
+    const pipeline=deal.campaign?.name||'';
     rdC[idx]={contact:c,deal,empresa:c.organization_name,funil:deal.deal_stage?.name,pipeline};
     el.innerHTML=`
       <div class="three-col">
@@ -469,7 +540,7 @@ async function buscarRD(email,resId,actId,nome,idx){
   }catch(e){el.innerHTML=`<span style="font-size:12px;color:#791F1F;">Erro: ${e.message}</span>`;}
 }
 
-// ── GRAVAR HISTÓRICO ──────────────────────────────────────
+// ── GRAVAR ────────────────────────────────────────────────
 function montarTxt(idx,nome){
   const rd=rdC[idx]||{},rf=rfC[idx]||{},d=rf.data||{};
   const analise=aiC['aibox-'+idx]||'Análise não gerada ainda.';
@@ -550,11 +621,7 @@ function cardR(r,i){
         <div class="tab" onclick="swTab(this,'ai-${i}')">Análise IA</div>
       </div>
       <div class="tp active" id="rd-${i}">
-        ${r.email
-          ?`<div style="font-size:12px;color:#6b6b6b;margin-bottom:10px;">E-mail: <strong>${r.email}</strong></div>
-             <button class="btn" onclick="buscarRD('${r.email}','rdr-${i}','act-${i}','${r.nome}',${i})">Buscar no RD Station →</button>
-             <div id="rdr-${i}" style="margin-top:10px;"></div>`
-          :`<div class="nb" style="color:#6b6b6b;">E-mail não identificado nesta reunião.</div>`}
+        ${r.email?`<div style="font-size:12px;color:#6b6b6b;margin-bottom:10px;">E-mail: <strong>${r.email}</strong></div><button class="btn" onclick="buscarRD('${r.email}','rdr-${i}','act-${i}','${r.nome}',${i})">Buscar no RD Station →</button><div id="rdr-${i}" style="margin-top:10px;"></div>`:`<div class="nb" style="color:#6b6b6b;">E-mail não identificado.</div>`}
       </div>
       <div class="tp" id="rf-${i}">
         <div class="sl" style="margin-top:0">CNPJ do cliente</div>
@@ -574,14 +641,11 @@ function cardR(r,i){
       <div style="font-size:12px;color:#6b6b6b;margin-bottom:10px;">Dados da empresa + contexto comercial + análise tributária.</div>
       <div id="act-${i}" class="act-row"><div style="font-size:12px;color:#9e9e9e;">Busque o lead no RD Station para habilitar a gravação.</div></div>
       <div class="pv-box" id="pv-${i}">
-        <div class="pv-head"><span class="pt">Prévia — o que será gravado</span><span class="pd">${r.nome} · RD Station</span></div>
+        <div class="pv-head"><span class="pt">Prévia — o que será gravado</span><span class="pd">${r.nome}</span></div>
         <div class="pv-body" id="pv-c-${i}"></div>
         <div class="pv-foot">
           <span class="pv-aviso">Será gravado como anotação na negociação</span>
-          <div style="display:flex;gap:6px;">
-            <button class="btn" onclick="cancelarPv(${i})">Cancelar</button>
-            <button class="btn btn-s" onclick="confirmarGrav(${i})">Confirmar e gravar →</button>
-          </div>
+          <div style="display:flex;gap:6px;"><button class="btn" onclick="cancelarPv(${i})">Cancelar</button><button class="btn btn-s" onclick="confirmarGrav(${i})">Confirmar e gravar →</button></div>
         </div>
       </div>
       <div class="ok-msg" id="gv-${i}" style="display:none;"><div class="dot"></div><div class="dot"></div><div class="dot"></div><span style="margin-left:4px;">Gravando...</span></div>
@@ -592,7 +656,7 @@ function cardR(r,i){
 </div>`;
 }
 
-// ── PROPOSTAS COM FILTROS CORRETOS ────────────────────────
+// ── PROPOSTAS ─────────────────────────────────────────────
 function limparFiltros(){
   document.getElementById('f-ini').value='';
   document.getElementById('f-fim').value='';
@@ -601,32 +665,31 @@ function limparFiltros(){
 }
 
 async function carregarPropostas(){
-  if(!getCfg().rd){document.getElementById('cards-p').innerHTML='<div class="empty">Configure o token do RD Station para carregar as propostas.</div>';return;}
-
+  if(!getCfg().rd){document.getElementById('cards-p').innerHTML='<div class="empty">Configure o token do RD Station.</div>';return;}
   const dataIni=document.getElementById('f-ini').value;
   const dataFim=document.getElementById('f-fim').value;
   const status=document.getElementById('f-st').value;
   const urgFiltro=document.getElementById('f-urg').value;
 
-  // Monta parâmetros corretos para a API RD Station v1
+  // Parâmetros CORRETOS da API RD Station v1
+  // win=true → ganhas | win=false = perdidas NÃO, precisa de lost=true para perdidas
   const params={page:'1'};
   if(status==='ganha'){params.win='true';}
-  else if(status==='perdida'){params.lost='true';}
+  else if(status==='perdida'){params.win='false';params.lost='true';}
   else if(status==='aberta'){params.win='false';params.lost='false';}
-  // 'all' não passa filtro
+  // 'all' = sem filtro de status
 
-  const titulos={ganha:'✅ Propostas ganhas',perdida:'❌ Propostas perdidas',aberta:'🔄 Propostas em andamento',all:'📋 Todas as propostas'};
+  const titulos={ganha:'✅ Propostas ganhas',perdida:'❌ Propostas perdidas',aberta:'🔄 Propostas em andamento',all:'📋 Todas as negociações'};
   document.getElementById('prop-titulo').textContent=titulos[status]||'Propostas';
-
-  document.getElementById('cards-p').innerHTML=load('Buscando propostas no RD Station...');
+  document.getElementById('cards-p').innerHTML=load('Buscando propostas...');
 
   try{
     const data=await rdFetch('deals',params);
     let deals=data.deals||[];
 
-    // Filtra por período de data
-    if(dataIni){const ini=new Date(dataIni+'T00:00:00');deals=deals.filter(d=>new Date(d.updated_at||d.created_at)>=ini);}
-    if(dataFim){const fim=new Date(dataFim+'T23:59:59');deals=deals.filter(d=>new Date(d.updated_at||d.created_at)<=fim);}
+    // Filtra por data de atualização
+    if(dataIni){const d=new Date(dataIni+'T00:00:00');deals=deals.filter(x=>new Date(x.updated_at||x.created_at)>=d);}
+    if(dataFim){const d=new Date(dataFim+'T23:59:59');deals=deals.filter(x=>new Date(x.updated_at||x.created_at)<=d);}
 
     // Calcula dias e urgência
     const com=deals.map(d=>{
@@ -662,15 +725,14 @@ function cardP(d,i){
   const emp=d.contacts?.[0]?.organization_name||'-';
   const val=d.amount_montly?'R$ '+Number(d.amount_montly).toLocaleString('pt-BR'):'-';
   const estagio=d.deal_stage?.name||'-';
-  const pipeline=d.deal_pipeline?.name||'';  // FUNIL de vendas
+  const pipeline=d.campaign?.name||d.organization?.name||'';
   const resp=d.user?.name||'-';
   const dl=d.di===0?'Hoje':d.di===1?'1 dia':`${d.di} dias`;
   const dc=d.urg==='urgente'?'dp-urgente':d.urg==='atencao'?'dp-atencao':'dp-ok';
   const ac=d.urg==='urgente'?'av-urgente':d.urg==='atencao'?'av-atencao':'av-ok';
   const atualizado=d.updated_at?new Date(d.updated_at).toLocaleDateString('pt-BR'):'-';
-  const statusLabel=d.win?'✅ Ganha':d.lost?'❌ Perdida':'🔄 Em andamento';
   const statusBadge=d.win?'badge-green':d.lost?'badge-red':'badge-amber';
-
+  const statusLabel=d.win?'✅ Ganha':d.lost?'❌ Perdida':'🔄 Em andamento';
   return `
 <div class="card ${d.urg}">
   <div class="card-head" onclick="toggle(this)">
@@ -689,7 +751,7 @@ function cardP(d,i){
       <div class="prazo-bar ${d.urg}">
         <div><div class="prazo-num">${d.di}</div><div class="prazo-lbl">dias sem atualização</div></div>
         <div style="flex:1;margin-left:16px;font-size:12px;">
-          ${d.urg==='urgente'?'⚠ Mais de 7 dias sem movimentação. Priorize o follow-up.':d.urg==='atencao'?'Considere fazer um follow-up.':'Proposta recente.'}
+          ${d.urg==='urgente'?'⚠ Mais de 7 dias sem movimentação.':d.urg==='atencao'?'Considere fazer um follow-up.':'Proposta recente.'}
           <div style="margin-top:4px;color:#9e9e9e;font-size:11px;">Última atualização: ${atualizado}</div>
         </div>
       </div>
@@ -717,8 +779,7 @@ function cardP(d,i){
 (function(){
   document.getElementById('td').textContent=new Date().toLocaleDateString('pt-BR',{weekday:'short',day:'numeric',month:'short'});
   checkCfg();
-  // Seta hoje no filtro de reuniões e carrega
-  document.getElementById('f-data-r').value=HOJE;
+  document.getElementById('f-data-r').value=dataHoje();
   document.getElementById('f-st').value='aberta';
   irHoje();
 })();
