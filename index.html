@@ -618,9 +618,9 @@ Responda com estas 4 seções (máx 350 palavras):
 3. PONTOS DE ATENÇÃO (2-3 riscos)
 4. PERGUNTAS ESTRATÉGICAS PARA A REUNIÃO (3 perguntas)`;
   try{
-    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':cfg.ai,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-opus-4-6',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
+    const res=await fetch('/api/ai',{method:'POST',headers:{'Content-Type':'application/json','X-AI-Key':cfg.ai},body:JSON.stringify({prompt,max_tokens:1000})});
     const j=await res.json();
-    const text=j.content?.find(b=>b.type==='text')?.text||'Não foi possível gerar a análise.';
+    const text=j.texto||'';
     aiC[boxId]=text;
     box.innerHTML=`<div class="ai-box">${text}</div>`;
   }catch(e){box.innerHTML=`<span style="font-size:12px;color:#791F1F;">Erro: ${e.message}</span>`;}
