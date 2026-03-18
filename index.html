@@ -169,6 +169,35 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .btn-cancel{padding:8px 16px;font-size:13px;border-radius:8px;border:1px solid #e5e5e5;background:#fff;cursor:pointer;color:#6b6b6b}
 .btn-save{padding:8px 20px;font-size:13px;font-weight:500;border-radius:8px;border:none;background:#1a1a1a;color:#fff;cursor:pointer}
 @media(max-width:600px){.two-col,.three-col{grid-template-columns:1fr}.stats{grid-template-columns:repeat(3,1fr)}.nav-tab{padding:0 10px;font-size:12px}.filtros{flex-direction:column;align-items:stretch}.fa{margin-left:0}}
+
+/* ── MODAL ANÁLISE IA ─────────────────────────────── */
+.modal-ai{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;}
+.modal-ai-box{background:#fff;border-radius:16px;padding:24px;width:620px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3);}
+.modal-ai-titulo{font-size:15px;font-weight:700;color:#1a1a1a;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;}
+.llm-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;}
+.llm-btn{border:2px solid #e5e5e5;border-radius:10px;padding:12px 8px;text-align:center;cursor:pointer;font-size:12px;font-weight:600;transition:all .2s;background:#fff;}
+.llm-btn:hover{border-color:#378ADD;background:#EDF5FF;}
+.llm-btn.ativo{border-color:#378ADD;background:#EDF5FF;color:#185FA5;}
+.prompt-box{background:#f8f8f8;border:1px solid #e5e5e5;border-radius:8px;padding:12px;font-size:11px;font-family:monospace;line-height:1.5;max-height:200px;overflow-y:auto;margin-bottom:12px;white-space:pre-wrap;color:#1a1a1a;}
+.btn-ai-acao{width:100%;padding:11px;border-radius:8px;border:none;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:8px;transition:all .2s;}
+.btn-copiar{background:#1a1a1a;color:#fff;}
+.btn-copiar:hover{background:#333;}
+.btn-abrir{background:#378ADD;color:#fff;}
+.btn-abrir:hover{background:#2266B0;}
+.btn-importar{background:#1D9E75;color:#fff;}
+.btn-importar:hover{background:#157a59;}
+.importar-area{border:2px dashed #e5e5e5;border-radius:8px;padding:20px;text-align:center;font-size:12px;color:#6b6b6b;margin-bottom:12px;cursor:pointer;transition:all .2s;}
+.importar-area:hover{border-color:#378ADD;color:#378ADD;}
+.analise-importada{font-size:12px;line-height:1.7;color:#1a1a1a;white-space:pre-wrap;background:#f8f8f8;border-radius:8px;padding:14px;max-height:300px;overflow-y:auto;margin-bottom:12px;}
+.copiado-badge{display:inline-block;background:#1D9E75;color:#fff;font-size:11px;padding:3px 10px;border-radius:20px;margin-left:8px;opacity:0;transition:opacity .3s;}
+/* ── TELA IMPORTAÇÃO ───────────────────────────── */
+.tela-importacao{display:none;position:fixed;inset:0;background:#fff;z-index:9998;flex-direction:column;}
+.tela-importacao.aberta{display:flex;}
+.tela-imp-header{background:#1a1a1a;color:#fff;padding:16px 24px;display:flex;justify-content:space-between;align-items:center;font-weight:700;font-size:14px;}
+.tela-imp-body{flex:1;overflow-y:auto;padding:24px;max-width:900px;margin:0 auto;width:100%;}
+.tela-imp-secao{background:#f8f8f8;border-radius:12px;padding:16px;margin-bottom:16px;font-size:13px;line-height:1.7;}
+.tela-imp-label{font-size:11px;font-weight:700;color:#6b6b6b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;}
+.tela-imp-footer{background:#f8f8f8;border-top:1px solid #e5e5e5;padding:16px 24px;display:flex;gap:12px;justify-content:flex-end;}
 </style>
 </head>
 <body>
@@ -388,6 +417,69 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <button class="btn-cancel" onclick="fecharCfg()">Cancelar</button>
       <button class="btn-save" onclick="salvarCfg()">Salvar</button>
     </div>
+  </div>
+</div>
+
+<!-- MODAL ANÁLISE IA -->
+<div id="modal-ai" class="modal-ai" style="display:none;" onclick="if(event.target===this)fecharModalAI()">
+  <div class="modal-ai-box">
+    <div class="modal-ai-titulo">
+      <span>🤖 Gerar Análise com IA</span>
+      <button onclick="fecharModalAI()" style="background:none;border:none;font-size:18px;cursor:pointer;color:#6b6b6b;">✕</button>
+    </div>
+    <!-- Seletor de LLM -->
+    <div style="font-size:11px;font-weight:600;color:#6b6b6b;margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em;">Escolha a IA</div>
+    <div class="llm-grid">
+      <div class="llm-btn ativo" onclick="selecionarLLM('gemini',this)">
+        <div style="font-size:20px;margin-bottom:4px;">🟦</div>
+        <div>Google Gemini</div>
+      </div>
+      <div class="llm-btn" onclick="selecionarLLM('claude',this)">
+        <div style="font-size:20px;margin-bottom:4px;">🟠</div>
+        <div>Claude.ai</div>
+      </div>
+      <div class="llm-btn" onclick="selecionarLLM('chatgpt',this)">
+        <div style="font-size:20px;margin-bottom:4px;">🟢</div>
+        <div>ChatGPT</div>
+      </div>
+    </div>
+    <!-- Prompt -->
+    <div style="font-size:11px;font-weight:600;color:#6b6b6b;margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em;">
+      Prompt gerado
+      <span id="badge-copiado" class="copiado-badge">✓ Copiado!</span>
+    </div>
+    <div id="prompt-preview" class="prompt-box"></div>
+    <!-- Ações -->
+    <button class="btn-ai-acao btn-copiar" onclick="copiarPromptAI()">📋 Copiar prompt</button>
+    <button class="btn-ai-acao btn-abrir" onclick="abrirLLM()">🚀 Abrir IA em nova aba</button>
+    <div style="border-top:1px solid #e5e5e5;margin:12px 0;"></div>
+    <!-- Importar resultado -->
+    <div style="font-size:11px;font-weight:600;color:#6b6b6b;margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em;">Importar resultado da IA</div>
+    <div style="font-size:12px;color:#6b6b6b;margin-bottom:10px;">Após gerar na IA, salve como .txt e importe aqui, ou cole o texto diretamente:</div>
+    <div class="importar-area" onclick="document.getElementById('input-import-ai').click()">
+      📁 Clique para importar arquivo .txt
+      <input type="file" id="input-import-ai" accept=".txt,.md" style="display:none" onchange="importarArquivoAI(this)">
+    </div>
+    <textarea id="txt-colar-ai" placeholder="Ou cole o texto da análise aqui..." style="width:100%;height:100px;border:1px solid #e5e5e5;border-radius:8px;padding:10px;font-size:12px;resize:vertical;box-sizing:border-box;margin-bottom:8px;"></textarea>
+    <button class="btn-ai-acao btn-importar" onclick="processarAnaliseImportada()">✅ Visualizar e gravar no RD Station</button>
+  </div>
+</div>
+
+<!-- TELA DE IMPORTAÇÃO COMPLETA -->
+<div id="tela-importacao" class="tela-importacao">
+  <div class="tela-imp-header">
+    <span>📋 Revisão da Análise — <span id="ti-nome"></span></span>
+    <button onclick="fecharTelaImportacao()" style="background:none;border:none;color:#fff;font-size:18px;cursor:pointer;">✕</button>
+  </div>
+  <div class="tela-imp-body">
+    <div class="tela-imp-label">Dados da Reunião</div>
+    <div class="tela-imp-secao" id="ti-dados"></div>
+    <div class="tela-imp-label" style="margin-top:16px;">Análise Gerada pela IA</div>
+    <div class="tela-imp-secao" id="ti-analise" style="white-space:pre-wrap;font-family:monospace;font-size:12px;"></div>
+  </div>
+  <div class="tela-imp-footer">
+    <button onclick="fecharTelaImportacao()" style="padding:10px 20px;border-radius:8px;border:1px solid #e5e5e5;background:#fff;cursor:pointer;font-size:13px;">Cancelar</button>
+    <button onclick="gravarNoRD()" style="padding:10px 24px;border-radius:8px;border:none;background:#1D9E75;color:#fff;font-weight:600;cursor:pointer;font-size:13px;">💾 Gravar no RD Station</button>
   </div>
 </div>
 
@@ -1366,6 +1458,169 @@ function cardTarefa(t){
     ${dealId?`<a href="https://crm.rdstation.com/app/deals/${dealId}" target="_blank" class="btn" style="font-size:11px;padding:4px 10px;">Abrir lead ↗</a>`:''}
   </div>
 </div>`;
+}
+
+// ── ANÁLISE IA — JANELA FLUTUANTE ──────────────────────────────
+
+let _llmAtiva = 'gemini';
+let _dadosReuniaoAtual = null;
+
+const _llmUrls = {
+  gemini: 'https://gemini.google.com/',
+  claude: 'https://claude.ai/new',
+  chatgpt: 'https://chatgpt.com/'
+};
+
+function selecionarLLM(llm, el) {
+  _llmAtiva = llm;
+  document.querySelectorAll('.llm-btn').forEach(b => b.classList.remove('ativo'));
+  el.classList.add('ativo');
+}
+
+function abrirModalAI(dados) {
+  _dadosReuniaoAtual = dados;
+  const prompt = montarPromptAI(dados);
+  document.getElementById('prompt-preview').textContent = prompt;
+  document.getElementById('modal-ai').style.display = 'flex';
+  document.getElementById('txt-colar-ai').value = '';
+  document.getElementById('badge-copiado').style.opacity = '0';
+}
+
+function fecharModalAI() {
+  document.getElementById('modal-ai').style.display = 'none';
+}
+
+function montarPromptAI(dados) {
+  return `Você é um especialista sênior em contabilidade e planejamento tributário brasileiro, com foco em PMEs. A Outtax é uma contabilidade consultiva que vai se reunir com este potencial cliente.
+
+DADOS DA EMPRESA:
+- Cliente: ${dados.nome || '-'}
+- Razão Social: ${dados.razao_social || '-'}
+- CNPJ: ${dados.cnpj || '-'}
+- Situação: ${dados.situacao || 'ATIVA'}
+- Regime Tributário: ${dados.regime || '-'}
+- Porte: ${dados.porte || '-'}
+- Capital Social: ${dados.capital || '-'}
+- UF/Município: ${dados.municipio || '-'} / ${dados.uf || '-'}
+- CNAE Principal: ${dados.cnae_cod || '-'} — ${dados.cnae_desc || '-'}
+- CNAEs Secundários: ${dados.cnaes_sec || 'Nenhum'}
+
+CONTEXTO COMERCIAL (RD Station CRM):
+- Estágio no funil: ${dados.estagio || '-'}
+- Funil: ${dados.funil || '-'}
+- Valor estimado: ${dados.valor || '-'}
+
+Gere uma análise completa nas seguintes seções:
+
+## 1. DIAGNÓSTICO TRIBUTÁRIO
+Analise o regime atual considerando o CNAE e porte. Está no regime ideal? Existe risco de exclusão do Simples? Qual o impacto do CNAE na alíquota?
+
+## 2. OPORTUNIDADES DE ECONOMIA FISCAL
+Liste de 4 a 6 oportunidades concretas: migração de regime, deduções legais, planejamento de pró-labore, benefícios fiscais regionais, separação de CNAEs, etc.
+
+## 3. RISCOS E PONTOS DE ATENÇÃO
+Identifique de 3 a 5 riscos reais: CNAEs incompatíveis com Simples, obrigações acessórias críticas, riscos trabalhistas ou previdenciários.
+
+## 4. PERFIL DO CLIENTE PARA A REUNIÃO
+Qual o perfil típico deste empresário? Quais são as dores mais comuns? O que ele provavelmente não sabe que a Outtax pode resolver?
+
+## 5. PERGUNTAS ESTRATÉGICAS PARA A REUNIÃO
+Liste 5 perguntas de diagnóstico que o consultor deve fazer para identificar oportunidades e dores.
+
+Responda em português, de forma direta e profissional. Mínimo de 500 palavras. No final, gere um resumo executivo de 3 linhas.`;
+}
+
+function copiarPromptAI() {
+  const prompt = document.getElementById('prompt-preview').textContent;
+  navigator.clipboard.writeText(prompt).then(() => {
+    const badge = document.getElementById('badge-copiado');
+    badge.style.opacity = '1';
+    setTimeout(() => badge.style.opacity = '0', 2500);
+  });
+}
+
+function abrirLLM() {
+  const url = _llmUrls[_llmAtiva] || 'https://gemini.google.com/';
+  window.open(url, '_blank');
+}
+
+function importarArquivoAI(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById('txt-colar-ai').value = e.target.result;
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+
+function processarAnaliseImportada() {
+  const texto = document.getElementById('txt-colar-ai').value.trim();
+  if (!texto) { alert('Cole ou importe o texto da análise primeiro.'); return; }
+  const dados = _dadosReuniaoAtual || {};
+  
+  // Preenche a tela de revisão
+  document.getElementById('ti-nome').textContent = dados.nome || '-';
+  document.getElementById('ti-dados').innerHTML = `
+    <strong>Cliente:</strong> ${dados.nome || '-'}<br>
+    <strong>Empresa:</strong> ${dados.razao_social || '-'} | CNPJ: ${dados.cnpj || '-'}<br>
+    <strong>Regime:</strong> ${dados.regime || '-'} | Porte: ${dados.porte || '-'}<br>
+    <strong>CNAE:</strong> ${dados.cnae_cod || '-'} — ${dados.cnae_desc || '-'}<br>
+    <strong>Funil:</strong> ${dados.funil || '-'} | Estágio: ${dados.estagio || '-'} | Valor: ${dados.valor || '-'}
+  `;
+  document.getElementById('ti-analise').textContent = texto;
+  
+  fecharModalAI();
+  document.getElementById('tela-importacao').classList.add('aberta');
+}
+
+function fecharTelaImportacao() {
+  document.getElementById('tela-importacao').classList.remove('aberta');
+}
+
+async function gravarNoRD() {
+  const dados = _dadosReuniaoAtual || {};
+  const analise = document.getElementById('ti-analise').textContent;
+  if (!dados.dealId) { alert('Deal ID não encontrado — não é possível gravar no RD.'); return; }
+  
+  const cfg = getCfg();
+  if (!cfg.rd) { alert('Configure o token do RD Station.'); return; }
+  
+  const nota = `📊 ANÁLISE TRIBUTÁRIA — ${new Date().toLocaleDateString('pt-BR')}
+
+${analise}
+
+—
+Gerado pelo Outtax Dashboard`;
+
+  try {
+    const btn = event.target;
+    btn.textContent = '⏳ Gravando...';
+    btn.disabled = true;
+    
+    const r = await fetch('/api/rd', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-RD-Token': cfg.rd },
+      body: JSON.stringify({
+        path: `deals/${dados.dealId}/annotations`,
+        method: 'POST',
+        body: { annotation: { item_type: 'deal', item_id: dados.dealId, note: nota } }
+      })
+    });
+    
+    if (r.ok) {
+      btn.textContent = '✅ Gravado!';
+      btn.style.background = '#1D9E75';
+      setTimeout(() => fecharTelaImportacao(), 2000);
+    } else {
+      const e = await r.json();
+      throw new Error(e.erro || 'Erro ao gravar');
+    }
+  } catch(e) {
+    alert('Erro ao gravar no RD: ' + e.message);
+    event.target.textContent = '💾 Gravar no RD Station';
+    event.target.disabled = false;
+  }
 }
 
 // ── INIT ─────────────────────────────────────────────────
