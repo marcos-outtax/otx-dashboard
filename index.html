@@ -755,7 +755,7 @@ async function gerarAnalise(btn,boxId,nome,destaque,rdData){
   const rf=Object.values(rfC).find(x=>x.raw===cnpj);
   if(!rf)return;
   const cfg=getCfg();
-  if(!cfg.ai){alert('Configure a chave API de IA nas configurações.');return;}
+  // API key não necessária no novo fluxo de janela flutuante
   const box=document.getElementById(boxId);
   box.innerHTML=load('Gerando análise fiscal...');
   const d=rf.data;
@@ -982,7 +982,7 @@ function cardR(r,i){
       </div>
       <div class="tp" id="ai-${i}">
         <div id="aibox-${i}" style="font-size:12px;color:#9e9e9e;margin-bottom:10px;">Consulte o CNPJ na aba Receita Federal para liberar a análise.</div>
-        <button class="btn btn-p" id="aib-${i}" style="display:none;" onclick="gerarAnalise(this,'aibox-${i}','${r.nome}','${r.dest||''}',rdC[${i}])">Gerar análise tributária →</button>
+        <button class="btn btn-p" id="aib-${i}" style="display:none;" onclick="abrirModalAI({nome:'${r.nome}',cnpj:'${r.cnpj||''}',razao_social:rfC['${r.cnpj||''}']?.data?.razao_social||'-',situacao:rfC['${r.cnpj||''}']?.data?.descricao_situacao_cadastral||'ATIVA',regime:rfC['${r.cnpj||''}']?.simples||'-',porte:rfC['${r.cnpj||''}']?.data?.porte||'-',capital:rfC['${r.cnpj||''}']?.capital||'-',uf:rfC['${r.cnpj||''}']?.data?.uf||'-',municipio:rfC['${r.cnpj||''}']?.data?.municipio||'-',cnae_cod:rfC['${r.cnpj||''}']?.data?.cnae_fiscal||'-',cnae_desc:rfC['${r.cnpj||''}']?.data?.cnae_fiscal_descricao||'-',cnaes_sec:(rfC['${r.cnpj||''}']?.data?.cnaes_secundarios||[]).slice(0,5).map(c=>c.descricao).join(', ')||'Nenhum',estagio:rdC[${i}]?.estagio||'-',funil:rdC[${i}]?.funil||'-',valor:rdC[${i}]?.valor||'-',dealId:rdC[${i}]?.dealId||''})">✨ Gerar análise IA →</button>
       </div>
       <div class="divl"></div>
       <div class="sl">Gravar no histórico da negociação</div>
