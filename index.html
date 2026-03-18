@@ -857,7 +857,7 @@ async function buscarRD(email,resId,actId,nome,idx){
     }
 
     const pipeline=deal.campaign?.name||'';
-    rdC[idx]={contact:c,deal,empresa:c.organization_name||deal.name,funil:deal.deal_stage?.name,pipeline};
+    rdC[idx]={contact:c,deal,empresa:c.organization_name||deal.name,funil:deal.deal_stage?.name,pipeline,dealId:deal.id||deal._id||''};
     el.innerHTML=`
       <div class="three-col">
         <div class="ib"><div class="l">Empresa</div><div class="v">${c.organization_name||deal.name||'-'}</div></div>
@@ -976,7 +976,7 @@ function cardR(r,i){
       </div>
       <div class="tp" id="ai-${i}">
         <div id="aibox-${i}" style="font-size:12px;color:#9e9e9e;margin-bottom:10px;">Consulte o CNPJ na aba Receita Federal para liberar a análise.</div>
-        <button class="btn btn-p" id="aib-${i}" style="display:none;" onclick="abrirModalAI(${i},{nome:'${r.nome}',estagio:rdC[${i}]?.estagio||'-',funil:rdC[${i}]?.funil||'-',valor:rdC[${i}]?.valor||'-',dealId:rdC[${i}]?.dealId||''})">✨ Gerar análise IA →</button>
+        <button class="btn btn-p" id="aib-${i}" style="display:none;" onclick="abrirModalAI(${i},{nome:'${r.nome}',estagio:rdC[${i}]?.funil||'-',funil:rdC[${i}]?.pipeline||'-',valor:rdC[${i}]?.deal?.amount_montly?'R$ '+Number(rdC[${i}]?.deal?.amount_montly).toLocaleString('pt-BR'):'-',dealId:rdC[${i}]?.dealId||rdC[${i}]?.deal?.id||rdC[${i}]?.deal?._id||''})">✨ Gerar análise IA →</button>
       </div>
       <div class="divl"></div>
       <div class="sl">Gravar no histórico da negociação</div>
@@ -1697,7 +1697,9 @@ function fecharTelaImportacao() {
 async function gravarNoRD() {
   const dados = _dadosReuniaoAtual || {};
   const analise = document.getElementById('ti-analise').textContent;
-  if (!dados.dealId) { alert('Deal ID não encontrado — não é possível gravar no RD.'); return; }
+  const dealId = dados.dealId || dados.deal?.id || dados.deal?._id || '';
+  if (!dealId) { alert('Deal ID não encontrado. Certifique-se de ter buscado o lead no RD Station antes de gerar a análise.'); return; }
+  dados.dealId = dealId;
   
   const cfg = getCfg();
   if (!cfg.rd) { alert('Configure o token do RD Station.'); return; }
