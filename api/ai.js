@@ -6,7 +6,7 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ erro: 'Método não permitido' });
 
   const apiKey   = req.headers['x-ai-key'];
-  const provider = (req.headers['x-ai-provider'] || 'anthropic').toLowerCase();
+  const provider = (req.headers['x-ai-provider'] || 'gemini').toLowerCase();
   const { prompt, max_tokens } = req.body;
 
   if (!apiKey)  return res.status(400).json({ erro: 'Chave API não fornecida.' });
@@ -26,11 +26,16 @@ export default async function handler(req, res) {
       texto = d.content?.find(b=>b.type==='text')?.text || '';
 
     } else if (provider === 'gemini') {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+      // gemini-2.5-flash é o modelo gratuito atual (gemini-2.0-flash depreciado em março 2026)
+      const model = 'gemini-2.5-flash';
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
       const r = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { maxOutputTokens: max_tokens||1000 } })
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { maxOutputTokens: max_tokens||1000 }
+        })
       });
       const d = await r.json();
       if (!r.ok) return res.status(r.status).json({ erro: d.error?.message||'Erro Gemini', detalhe: d });
