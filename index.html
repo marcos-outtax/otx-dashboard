@@ -1512,53 +1512,139 @@ function fecharModalAI() {
 
 function montarPromptAI(dados) {
   const cnpj = dados.cnpjFmt || dados.cnpj || 'NÃO INFORMADO — consulte a aba Receita Federal no card';
+  const cnpjRaw = (dados.cnpj || '').replace(/\D/g,'');
   const nome = dados.nome || '-';
   const estagio = dados.estagio || '-';
   const funil = dados.funil || '-';
   const valor = dados.valor || '-';
+  const nomeArquivo = nome.replace(/\s+/g,'_');
 
-  return `Você é um especialista sênior em contabilidade e planejamento tributário brasileiro, com foco em PMEs. A Outtax é uma contabilidade consultiva que está se preparando para uma reunião comercial.
+  return `Atue como um especialista em contabilidade consultiva, planejamento tributário e inteligência fiscal no Brasil. Seu objetivo é gerar um diagnóstico fiscal e tributário COMPLETO E APROFUNDADO da empresa abaixo.
 
+CNPJ PARA ANÁLISE: ${cnpj}
 CLIENTE: ${nome}
-CNPJ: ${cnpj}
 CONTEXTO CRM: Funil: ${funil} | Estágio: ${estagio} | Valor estimado: ${valor}
 
-PASSO 1 — CONSULTA DO CNPJ:
-Consulte os dados públicos do CNPJ ${cnpj} na Receita Federal (dados.gov.br ou receitaws.com.br ou brasilapi.com.br/api/cnpj/v1/${dados.cnpj||cnpj.replace(/\D/g,"")}) e extraia:
-- Razão social
-- Situação cadastral
-- Porte e capital social
-- Município/UF
-- CNAE principal (código e descrição)
-- CNAEs secundários (todos)
-- Se é optante pelo Simples Nacional — e desde quando
-- Se não é optante, qual o regime tributário provável (Lucro Presumido ou Lucro Real) e por quê
+═══════════════════════════════════════════════════════════════
+PASSO 1 — CONSULTA PÚBLICA DO CNPJ
+═══════════════════════════════════════════════════════════════
+Consulte os dados públicos do CNPJ acima em fontes como
+brasilapi.com.br/api/cnpj/v1/${cnpjRaw}, receitaws.com.br
+ou dados.gov.br e extraia OBRIGATORIAMENTE:
 
-PASSO 2 — ANÁLISE COMPLETA:
-Com base nos dados encontrados, gere a análise nas seções abaixo:
+- Razão social e nome fantasia
+- Natureza jurídica
+- Porte da empresa
+- Capital social
+- Data de abertura
+- Situação cadastral
+- Município e estado
+- CNAE principal (código + descrição completa)
+- TODOS os CNAEs secundários (código + descrição)
+- Se é OPTANTE PELO SIMPLES NACIONAL — e DESDE QUANDO
+  (consulte em www8.receita.fazenda.gov.br/SimplesNacional/)
+- Se NÃO é optante, qual o regime tributário provável e por quê
+
+═══════════════════════════════════════════════════════════════
+PASSO 2 — ANÁLISE COMPLETA
+Seja ESPECÍFICO ao CNAE encontrado. PROIBIDO respostas genéricas.
+Mínimo de 800 palavras. Use estimativas em R$ sempre que possível.
+═══════════════════════════════════════════════════════════════
 
 ## 1. DIAGNÓSTICO TRIBUTÁRIO
-O regime atual é o mais adequado para este CNAE e porte? Existe risco de exclusão do Simples Nacional? Qual o impacto do CNAE principal e secundários na alíquota efetiva?
+- A atividade é serviço, comércio, indústria ou mista?
+- O regime atual é o mais adequado para este CNAE e porte?
+- Em qual Anexo do Simples se enquadra (I, II, III, IV ou V)?
+- Existe Fator R aplicável? Qual o impacto prático?
+- Risco de enquadramento incorreto de CNAE?
+- Risco de exclusão do Simples Nacional?
+- Principais tributos incidentes neste CNAE específico
 
-## 2. OPORTUNIDADES DE ECONOMIA FISCAL
-Liste de 4 a 6 oportunidades concretas e específicas para este CNAE: migração de regime, otimização de pró-labore, distribuição de lucros, benefícios fiscais regionais, segregação de CNAEs, recuperação de créditos tributários.
+## 2. ANÁLISE DO SIMPLES NACIONAL E FATOR R
+- Enquadramento no Anexo correto com justificativa
+- Se cabe Fator R: quanto a folha deveria representar do faturamento
+  para migrar do Anexo V para o Anexo III
+- Estimativa de carga tributária atual com alíquota efetiva aproximada
+- Impacto em R$ de uma eventual mudança de anexo
 
-## 3. RISCOS E PONTOS DE ATENÇÃO
-Identifique de 3 a 5 riscos reais: CNAEs incompatíveis com Simples, obrigações acessórias críticas para este setor, riscos trabalhistas ou previdenciários, passivos ocultos.
+## 3. SIMULAÇÃO DE REGIMES TRIBUTÁRIOS
+Compare os três regimes com estimativas numéricas para este CNAE:
+- Simples Nacional: alíquota efetiva estimada
+- Lucro Presumido: carga estimada (IRPJ+CSLL+PIS+COFINS+ISS/ICMS)
+- Lucro Real: quando seria vantajoso para este perfil
+Indique CLARAMENTE qual regime é mais vantajoso e a partir de
+qual faturamento mensal/anual cada regime se torna mais eficiente.
 
-## 4. PERFIL DO CLIENTE PARA A REUNIÃO
-Com base no CNAE e porte, qual o perfil típico deste empresário? Quais são as dores mais comuns? O que ele provavelmente não sabe que a Outtax pode resolver?
+## 4. ANÁLISE DE CPRB (DESONERAÇÃO DA FOLHA)
+- Este CNAE pode optar pela CPRB?
+- Se sim: comparação entre INSS sobre folha vs alíquota sobre receita bruta
+- Cenário em que a desoneração é vantajosa para este setor específico
 
-## 5. PERGUNTAS ESTRATÉGICAS PARA A REUNIÃO
-Liste 5 perguntas de diagnóstico que o consultor deve fazer para identificar oportunidades e dores, e que abrem espaço para a proposta de valor da Outtax.
+## 5. OPORTUNIDADES DE ECONOMIA FISCAL
+Liste MÍNIMO 5 oportunidades CONCRETAS para este CNAE.
+Para cada uma informe:
+- O que fazer
+- Estimativa de economia em R$ ou % (mesmo que aproximada)
+- Prazo para implementação (curto/médio/longo)
+Inclua: otimização de pró-labore, distribuição de lucros, migração
+de regime, segregação de CNAEs, recuperação de créditos,
+benefícios municipais/estaduais, holding patrimonial.
 
-## RESUMO EXECUTIVO
-3 linhas com os pontos mais críticos e a principal oportunidade identificada.
+## 6. BENEFÍCIOS FISCAIS APLICÁVEIS AO SETOR
+Identifique benefícios específicos para este CNAE e município/estado:
+- Créditos de PIS e COFINS
+- Incentivos de ISS municipal (verificar legislação local)
+- Incentivos de ICMS estadual
+- Lei do Bem (inovação) se aplicável
+- Incentivos regionais específicos
+- Regimes especiais do setor
 
-Responda em português, de forma direta e profissional. Mínimo de 500 palavras.
+## 7. RISCOS FISCAIS E PONTOS DE ATENÇÃO
+Liste MÍNIMO 4 riscos REAIS e ESPECÍFICOS para este CNAE.
+Para cada risco informe:
+- O risco em si (seja específico ao setor)
+- Consequência prática se não tratado
+- Urgência: Alta / Média / Baixa
 
-IMPORTANTE: Ao finalizar, informe que o resultado deve ser salvo como arquivo de texto com o nome: Analise_${nome.replace(/ /g,'_')}.txt`;
+## 8. PERFIL DO CLIENTE PARA A REUNIÃO
+- Perfil típico do empresário deste CNAE e porte
+- Mínimo 5 dores específicas deste setor
+- O que ele provavelmente NÃO sabe que a Outtax pode resolver
+- Como posicionar a Outtax como diferencial consultivo
+
+## 9. PERGUNTAS ESTRATÉGICAS PARA A REUNIÃO
+Liste 5 perguntas de diagnóstico. Para cada uma informe:
+- A pergunta (direta e natural para uma conversa)
+- Objetivo da pergunta para o consultor Outtax
+
+## 10. RECOMENDAÇÕES ESTRATÉGICAS
+- CURTO PRAZO (até 30 dias): ações imediatas e urgentes
+- MÉDIO PRAZO (1 a 6 meses): planejamento estrutural
+- LONGO PRAZO (6 a 24 meses): crescimento e proteção patrimonial
+
+## 11. RESUMO EXECUTIVO
+Máximo 5 linhas contendo:
+- Situação fiscal atual
+- Melhor cenário tributário identificado
+- Principal oportunidade de economia (com valor estimado em R$)
+- Risco mais urgente
+- Recomendação prioritária para a Outtax
+
+═══════════════════════════════════════════════════════════════
+FORMATO E ENTREGA FINAL
+═══════════════════════════════════════════════════════════════
+- Títulos numerados e claros
+- Bullet points para listas
+- Negrito nos pontos críticos
+- Estimativas numéricas em R$ sempre que possível
+- Linguagem profissional mas acessível
+- Mínimo de 800 palavras no total
+
+AO FINALIZAR A ANÁLISE:
+Crie o conteúdo completo desta análise em formato texto e
+disponibilize para download como arquivo .txt com o nome: ${nomeArquivo}.txt`;
 }
+
 
 function copiarPromptAI() {
   const prompt = document.getElementById('prompt-preview').textContent;
