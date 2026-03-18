@@ -1472,6 +1472,9 @@ function selecionarLLM(llm, el) {
 }
 
 function abrirModalAI(idx, dados) {
+  // Salva o idx para usar na gravação
+  dados._cardIdx = idx;
+
   // rfC é indexado pelo idx do card — busca o CNPJ consultado na aba Receita Federal
   const rfDados = rfC[idx];
 
@@ -1697,8 +1700,18 @@ function fecharTelaImportacao() {
 async function gravarNoRD() {
   const dados = _dadosReuniaoAtual || {};
   const analise = document.getElementById('ti-analise').textContent;
-  const dealId = dados.dealId || dados.deal?.id || dados.deal?._id || '';
-  if (!dealId) { alert('Deal ID não encontrado. Certifique-se de ter buscado o lead no RD Station antes de gerar a análise.'); return; }
+  // Busca dealId em múltiplas fontes — prioriza rdC pelo idx do card
+  const cardIdx = dados._cardIdx;
+  const dealId = dados.dealId 
+    || (cardIdx !== undefined ? rdC[cardIdx]?.dealId || rdC[cardIdx]?.deal?.id || rdC[cardIdx]?.deal?._id : '')
+    || dados.deal?.id 
+    || dados.deal?._id 
+    || '';
+  
+  if (!dealId) { 
+    alert('Deal ID não encontrado. Certifique-se de ter buscado o lead no RD Station (aba "RD Station" do card) antes de gravar a análise.'); 
+    return; 
+  }
   dados.dealId = dealId;
   
   const cfg = getCfg();
