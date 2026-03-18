@@ -976,7 +976,7 @@ function cardR(r,i){
       </div>
       <div class="tp" id="ai-${i}">
         <div id="aibox-${i}" style="font-size:12px;color:#9e9e9e;margin-bottom:10px;">Consulte o CNPJ na aba Receita Federal para liberar a análise.</div>
-        <button class="btn btn-p" id="aib-${i}" style="display:none;" onclick="abrirModalAI({nome:'${r.nome}',email:'${r.email||''}',estagio:rdC[${i}]?.estagio||'-',funil:rdC[${i}]?.funil||'-',valor:rdC[${i}]?.valor||'-',dealId:rdC[${i}]?.dealId||''})">✨ Gerar análise IA →</button>
+        <button class="btn btn-p" id="aib-${i}" style="display:none;" onclick="abrirModalAI(${i},{nome:'${r.nome}',estagio:rdC[${i}]?.estagio||'-',funil:rdC[${i}]?.funil||'-',valor:rdC[${i}]?.valor||'-',dealId:rdC[${i}]?.dealId||''})">✨ Gerar análise IA →</button>
       </div>
       <div class="divl"></div>
       <div class="sl">Gravar no histórico da negociação</div>
@@ -1471,19 +1471,19 @@ function selecionarLLM(llm, el) {
   el.classList.add('ativo');
 }
 
-function abrirModalAI(dados) {
-  _dadosReuniaoAtual = dados;
+function abrirModalAI(idx, dados) {
+  // rfC é indexado pelo idx do card — busca o CNPJ consultado na aba Receita Federal
+  const rfDados = rfC[idx];
 
-  // Pega CNPJ do cache rfC — populado quando o usuário consulta a aba Receita Federal
-  let cnpjEncontrado = null;
-  for(const [key, val] of Object.entries(rfC)) {
-    if(val?.data) { cnpjEncontrado = key; break; }
-  }
-
-  if(cnpjEncontrado) {
-    dados.cnpj = cnpjEncontrado;
+  if(rfDados?.raw) {
+    dados.cnpj = rfDados.raw; // CNPJ real sem formatação ex: 52973241000110
+    // Formata o CNPJ para exibição
+    const c = rfDados.raw;
+    dados.cnpjFmt = c.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5');
     document.getElementById('aviso-cnpj').style.display = 'none';
   } else {
+    dados.cnpj = '';
+    dados.cnpjFmt = '';
     document.getElementById('aviso-cnpj').style.display = 'block';
   }
 
@@ -1511,7 +1511,7 @@ function fecharModalAI() {
 }
 
 function montarPromptAI(dados) {
-  const cnpj = dados.cnpj || 'NÃO INFORMADO';
+  const cnpj = dados.cnpjFmt || dados.cnpj || 'NÃO INFORMADO — consulte a aba Receita Federal no card';
   const nome = dados.nome || '-';
   const estagio = dados.estagio || '-';
   const funil = dados.funil || '-';
@@ -1524,7 +1524,7 @@ CNPJ: ${cnpj}
 CONTEXTO CRM: Funil: ${funil} | Estágio: ${estagio} | Valor estimado: ${valor}
 
 PASSO 1 — CONSULTA DO CNPJ:
-Consulte os dados públicos do CNPJ ${cnpj} na Receita Federal (dados.gov.br ou receitaws.com.br ou brasilapi.com.br/api/cnpj/v1/${cnpj}) e extraia:
+Consulte os dados públicos do CNPJ ${cnpj} na Receita Federal (dados.gov.br ou receitaws.com.br ou brasilapi.com.br/api/cnpj/v1/${dados.cnpj||cnpj.replace(/\D/g,"")}) e extraia:
 - Razão social
 - Situação cadastral
 - Porte e capital social
