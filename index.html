@@ -995,8 +995,7 @@ async function buscarRD(email,resId,actId,nome,idx){
       const dealEstagio=deal.deal_stage?.name?` — ${deal.deal_stage.name}`:'';
       const contactEmail=(deal.contacts?.[0]?.emails?.[0]?.email)||'';
       document.getElementById(actId).innerHTML=`
-        ${deals.length>1?`<div style="font-size:11px;color:#854F0B;background:#FAEEDA;padding:6px 10px;border-radius:6px;margin-bottom:8px;">⚠ ${deals.length} negociações encontradas. Abrindo a mais recente${dealEstagio}.</div>`:''}
-        <button class="btn btn-p" onclick="mostrarPv(${idx})">Revisar e gravar ↗</button>
+  <button class="btn btn-p" onclick="mostrarPv(${idx})">Revisar e gravar ↗</button>
         <a href="https://crm.rdstation.com/app/deals/${deal.id}" target="_blank" class="btn">Abrir negociação ↗</a>
         ${c.id?`<a href="https://crm.rdstation.com/contacts/${c.id}" target="_blank" class="btn">Ver contato ↗</a>`:''}`;
     }
