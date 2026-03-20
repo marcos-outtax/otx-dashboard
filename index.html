@@ -230,6 +230,7 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 .analise-importada{font-size:12px;line-height:1.7;color:var(--text);white-space:pre-wrap;background:var(--azul-pale);border-radius:8px;padding:14px;max-height:300px;overflow-y:auto;margin-bottom:12px;}
 .copiado-badge{display:inline-block;background:var(--laranja);color:#fff;font-size:11px;padding:3px 10px;border-radius:20px;margin-left:8px;opacity:0;transition:opacity .3s;}
 tr[onclick]{cursor:pointer!important}
+tr[onclick] td{cursor:pointer!important}
 tr[onclick]:hover td{background:var(--azul-pale)!important}
 .tela-importacao{display:none;position:fixed;inset:0;background:var(--branco);z-index:9998;flex-direction:column;}
 .tela-importacao.aberta{display:flex;}
@@ -2594,11 +2595,9 @@ function mkDrillDown(campNome,filtroEstagio){
     _mkDrillAberto=null;return;
   }
   _mkDrillAberto=key;
+
+  // Filtra por estágio primeiro
   let filtrados=_mkDeals.filter(d=>{
-    const camp=(d.campaign?.name||'').toLowerCase();
-    const cn=campNome.toLowerCase();
-    const matchCamp=campNome==='all'||camp.includes(cn.split(' ')[0])||cn.includes(camp.split(' ')[0]);
-    if(!matchCamp)return false;
     if(!filtroEstagio)return true;
     const est=(d.deal_stage?.name||'').toLowerCase();
     if(filtroEstagio==='reunioes')return est.includes('reuni');
@@ -2607,6 +2606,28 @@ function mkDrillDown(campNome,filtroEstagio){
     if(filtroEstagio==='semcontato')return est.includes('sem contato')||est.includes('tentativa')||est.includes('novos');
     return true;
   });
+
+  // Filtra por campanha — tenta cruzar, se não achar mostra todos com aviso
+  let campAviso='';
+  if(campNome!=='all'){
+    const cn=campNome.toLowerCase();
+    // Extrai palavras-chave relevantes do nome da campanha FB (remove prefixos como [MF] [C])
+    const palavras=cn.replace(/\[.*?\]/g,'').trim().split(/\s+/).filter(p=>p.length>3);
+    const porCamp=filtrados.filter(d=>{
+      const camp=(d.campaign?.name||'').toLowerCase();
+      return palavras.some(p=>camp.includes(p));
+    });
+    if(porCamp.length>0){
+      filtrados=porCamp;
+    } else {
+      // Não encontrou cruzamento — mostra todos com aviso
+      campAviso=`<div style="font-size:11px;padding:8px 12px;background:#FFF0E0;border-radius:6px;margin-bottom:12px;color:#a85000;">
+        ⚠ Campo "Campanha" não identificado nos leads. Mostrando todos os ${filtrados.length} leads do período${filtroEstagio?' neste estágio':''}.
+        <br>Campos campanha encontrados: ${[...new Set(_mkDeals.map(d=>d.campaign?.name||'(vazio)'))].slice(0,5).join(', ')}
+      </div>`;
+    }
+  }
+
   const titulos={reunioes:'Reuniões Agendadas',propostas:'Propostas Enviadas',desqualificados:'Desqualificados',semcontato:'Sem Contato'};
   const titulo=filtroEstagio?titulos[filtroEstagio]:'Todos os Leads';
   const drill=document.getElementById('mk-drill');
@@ -2617,6 +2638,7 @@ function mkDrillDown(campNome,filtroEstagio){
       <button onclick="document.getElementById('mk-drill').style.display='none';_mkDrillAberto=null;" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-muted);">✕</button>
     </div>
     <div style="padding:16px;">
+      ${campAviso}
       ${filtrados.length
         ?filtrados.map((d,i)=>{const di=diasAtras(d.updated_at||d.created_at);const urg=di>7?'urgente':di>=3?'atencao':'ok';return cardP({...d,di,urg},9000+i);}).join('')
         :'<div class="empty">Nenhum lead encontrado.</div>'}
