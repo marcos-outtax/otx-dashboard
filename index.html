@@ -2589,14 +2589,13 @@ function limparFiltrosMK(){
 }
 
 function mkDrillDown(campNome,filtroEstagio){
-  const key=campNome+'|'+filtroEstagio;
-  if(_mkDrillAberto===key){
-    document.getElementById('mk-drill').style.display='none';
-    _mkDrillAberto=null;return;
-  }
-  _mkDrillAberto=key;
+  const drill=document.getElementById('mk-drill');
 
-  // Filtra por estágio primeiro
+  // Sempre limpa o conteúdo anterior primeiro
+  drill.innerHTML='';
+  _mkDrillAberto=campNome+'|'+filtroEstagio;
+
+  // Filtra por estágio
   let filtrados=_mkDeals.filter(d=>{
     if(!filtroEstagio)return true;
     const est=(d.deal_stage?.name||'').toLowerCase();
@@ -2607,11 +2606,10 @@ function mkDrillDown(campNome,filtroEstagio){
     return true;
   });
 
-  // Filtra por campanha — tenta cruzar, se não achar mostra todos com aviso
+  // Filtra por campanha
   let campAviso='';
   if(campNome!=='all'){
     const cn=campNome.toLowerCase();
-    // Extrai palavras-chave relevantes do nome da campanha FB (remove prefixos como [MF] [C])
     const palavras=cn.replace(/\[.*?\]/g,'').trim().split(/\s+/).filter(p=>p.length>3);
     const porCamp=filtrados.filter(d=>{
       const camp=(d.campaign?.name||'').toLowerCase();
@@ -2620,30 +2618,27 @@ function mkDrillDown(campNome,filtroEstagio){
     if(porCamp.length>0){
       filtrados=porCamp;
     } else {
-      // Não encontrou cruzamento — mostra todos com aviso
       campAviso=`<div style="font-size:11px;padding:8px 12px;background:#FFF0E0;border-radius:6px;margin-bottom:12px;color:#a85000;">
-        ⚠ Campo "Campanha" não identificado nos leads. Mostrando todos os ${filtrados.length} leads do período${filtroEstagio?' neste estágio':''}.
-        <br>Campos campanha encontrados: ${[...new Set(_mkDeals.map(d=>d.campaign?.name||'(vazio)'))].slice(0,5).join(', ')}
+        ⚠ Cruzamento por campanha não identificado. Mostrando todos os ${filtrados.length} leads do período${filtroEstagio?' neste estágio':''}.
+        <br>Campos campanha nos leads: ${[...new Set(_mkDeals.map(d=>d.campaign?.name||'(vazio)'))].filter(Boolean).slice(0,5).join(', ')||'(nenhum preenchido)'}
       </div>`;
     }
   }
 
   const titulos={reunioes:'Reuniões Agendadas',propostas:'Propostas Enviadas',desqualificados:'Desqualificados',semcontato:'Sem Contato'};
   const titulo=filtroEstagio?titulos[filtroEstagio]:'Todos os Leads';
-  const drill=document.getElementById('mk-drill');
+
   drill.style.display='block';
-  // Limpa sempre antes de renderizar novo conteúdo
-  drill.innerHTML='';
   drill.innerHTML=`
     <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--border);background:var(--azul-pale);">
       <span style="font-size:13px;font-weight:600;color:var(--azul-escuro);">${campNome==='all'?'Todas as campanhas':campNome} — ${titulo} (${filtrados.length})</span>
-      <button onclick="document.getElementById('mk-drill').style.display='none';_mkDrillAberto=null;" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-muted);">✕</button>
+      <button onclick="document.getElementById('mk-drill').style.display='none';document.getElementById('mk-drill').innerHTML='';_mkDrillAberto=null;" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-muted);">✕</button>
     </div>
     <div style="padding:16px;">
       ${campAviso}
       ${filtrados.length
         ?filtrados.map((d,i)=>{const di=diasAtras(d.updated_at||d.created_at);const urg=di>7?'urgente':di>=3?'atencao':'ok';return cardP({...d,di,urg},9000+i);}).join('')
-        :'<div class="empty">Nenhum lead encontrado.</div>'}
+        :'<div class="empty">Nenhum lead encontrado para esta seleção.</div>'}
     </div>`;
   drill.scrollIntoView({behavior:'smooth',block:'start'});
 }
@@ -2780,15 +2775,15 @@ async function carregarAnaliseMarketing(){
       const convPct=c.leads>0&&reuC>0?(reuC/c.leads*100).toFixed(1)+'%':'-';
       const convNum=parseFloat(convPct)||0;
       const cn=c.nome.replace(/'/g,"\\'");
-      return `<tr style="border-bottom:1px solid var(--border);cursor:pointer;" onclick="mkDrillDown('${cn}','')" title="Clique para ver todos os leads desta campanha">
-        <td style="padding:10px 14px;font-size:12px;font-weight:500;color:var(--azul-escuro);">${c.nome} <span style="font-size:10px;color:var(--text-muted);">▶</span></td>
-        <td style="padding:10px 12px;text-align:right;font-size:12px;">${fmtBRL(c.investimento)}</td>
-        <td style="padding:10px 12px;text-align:right;font-size:12px;font-weight:600;color:var(--laranja);">${c.leads||0}</td>
-        <td style="padding:10px 12px;text-align:right;font-size:12px;">${fmtBRL(c.cpl)}</td>
-        <td style="padding:10px 12px;text-align:right;font-size:12px;font-weight:600;color:#1D9E75;" onclick="event.stopPropagation();mkDrillDown('${cn}','reunioes')">${reuC} ▶</td>
-        <td style="padding:10px 12px;text-align:right;font-size:12px;font-weight:600;color:#7C3AED;" onclick="event.stopPropagation();mkDrillDown('${cn}','propostas')">${propC} ▶</td>
-        <td style="padding:10px 12px;text-align:right;font-size:12px;">${fmtBRL(cReu)}</td>
-        <td style="padding:10px 12px;text-align:right;font-size:12px;font-weight:600;color:${convNum>10?'#1D9E75':convNum>5?'var(--laranja)':'#E24B4A'}">${convPct}</td>
+      return `<tr style="border-bottom:1px solid var(--border);cursor:pointer;user-select:none;" onclick="mkDrillDown('${cn}','')" title="Clique para ver todos os leads desta campanha">
+        <td style="padding:10px 14px;font-size:12px;font-weight:500;color:var(--azul-escuro);cursor:pointer;">${c.nome} <span style="font-size:10px;color:var(--text-muted);">▶</span></td>
+        <td style="padding:10px 12px;text-align:right;font-size:12px;cursor:pointer;">${fmtBRL(c.investimento)}</td>
+        <td style="padding:10px 12px;text-align:right;font-size:12px;font-weight:600;color:var(--laranja);cursor:pointer;">${c.leads||0}</td>
+        <td style="padding:10px 12px;text-align:right;font-size:12px;cursor:pointer;">${fmtBRL(c.cpl)}</td>
+        <td style="padding:10px 12px;text-align:right;font-size:12px;font-weight:600;color:#1D9E75;cursor:pointer;" onclick="event.stopPropagation();mkDrillDown('${cn}','reunioes')">${reuC} ▶</td>
+        <td style="padding:10px 12px;text-align:right;font-size:12px;font-weight:600;color:#7C3AED;cursor:pointer;" onclick="event.stopPropagation();mkDrillDown('${cn}','propostas')">${propC} ▶</td>
+        <td style="padding:10px 12px;text-align:right;font-size:12px;cursor:pointer;">${fmtBRL(cReu)}</td>
+        <td style="padding:10px 12px;text-align:right;font-size:12px;font-weight:600;cursor:pointer;color:${convNum>10?'#1D9E75':convNum>5?'var(--laranja)':'#E24B4A'}">${convPct}</td>
       </tr>`;
     }).join('');
     document.getElementById('mk-tabela').style.display='block';
