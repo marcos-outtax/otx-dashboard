@@ -1234,52 +1234,49 @@ async function buscarRD(email,resId,actId,nome,idx){
 
   try{
     let deal=null;
+    let diagnostico=[];
 
-    // PASSO 1: Busca o contato pelo email do cliente → pega deals desse contato
+    // PASSO 1: Busca contato pelo email
     if(email && !emailsInternos.includes(email)){
-      // GET /contacts?email=X  (parâmetro correto da API v1)
       const cd=await rdFetch('contacts',{email});
       const contacts=cd.contacts||[];
+      diagnostico.push(`Contatos encontrados para "${email}": ${contacts.length}`);
+
       if(contacts.length){
-        // Pode ter mais de um contato — percorre todos e pega o deal mais recente
-        let todosDeals=[];
         for(const c of contacts){
+          diagnostico.push(`→ Contato: ${c.name} (id:${c.id})`);
           const dd=await rdFetch('deals',{contact_id:c.id});
-          todosDeals=[...todosDeals,...(dd.deals||[])];
-        }
-        if(todosDeals.length){
-          deal=todosDeals.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at))[0];
+          const dealsC=dd.deals||[];
+          diagnostico.push(`→ Deals deste contato: ${dealsC.length} — ${dealsC.map(d=>d.name).join(', ')}`);
+          if(dealsC.length&&!deal){
+            deal=dealsC.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at))[0];
+          }
         }
       }
     }
 
-    // PASSO 2: Fallback pelo nome limpo da reunião
+    // PASSO 2: Fallback pelo nome
     if(!deal){
+      diagnostico.push(`Tentando busca por nome: "${nomeLimpo}"`);
       const dd2=await rdFetch('deals',{name:nomeLimpo});
       const dealsNome=dd2.deals||[];
+      diagnostico.push(`Deals pelo nome: ${dealsNome.length}`);
       if(dealsNome.length){
         deal=dealsNome.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at))[0];
       }
     }
 
-    // PASSO 3: Fallback pelo primeiro nome
     if(!deal){
-      const primeiroNome=nomeLimpo.split(' ')[0];
-      if(primeiroNome.length>2){
-        const dd3=await rdFetch('deals',{name:primeiroNome});
-        const dealsPNome=(dd3.deals||[]).filter(d=>
-          d.name?.toLowerCase().includes(primeiroNome.toLowerCase())
-        );
-        if(dealsPNome.length){
-          deal=dealsPNome.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at))[0];
-        }
-      }
-    }
-
-    if(!deal){
-      el.innerHTML=`<div class="nb" style="color:#6b6b6b;">Negociação não encontrada para "${nomeLimpo}".<br><span style="font-size:11px;color:#9e9e9e;">Email buscado: ${email||'não disponível'}</span></div>`;
+      el.innerHTML=`<div class="nb" style="color:#6b6b6b;">
+        Negociação não encontrada para "${nomeLimpo}".
+        <details style="margin-top:8px;font-size:10px;color:#9e9e9e;"><summary>Diagnóstico</summary>${diagnostico.join('<br>')}</details>
+      </div>`;
       return;
     }
+
+    // Mostra diagnóstico junto com o resultado para debug
+    diagnostico.push(`✓ Deal encontrado: ${deal.name} (id:${deal.id})`);
+    console.log('[buscarRD]', diagnostico.join(' | '));
 
     // Busca dados do contato pelo deal
     const contactId=deal.contacts?.[0]?.id||'';
