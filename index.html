@@ -232,6 +232,9 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 tr[onclick]{cursor:pointer!important;user-select:none!important}
 tr[onclick] *{cursor:pointer!important;user-select:none!important}
 tr[onclick]:hover td{background:var(--azul-pale)!important}
+.tr-clicavel{cursor:pointer!important;user-select:none!important}
+.tr-clicavel td{cursor:pointer!important;user-select:none!important}
+.tr-clicavel:hover td{background:var(--azul-pale)!important}
 .tela-importacao{display:none;position:fixed;inset:0;background:var(--branco);z-index:9998;flex-direction:column;}
 .tela-importacao.aberta{display:flex;}
 .tela-imp-header{background:linear-gradient(135deg,var(--azul-escuro) 0%,var(--azul-medio) 100%);color:#fff;padding:16px 24px;display:flex;justify-content:space-between;align-items:center;font-weight:700;font-size:14px;}
@@ -2608,7 +2611,7 @@ function mkDrillDown(campNome,filtroEstagio){
   });
 
   // Filtra por campanha
-  let campAviso='';
+  let semCruzamento=false;
   if(campNome!=='all'){
     const cn=campNome.toLowerCase();
     const palavras=cn.replace(/\[.*?\]/g,'').trim().split(/\s+/).filter(p=>p.length>3);
@@ -2619,10 +2622,9 @@ function mkDrillDown(campNome,filtroEstagio){
     if(porCamp.length>0){
       filtrados=porCamp;
     } else {
-      campAviso=`<div style="font-size:11px;padding:8px 12px;background:#FFF0E0;border-radius:6px;margin-bottom:12px;color:#a85000;">
-        ⚠ Cruzamento por campanha não identificado. Mostrando todos os ${filtrados.length} leads do período${filtroEstagio?' neste estágio':''}.
-        <br>Campos campanha nos leads: ${[...new Set(_mkDeals.map(d=>d.campaign?.name||'').filter(Boolean))].slice(0,5).join(' | ')||'(nenhum preenchido)'}
-      </div>`;
+      // Não encontrou — mostra vazio com diagnóstico
+      semCruzamento=true;
+      filtrados=[];
     }
   }
 
@@ -2640,10 +2642,13 @@ function mkDrillDown(campNome,filtroEstagio){
   const body=document.createElement('div');
   body.style.padding='16px';
 
-  if(campAviso) body.innerHTML=campAviso;
-
-  if(filtrados.length===0){
-    body.innerHTML+=`<div class="empty">Nenhum lead encontrado para esta campanha no período selecionado.</div>`;
+  if(semCruzamento){
+    body.innerHTML=`<div class="empty" style="color:var(--text-muted);">
+      Nenhum lead encontrado para <strong>"${campNome}"</strong> no período selecionado.
+      <div style="font-size:11px;margin-top:8px;color:var(--text-muted);">Campos campanha disponíveis: ${[...new Set(_mkDeals.map(d=>d.campaign?.name||'').filter(Boolean))].slice(0,5).join(' | ')||'(nenhum preenchido)'}</div>
+    </div>`;
+  } else if(filtrados.length===0){
+    body.innerHTML=`<div class="empty">Nenhum lead encontrado para esta seleção.</div>`;
   } else {
     filtrados.forEach((d,i)=>{
       const di=diasAtras(d.updated_at||d.created_at);
@@ -2792,7 +2797,7 @@ async function carregarAnaliseMarketing(){
       const convPct=c.leads>0&&reuC>0?(reuC/c.leads*100).toFixed(1)+'%':'-';
       const convNum=parseFloat(convPct)||0;
       const cn=c.nome.replace(/'/g,"\\'");
-      return `<tr style="border-bottom:1px solid var(--border);cursor:pointer;user-select:none;" onclick="mkDrillDown('${cn}','')" title="Clique para ver todos os leads desta campanha">
+      return `<tr class="tr-clicavel" style="border-bottom:1px solid var(--border);" onclick="mkDrillDown('${cn}','')" title="Clique para ver todos os leads desta campanha">
         <td style="padding:10px 14px;font-size:12px;font-weight:500;color:var(--azul-escuro);cursor:pointer;">${c.nome} <span style="font-size:10px;color:var(--text-muted);">▶</span></td>
         <td style="padding:10px 12px;text-align:right;font-size:12px;cursor:pointer;">${fmtBRL(c.investimento)}</td>
         <td style="padding:10px 12px;text-align:right;font-size:12px;font-weight:600;color:var(--laranja);cursor:pointer;">${c.leads||0}</td>
