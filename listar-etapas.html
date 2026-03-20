@@ -14,7 +14,6 @@ h1{font-size:18px;margin-bottom:8px;}
 .erro{color:#791F1F;padding:16px;background:#fff;border-radius:8px;}
 button{background:#152c6b;color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:13px;cursor:pointer;margin-bottom:20px;}
 input{padding:8px 12px;border:1px solid #d6e0f0;border-radius:8px;font-size:12px;width:320px;margin-right:8px;}
-pre{font-size:10px;background:#f0f4fb;padding:8px;border-radius:4px;overflow:auto;max-height:300px;white-space:pre-wrap;}
 </style>
 </head>
 <body>
@@ -27,73 +26,72 @@ pre{font-size:10px;background:#f0f4fb;padding:8px;border-radius:4px;overflow:aut
 <script>
 try{const cfg=JSON.parse(localStorage.getItem('otx_cfg')||'{}');if(cfg.rd)document.getElementById('token').value=cfg.rd;}catch(e){}
 
+const FUNIS=[
+  {id:'6706b83df4cf270013213222',nome:'📥 Pré-vendas [Inbound]'},
+  {id:'6706b8464c9f220026c047c1',nome:'💼 Vendas Contabilidade'},
+  {id:'65c4078fa051670017a8b25d',nome:'📊 Vendas BPO Financeiro'},
+  {id:'671931f51da141001338787c',nome:'🏥 Projeto 360 + Médicos'},
+  {id:'689c91211ee005001ae35f53',nome:'💰 Vendas 360 + Médicos'},
+  {id:'689c9195890719001dedb952',nome:'⏳ Oportunidades +30D'},
+];
+
 async function rdGet(path,params={}){
   const token=document.getElementById('token').value.trim();
   const qs=Object.keys(params).length?'&'+new URLSearchParams(params):'';
   const r=await fetch('/api/rd?path='+encodeURIComponent(path)+qs,{
     headers:{'Content-Type':'application/json','X-RD-Token':token}
   });
-  const text=await r.text();
-  try{return JSON.parse(text);}catch(e){return{_raw:text.substring(0,500)};}
+  return r.json();
 }
 
 async function carregar(){
   const token=document.getElementById('token').value.trim();
   if(!token){alert('Insira o token');return;}
-  document.getElementById('resultado').innerHTML='<div class="loading">Buscando...</div>';
+  document.getElementById('resultado').innerHTML='<div class="loading">Buscando estágios de cada funil...</div>';
 
   try{
-    // Estratégia: busca deals de cada funil conhecido e extrai estágios únicos
-    const funisConhecidos=[
-      {id:'6706b83df4cf270013213222',nome:'Pré-vendas [Inbound]'},
-    ];
-
-    // Tenta descobrir outros funis buscando deals sem filtro de funil
-    // e coletando deal_pipeline e deal_stage únicos
     let html='';
-    let todosEstagios={};
 
-    // Busca deals das páginas 1-5 sem filtro de funil para descobrir todos
-    document.getElementById('resultado').innerHTML='<div class="loading">Buscando deals para mapear estágios...</div>';
-    
-    const pages=await Promise.all([1,2,3,4,5].map(p=>rdGet('deals',{page:String(p)})));
-    const todosDeals=pages.flatMap(p=>p.deals||[]);
+    for(const funil of FUNIS){
+      document.getElementById('resultado').innerHTML=`<div class="loading">Buscando: ${funil.nome}...</div>`;
 
-    // Agrupa por funil
-    const funisMapa={};
-    todosDeals.forEach(d=>{
-      const pId=d.deal_pipeline?.id||'sem_funil';
-      const pNome=d.deal_pipeline?.name||'(sem funil)';
-      const eNome=d.deal_stage?.name||'(sem estágio)';
-      const eId=d.deal_stage?.id||'';
-      if(!funisMapa[pId]) funisMapa[pId]={nome:pNome,etapas:{}};
-      funisMapa[pId].etapas[eId]=eNome;
-    });
+      // Busca deals do funil e extrai estágios únicos
+      const pages=await Promise.all([1,2,3].map(p=>
+        rdGet('deals',{deal_pipeline_id:funil.id,page:String(p)})
+      ));
+      const deals=pages.flatMap(p=>p.deals||[]);
 
-    if(!todosDeals.length){
-      document.getElementById('resultado').innerHTML=
-        '<div class="erro">Nenhum deal encontrado.<br>Verifique o token.</div>';
-      return;
-    }
-
-    html=`<p style="font-size:12px;color:#5a6e99;margin-bottom:12px;">${todosDeals.length} deals analisados — ${Object.keys(funisMapa).length} funis encontrados:</p>`;
-
-    Object.entries(funisMapa).forEach(([pId,funil])=>{
-      html+=`<div class="funil">
-        <div class="funil-titulo">📋 ${funil.nome} <span style="font-size:10px;opacity:.6;">(id: ${pId})</span></div>`;
-      Object.entries(funil.etapas).forEach(([eId,eNome])=>{
-        html+=`<div class="etapa">
-          <span style="font-weight:500;flex:1;">${eNome}</span>
-          <span style="color:#9e9e9e;font-size:10px;">id: ${eId}</span>
-        </div>`;
+      // Coleta estágios únicos preservando ordem
+      const estagiosMap={};
+      deals.forEach(d=>{
+        const eId=d.deal_stage?.id||'';
+        const eNome=d.deal_stage?.name||'(sem estágio)';
+        if(eId&&!estagiosMap[eId]) estagiosMap[eId]=eNome;
       });
+
+      const estagios=Object.entries(estagiosMap);
+
+      html+=`<div class="funil">
+        <div class="funil-titulo">${funil.nome} — ${deals.length} deals analisados</div>`;
+
+      if(estagios.length){
+        estagios.forEach(([eId,eNome],i)=>{
+          html+=`<div class="etapa">
+            <span style="background:#e8eef8;border-radius:4px;padding:2px 8px;font-size:11px;font-weight:600;min-width:20px;text-align:center;">${i+1}</span>
+            <span style="font-weight:500;flex:1;">${eNome}</span>
+            <span style="color:#9e9e9e;font-size:10px;">${eId}</span>
+          </div>`;
+        });
+      }else{
+        html+=`<div class="etapa" style="color:#9e9e9e;font-style:italic;">Nenhum deal encontrado neste funil</div>`;
+      }
       html+='</div>';
-    });
+    }
 
     document.getElementById('resultado').innerHTML=html;
 
   }catch(e){
-    document.getElementById('resultado').innerHTML=`<div class="erro">Erro: ${e.message}<br><pre>${e.stack}</pre></div>`;
+    document.getElementById('resultado').innerHTML=`<div class="erro">Erro: ${e.message}</div>`;
   }
 }
 </script>
