@@ -1214,9 +1214,11 @@ const rdC={};
 // Limpa títulos de eventos do Google Calendar para extrair só o nome do cliente
 function limparNomeCalendar(nome){
   let n=nome||'';
-  // Padrão "REUNIÃO COMERCIAL | Nome do Cliente & OUTTAX - Obs"
+  // Padrão com pipe: "REUNIÃO COMERCIAL | Nome & OUTTAX"
   if(n.includes('|')) n=n.split('|').slice(1).join('|');
-  // Remove empresa Outtax e observações após "&" ou "-"
+  // Padrão com letra l: "Reunião Comercial l Nome & OUTTAX"
+  else n=n.replace(/^.*?\bcomercial\b\s*l\s*/i,'');
+  // Remove "& OUTTAX" e tudo depois
   n=n.replace(/&\s*(OUTTAX|Outtax)[^,\n]*/gi,'')
      .replace(/-\s*(Fechamento|Reunião|Proposta|Follow[\-\s]?up|Alinhamento|Comercial)[^,\n]*/gi,'')
      .replace(/\b(REUNIÃO COMERCIAL|REUNIAO COMERCIAL|REUNIÃO|COMERCIAL|OUTTAX)\b/gi,'')
@@ -1230,60 +1232,64 @@ async function buscarRD(email,resId,actId,nome,idx){
   const el=document.getElementById(resId);
   el.innerHTML=load('Buscando no RD Station...');
   const nomeLimpo=limparNomeCalendar(nome);
-
-  // Emails a ignorar na busca — domínio Outtax + email de marketing
   const emailIgnorar=(e)=>!e||e.includes('@outtax.com.br')||e.includes('midias.outtax');
 
   try{
     let deal=null;
 
-    // ESTRATÉGIA PRINCIPAL: busca deals pelo nome do cliente
-    // O nome do deal no RD Station = nome do cliente (ex: "Debora", "Felipe Schwert")
-    // que é exatamente o nomeLimpo extraído do título da reunião
-    if(nomeLimpo){
-      const dd=await rdFetch('deals',{name:nomeLimpo});
-      const dealsNome=dd.deals||[];
-      if(dealsNome.length){
-        // Se tiver email do cliente, filtra o deal que tem esse email no contato
-        if(email && !emailIgnorar(email)){
-          const comEmail=dealsNome.filter(d=>
-            d.contacts?.some(c=>
-              c.emails?.some(em=>em.email?.toLowerCase()===email.toLowerCase())
-            )
-          );
-          if(comEmail.length){
-            deal=comEmail.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at))[0];
-          }
+    // PASSO 1: Email → contato → deals → confirma pelo nome
+    if(email && !emailIgnorar(email)){
+      const cd=await rdFetch('contacts',{email});
+      const contacts=cd.contacts||[];
+      if(contacts.length){
+        // Coleta todos os deals de todos os contatos com esse email
+        let todosDeals=[];
+        for(const c of contacts){
+          const dd=await rdFetch('deals',{contact_id:c.id});
+          todosDeals=[...todosDeals,...(dd.deals||[])];
         }
-        // Se não filtrou por email, pega o mais recente pelo nome
-        if(!deal){
-          deal=dealsNome.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at))[0];
+        if(todosDeals.length){
+          // Tenta confirmar pelo nome da reunião
+          const nL=nomeLimpo.toLowerCase();
+          const palavrasNome=nL.split(/\s+/).filter(p=>p.length>2);
+          // Pontua cada deal pela similaridade com o nome da reunião
+          const pontuados=todosDeals.map(d=>{
+            const dn=(d.name||'').toLowerCase();
+            let score=0;
+            if(dn===nL) score=10;
+            else if(dn.includes(nL)||nL.includes(dn)) score=8;
+            else{
+              palavrasNome.forEach(p=>{if(dn.includes(p)) score+=2;});
+              dn.split(/\s+/).forEach(p=>{if(p.length>2&&nL.includes(p)) score+=1;});
+            }
+            return {d,score};
+          }).sort((a,b)=>b.score-a.score);
+
+          // Usa o deal com maior score se acima do mínimo, senão pega o mais recente
+          deal=pontuados[0].score>0
+            ? pontuados[0].d
+            : todosDeals.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at))[0];
         }
       }
     }
 
-    // FALLBACK: busca pelo primeiro nome se nome completo não encontrar
+    // PASSO 2: Fallback — busca direto pelo nome do deal
     if(!deal){
-      const primeiroNome=nomeLimpo.split(' ')[0];
-      if(primeiroNome.length>2){
-        const dd2=await rdFetch('deals',{name:primeiroNome});
-        const dealsFN=(dd2.deals||[]).filter(d=>
-          d.name?.toLowerCase().includes(primeiroNome.toLowerCase())
-        );
-        if(dealsFN.length){
-          // Filtra por email se disponível
-          if(email && !emailIgnorar(email)){
-            const comEmail=dealsFN.filter(d=>
-              d.contacts?.some(c=>
-                c.emails?.some(em=>em.email?.toLowerCase()===email.toLowerCase())
-              )
-            );
-            deal=comEmail.length
-              ? comEmail.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at))[0]
-              : dealsFN.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at))[0];
-          } else {
-            deal=dealsFN.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at))[0];
-          }
+      const dd2=await rdFetch('deals',{name:nomeLimpo});
+      const dealsNome=dd2.deals||[];
+      if(dealsNome.length){
+        deal=dealsNome.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at))[0];
+      }
+    }
+
+    // PASSO 3: Fallback — primeiro nome
+    if(!deal){
+      const pNome=nomeLimpo.split(' ')[0];
+      if(pNome.length>2){
+        const dd3=await rdFetch('deals',{name:pNome});
+        const dealsPN=(dd3.deals||[]).filter(d=>d.name?.toLowerCase().includes(pNome.toLowerCase()));
+        if(dealsPN.length){
+          deal=dealsPN.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at))[0];
         }
       }
     }
