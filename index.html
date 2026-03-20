@@ -1230,53 +1230,68 @@ async function buscarRD(email,resId,actId,nome,idx){
   const el=document.getElementById(resId);
   el.innerHTML=load('Buscando no RD Station...');
   const nomeLimpo=limparNomeCalendar(nome);
-  const emailsInternos=['midias.outtax@gmail.com','maiccon@outtax.com.br','marcos@outtax.com.br'];
+
+  // Emails a ignorar na busca — domínio Outtax + email de marketing
+  const emailIgnorar=(e)=>!e||e.includes('@outtax.com.br')||e.includes('midias.outtax');
 
   try{
     let deal=null;
-    let diagnostico=[];
 
-    // PASSO 1: Busca contato pelo email
-    if(email && !emailsInternos.includes(email)){
-      const cd=await rdFetch('contacts',{email});
-      const contacts=cd.contacts||[];
-      diagnostico.push(`Contatos encontrados para "${email}": ${contacts.length}`);
+    // ESTRATÉGIA PRINCIPAL: busca deals pelo nome do cliente
+    // O nome do deal no RD Station = nome do cliente (ex: "Debora", "Felipe Schwert")
+    // que é exatamente o nomeLimpo extraído do título da reunião
+    if(nomeLimpo){
+      const dd=await rdFetch('deals',{name:nomeLimpo});
+      const dealsNome=dd.deals||[];
+      if(dealsNome.length){
+        // Se tiver email do cliente, filtra o deal que tem esse email no contato
+        if(email && !emailIgnorar(email)){
+          const comEmail=dealsNome.filter(d=>
+            d.contacts?.some(c=>
+              c.emails?.some(em=>em.email?.toLowerCase()===email.toLowerCase())
+            )
+          );
+          if(comEmail.length){
+            deal=comEmail.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at))[0];
+          }
+        }
+        // Se não filtrou por email, pega o mais recente pelo nome
+        if(!deal){
+          deal=dealsNome.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at))[0];
+        }
+      }
+    }
 
-      if(contacts.length){
-        for(const c of contacts){
-          diagnostico.push(`→ Contato: ${c.name} (id:${c.id})`);
-          const dd=await rdFetch('deals',{contact_id:c.id});
-          const dealsC=dd.deals||[];
-          diagnostico.push(`→ Deals deste contato: ${dealsC.length} — ${dealsC.map(d=>d.name).join(', ')}`);
-          if(dealsC.length&&!deal){
-            deal=dealsC.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at))[0];
+    // FALLBACK: busca pelo primeiro nome se nome completo não encontrar
+    if(!deal){
+      const primeiroNome=nomeLimpo.split(' ')[0];
+      if(primeiroNome.length>2){
+        const dd2=await rdFetch('deals',{name:primeiroNome});
+        const dealsFN=(dd2.deals||[]).filter(d=>
+          d.name?.toLowerCase().includes(primeiroNome.toLowerCase())
+        );
+        if(dealsFN.length){
+          // Filtra por email se disponível
+          if(email && !emailIgnorar(email)){
+            const comEmail=dealsFN.filter(d=>
+              d.contacts?.some(c=>
+                c.emails?.some(em=>em.email?.toLowerCase()===email.toLowerCase())
+              )
+            );
+            deal=comEmail.length
+              ? comEmail.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at))[0]
+              : dealsFN.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at))[0];
+          } else {
+            deal=dealsFN.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at))[0];
           }
         }
       }
     }
 
-    // PASSO 2: Fallback pelo nome
     if(!deal){
-      diagnostico.push(`Tentando busca por nome: "${nomeLimpo}"`);
-      const dd2=await rdFetch('deals',{name:nomeLimpo});
-      const dealsNome=dd2.deals||[];
-      diagnostico.push(`Deals pelo nome: ${dealsNome.length}`);
-      if(dealsNome.length){
-        deal=dealsNome.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at))[0];
-      }
-    }
-
-    if(!deal){
-      el.innerHTML=`<div class="nb" style="color:#6b6b6b;">
-        Negociação não encontrada para "${nomeLimpo}".
-        <details style="margin-top:8px;font-size:10px;color:#9e9e9e;"><summary>Diagnóstico</summary>${diagnostico.join('<br>')}</details>
-      </div>`;
+      el.innerHTML=`<div class="nb" style="color:#6b6b6b;">Negociação não encontrada para "${nomeLimpo}".<br><span style="font-size:11px;color:#9e9e9e;">Email: ${email||'não disponível'}</span></div>`;
       return;
     }
-
-    // Mostra diagnóstico junto com o resultado para debug
-    diagnostico.push(`✓ Deal encontrado: ${deal.name} (id:${deal.id})`);
-    console.log('[buscarRD]', diagnostico.join(' | '));
 
     // Busca dados do contato pelo deal
     const contactId=deal.contacts?.[0]?.id||'';
