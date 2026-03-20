@@ -2658,10 +2658,23 @@ function mkDrillDown(campNome,filtroEstagio){
   let filtrados=_mkDeals.filter(d=>{
     if(!filtroEstagio||filtroEstagio==='todos')return true;
     const est=(d.deal_stage?.name||'').toLowerCase();
-    if(filtroEstagio==='reunioes')return est.includes('reuni');
-    if(filtroEstagio==='propostas')return est.includes('proposta')||est.includes('negociaç')||est.includes('enviar')||est.includes('enviada');
-    if(filtroEstagio==='desqualificados')return est.includes('desqualif')||est.includes('perdid');
-    if(filtroEstagio==='semcontato')return est.includes('sem contato')||est.includes('tentativa')||est.includes('novos');
+    if(filtroEstagio==='reunioes'){
+      return (()=>{
+        const e=est;
+        const funil=(d.deal_pipeline?.name||'').toLowerCase();
+        if(e.includes('perdid')||e.includes('desqualif')) return false;
+        if(funil.includes('inbound')||funil.includes('pré-venda')||funil.includes('pre-venda')) return false;
+        if(funil.includes('bpo')) return e.includes('proposta enviada')||e.includes('negociaç');
+        if(funil.includes('contabilidade')) return e.includes('reunião de proposta')||e.includes('reuniao de proposta')||e.includes('enviar proposta')||e.includes('follow')||e.includes('prov.');
+        if(funil.includes('360')&&funil.includes('proj')) return e.includes('reunião de proposta')||e.includes('reuniao de proposta')||e.includes('enviar proposta')||e.includes('follow')||e.startsWith('[c]')||e.startsWith('[m]');
+        if(funil.includes('360')) return e.includes('proposta enviada')||e.includes('apresentaç');
+        if(funil.includes('oportunidade')||funil.includes('30d')) return false;
+        return e.includes('proposta')||e.includes('negociaç')||e.includes('enviar');
+      })();
+    }
+    if(filtroEstagio==='propostas') return est.includes('proposta fechada')||est.includes('fechada');
+    if(filtroEstagio==='desqualificados') return est.includes('desqualif')||est.includes('perdid');
+    if(filtroEstagio==='semcontato') return est.includes('reagend')||est.includes('sem contato')||est.includes('novos')||est.includes('sem contato')||est.includes('tentativa');
     return true;
   });
 
@@ -2755,7 +2768,8 @@ async function carregarAnaliseMarketing(){
     });
     if([...selCamp.options].some(o=>o.value===campAtual))selCamp.value=campAtual;
 
-    // 2. Deals do Pré-vendas Inbound no período (todas as situações)
+    // 2. Deals do Pré-vendas Inbound — filtra por updated_at no período
+    // (captura deals criados antes mas que evoluíram no período)
     const funilId='6706b83df4cf270013213222';
     const paginas=await Promise.all([1,2,3,4,5,6,7,8,9,10].map(p=>
       rdFetch('deals',{deal_pipeline_id:funilId,page:String(p)})
@@ -2766,7 +2780,12 @@ async function carregarAnaliseMarketing(){
     });
     const ini=new Date(de+'T00:00:00');
     const fim=new Date(ate+'T23:59:59');
-    deals=deals.filter(d=>new Date(d.created_at)>=ini&&new Date(d.created_at)<=fim);
+    // Usa created_at OU updated_at dentro do período
+    deals=deals.filter(d=>{
+      const criado=new Date(d.created_at);
+      const atualizado=new Date(d.updated_at||d.created_at);
+      return (criado>=ini&&criado<=fim)||(atualizado>=ini&&atualizado<=fim);
+    });
     _mkDeals=deals;
 
     // 3. Filtro por campanha
@@ -2783,13 +2802,72 @@ async function carregarAnaliseMarketing(){
       if(fbC){fbInvest=fbC.investimento;fbLeads=fbC.leads;}
     }
 
-    // 4. Conta estágios
+    // 4. Classifica estágios por funil com mapeamento exato confirmado
+    // Função que retorna a categoria do deal baseado no funil + estágio
+    function classificarDeal(d){
+      const e=(d.deal_stage?.name||'').toLowerCase().trim();
+      const funil=(d.deal_pipeline?.name||'').toLowerCase();
+
+      // PERDIDO — qualquer funil
+      if(e.includes('perdid')||e.includes('desqualif')) return 'desqualificado';
+
+      // PRÉ-VENDAS [INBOUND] — nenhuma etapa é reunião realizada
+      if(funil.includes('inbound')||funil.includes('pré-venda')||funil.includes('pre-venda')){
+        return 'semContato'; // todas as etapas do pré-vendas = ainda não realizou reunião
+      }
+
+      // VENDAS BPO FINANCEIRO
+      // Reunião realizada: Proposta Enviada, Negociação
+      if(funil.includes('bpo')){
+        if(e.includes('proposta enviada')||e.includes('negociaç')) return 'reuniao';
+        if(e.includes('proposta fechada')||e.includes('fechada')) return 'proposta';
+        return 'semContato';
+      }
+
+      // VENDAS CONTABILIDADE
+      // Reunião realizada: Reunião de Proposta, Enviar Proposta, [T] Follow-up, [C] Prov. fechamento, [M] Prov. fechamento
+      if(funil.includes('contabilidade')){
+        if(e.includes('reunião de proposta')||e.includes('reuniao de proposta')||
+           e.includes('enviar proposta')||e.includes('follow')||
+           e.includes('prov.')||e.includes('prov ')) return 'reuniao';
+        if(e.includes('proposta fechada')||e.includes('fechada')) return 'proposta';
+        return 'semContato';
+      }
+
+      // PROJETO 360 + MÉDICOS
+      // Reunião realizada: Reunião de proposta, Enviar proposta, Follow-up, [C]...
+      if(funil.includes('360')&&funil.includes('proj')){
+        if(e.includes('reunião de proposta')||e.includes('reuniao de proposta')||
+           e.includes('enviar proposta')||e.includes('follow')||
+           e.startsWith('[c]')||e.startsWith('[m]')) return 'reuniao';
+        if(e.includes('proposta fechada')||e.includes('fechada')) return 'proposta';
+        return 'semContato';
+      }
+
+      // VENDAS 360 + MÉDICOS
+      // Reunião realizada: Proposta enviada
+      if(funil.includes('360')){
+        if(e.includes('proposta enviada')||e.includes('apresentaç')) return 'reuniao';
+        if(e.includes('proposta fechada')||e.includes('fechada')) return 'proposta';
+        return 'semContato';
+      }
+
+      // OPORTUNIDADES +30D — não conta como reunião
+      if(funil.includes('oportunidade')||funil.includes('+30')||funil.includes('30d')){
+        return 'semContato';
+      }
+
+      // Fallback genérico
+      if(e.includes('proposta')||e.includes('negociaç')||e.includes('enviar')||e.includes('enviada')) return 'reuniao';
+      return 'semContato';
+    }
+
     let reunioes=0,propostas=0,desqualificados=0,semContato=0;
     dealsFilt.forEach(d=>{
-      const e=(d.deal_stage?.name||'').toLowerCase();
-      if(e.includes('reuni'))reunioes++;
-      else if(e.includes('proposta')||e.includes('negociaç')||e.includes('enviar')||e.includes('enviada'))propostas++;
-      else if(e.includes('desqualif')||e.includes('perdid'))desqualificados++;
+      const cat=classificarDeal(d);
+      if(cat==='reuniao') reunioes++;
+      else if(cat==='proposta') propostas++;
+      else if(cat==='desqualificado') desqualificados++;
       else semContato++;
     });
     const totalDeals=dealsFilt.length;
@@ -2844,8 +2922,13 @@ async function carregarAnaliseMarketing(){
       let reuC=0,propC=0;
       dealsC.forEach(d=>{
         const e=(d.deal_stage?.name||'').toLowerCase();
-        if(e.includes('reuni'))reuC++;
-        else if(e.includes('proposta')||e.includes('negociaç')||e.includes('enviar')||e.includes('enviada'))propC++;
+        const funil=(d.deal_pipeline?.name||'').toLowerCase();
+        if(e.includes('perdid')||e.includes('desqualif')){/* skip */}
+        else if(funil.includes('bpo')&&(e.includes('proposta enviada')||e.includes('negociaç')))reuC++;
+        else if(funil.includes('contabilidade')&&(e.includes('reunião de proposta')||e.includes('enviar proposta')||e.includes('follow')||e.includes('prov.')))reuC++;
+        else if(funil.includes('360')&&funil.includes('proj')&&(e.includes('reunião de proposta')||e.includes('enviar proposta')||e.includes('follow')||e.startsWith('[c]')||e.startsWith('[m]')))reuC++;
+        else if(funil.includes('360')&&!funil.includes('proj')&&(e.includes('proposta enviada')||e.includes('apresentaç')))reuC++;
+        else if(e.includes('proposta fechada')||e.includes('fechada'))propC++;
       });
       const cReu=reuC>0?c.investimento/reuC:null;
       const convPct=c.leads>0&&reuC>0?(reuC/c.leads*100).toFixed(1)+'%':'-';
