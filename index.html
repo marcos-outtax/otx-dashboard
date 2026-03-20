@@ -1229,40 +1229,49 @@ function limparNomeCalendar(nome){
 async function buscarRD(email,resId,actId,nome,idx){
   const el=document.getElementById(resId);
   el.innerHTML=load('Buscando no RD Station...');
-  // Limpa nome caso venha de título do Google Calendar
   const nomeLimpo=limparNomeCalendar(nome);
+  const emailsInternos=['midias.outtax@gmail.com','maiccon@outtax.com.br','marcos@outtax.com.br'];
+
   try{
-    // 1. Busca deal PELO NOME limpo do lead
-    const dd=await rdFetch('deals',{name:nomeLimpo});
-    let deals=dd.deals||[];
+    let deal=null;
 
-    // 2. Se não achar pelo nome exato, tenta busca parcial pelo primeiro nome
-    if(!deals.length){
-      const primeiroNome=nomeLimpo.split(' ')[0];
-      const dd2=await rdFetch('deals',{name:primeiroNome});
-      deals=(dd2.deals||[]).filter(d=>
-        d.name?.toLowerCase().includes(primeiroNome.toLowerCase())
-      );
-    }
-
-    // 3. Tenta pelo email do cliente (já filtrado de emails genéricos na API do Calendar)
-    const emailsInternos=['midias.outtax@gmail.com','maiccon@outtax.com.br','marcos@outtax.com.br'];
-    if(!deals.length && email && !emailsInternos.includes(email)){
-      const cd=await rdFetch('contacts',{email});
-      const contact=(cd.contacts||[])[0];
-      if(contact){
-        const dd3=await rdFetch('deals',{contact_id:contact.id});
-        deals=dd3.deals||[];
+    // ESTRATÉGIA 1: Busca negociações diretamente pelo email do cliente
+    if(email && !emailsInternos.includes(email)){
+      const dd=await rdFetch('deals',{contact_emails:email});
+      const dealsEmail=dd.deals||[];
+      if(dealsEmail.length){
+        // Pega o deal mais recente deste email
+        deal=dealsEmail.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at))[0];
       }
     }
 
-    if(!deals.length){
-      el.innerHTML=`<div class="nb" style="color:#6b6b6b;">Lead não encontrado para "${nomeLimpo}".<br><span style="font-size:11px;color:#9e9e9e;">Título original: ${nome}</span></div>`;
-      return;
+    // ESTRATÉGIA 2: Fallback pelo nome limpo da reunião
+    if(!deal){
+      const dd2=await rdFetch('deals',{name:nomeLimpo});
+      const dealsNome=dd2.deals||[];
+      if(dealsNome.length){
+        deal=dealsNome.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at))[0];
+      }
     }
 
-    // Pega o deal mais recente
-    const deal=deals.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at))[0];
+    // ESTRATÉGIA 3: Fallback pelo primeiro nome
+    if(!deal){
+      const primeiroNome=nomeLimpo.split(' ')[0];
+      if(primeiroNome.length>2){
+        const dd3=await rdFetch('deals',{name:primeiroNome});
+        const dealsPNome=(dd3.deals||[]).filter(d=>
+          d.name?.toLowerCase().includes(primeiroNome.toLowerCase())
+        );
+        if(dealsPNome.length){
+          deal=dealsPNome.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at))[0];
+        }
+      }
+    }
+
+    if(!deal){
+      el.innerHTML=`<div class="nb" style="color:#6b6b6b;">Negociação não encontrada para "${nomeLimpo}".<br><span style="font-size:11px;color:#9e9e9e;">Email buscado: ${email||'não disponível'}</span></div>`;
+      return;
+    }
 
     // Busca dados do contato pelo deal
     const contactId=deal.contacts?.[0]?.id||'';
