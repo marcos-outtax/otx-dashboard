@@ -2596,7 +2596,7 @@ function mkDrillDown(campNome,filtroEstagio){
 
   // Filtra por estágio
   let filtrados=_mkDeals.filter(d=>{
-    if(!filtroEstagio)return true;
+    if(!filtroEstagio||filtroEstagio==='todos')return true;
     const est=(d.deal_stage?.name||'').toLowerCase();
     if(filtroEstagio==='reunioes')return est.includes('reuni');
     if(filtroEstagio==='propostas')return est.includes('proposta')||est.includes('negociaç')||est.includes('enviar')||est.includes('enviada');
@@ -2751,7 +2751,7 @@ async function carregarAnaliseMarketing(){
 
     // 6. Funil visual clicável
     const etapas=[
-      {nome:'Leads Facebook Ads',qtd:fbLeads,cor:'var(--laranja)',filtro:null},
+      {nome:'Leads Facebook Ads',qtd:fbLeads,cor:'var(--laranja)',filtro:'todos'},
       {nome:'Leads no RD (Pré-vendas)',qtd:totalDeals,cor:'var(--azul-medio)',filtro:''},
       {nome:'Reuniões agendadas',qtd:reunioes,cor:'#1D9E75',filtro:'reunioes'},
       {nome:'Propostas enviadas',qtd:propostas,cor:'#7C3AED',filtro:'propostas'},
@@ -2761,10 +2761,9 @@ async function carregarAnaliseMarketing(){
     document.getElementById('mk-funil-bars').innerHTML=etapas.map((e,i)=>{
       const pct=Math.round(e.qtd/maxQtd*100);
       const conv=i>0&&etapas[i-1].qtd>0?` · ${(e.qtd/etapas[i-1].qtd*100).toFixed(1)}% da etapa anterior`:'';
-      const clicavel=e.filtro!==null?`onclick="mkDrillDown('${campFiltro}','${e.filtro}')" style="cursor:pointer;"`:' ';
-      return `<div style="margin-bottom:14px;" ${clicavel}>
+      return `<div style="margin-bottom:14px;cursor:pointer;user-select:none;" onclick="mkDrillDown('${campFiltro}','${e.filtro}')" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'" title="Clique para ver os leads">
         <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px;align-items:center;">
-          <span style="font-weight:500;color:var(--text);">${e.nome}${e.filtro!==null?' <span style="font-size:10px;color:var(--text-muted);">▶ ver leads</span>':''}</span>
+          <span style="font-weight:500;color:var(--text);cursor:pointer;">${e.nome} <span style="font-size:10px;color:var(--text-muted);">▶ ver leads</span></span>
           <span style="font-weight:700;color:${e.cor};">${e.qtd}${conv}</span>
         </div>
         <div style="background:var(--border);border-radius:6px;height:12px;">
