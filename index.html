@@ -593,26 +593,21 @@ tr[onclick]:hover td{background:var(--azul-pale)!important}
     <div id="mk-funil-bars"></div>
   </div>
 
-  <!-- Tabela por campanha -->
+  <!-- Detalhamento por campanha -->
   <div id="mk-tabela" style="display:none;background:var(--branco);border:1px solid var(--border);border-radius:12px;margin-bottom:16px;">
-    <div style="padding:14px 16px;border-bottom:1px solid var(--border);font-size:12px;font-weight:600;color:var(--azul-escuro);border-radius:12px 12px 0 0;">Detalhamento por Campanha</div>
-    <div style="overflow-x:auto;border-radius:0 0 12px 12px;">
-      <table id="mk-table" style="width:100%;border-collapse:collapse;font-size:12px;cursor:pointer;user-select:none;">
-        <thead>
-          <tr style="background:var(--azul-pale);">
-            <th style="padding:10px 14px;text-align:left;font-size:11px;color:var(--text-muted);font-weight:600;">Campanha</th>
-            <th style="padding:10px 12px;text-align:right;font-size:11px;color:var(--text-muted);font-weight:600;">Investimento</th>
-            <th style="padding:10px 12px;text-align:right;font-size:11px;color:var(--text-muted);font-weight:600;">Leads FB</th>
-            <th style="padding:10px 12px;text-align:right;font-size:11px;color:var(--text-muted);font-weight:600;">CPL</th>
-            <th style="padding:10px 12px;text-align:right;font-size:11px;color:var(--text-muted);font-weight:600;">Reuniões</th>
-            <th style="padding:10px 12px;text-align:right;font-size:11px;color:var(--text-muted);font-weight:600;">Propostas</th>
-            <th style="padding:10px 12px;text-align:right;font-size:11px;color:var(--text-muted);font-weight:600;">Custo/Reunião</th>
-            <th style="padding:10px 12px;text-align:right;font-size:11px;color:var(--text-muted);font-weight:600;">Conv. Lead→Reunião</th>
-          </tr>
-        </thead>
-        <tbody id="mk-table-body"></tbody>
-      </table>
+    <div style="padding:14px 16px;border-bottom:1px solid var(--border);font-size:12px;font-weight:600;color:var(--azul-escuro);">Detalhamento por Campanha</div>
+    <!-- Cabeçalho -->
+    <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr;padding:8px 14px;background:var(--azul-pale);font-size:11px;font-weight:600;color:var(--text-muted);">
+      <span>Campanha</span>
+      <span style="text-align:right;">Investimento</span>
+      <span style="text-align:right;">Leads FB</span>
+      <span style="text-align:right;">CPL</span>
+      <span style="text-align:right;">Reuniões</span>
+      <span style="text-align:right;">Propostas</span>
+      <span style="text-align:right;">Custo/Reunião</span>
+      <span style="text-align:right;">Conv. Lead→Reunião</span>
     </div>
+    <div id="mk-table-body"></div>
   </div>
 
   <div id="mk-empty" class="empty">🎯 Selecione o período e clique em Analisar.</div>
@@ -2797,16 +2792,16 @@ async function carregarAnaliseMarketing(){
       const convPct=c.leads>0&&reuC>0?(reuC/c.leads*100).toFixed(1)+'%':'-';
       const convNum=parseFloat(convPct)||0;
       const cn=c.nome.replace(/'/g,"\\'");
-      return `<tr class="tr-clicavel" style="border-bottom:1px solid var(--border);" onclick="mkDrillDown('${cn}','')" title="Clique para ver todos os leads desta campanha">
-        <td style="padding:10px 14px;font-size:12px;font-weight:500;color:var(--azul-escuro);cursor:pointer;user-select:none;">${c.nome} <span style="font-size:10px;color:var(--text-muted);cursor:pointer;">▶</span></td>
-        <td style="padding:10px 12px;text-align:right;font-size:12px;cursor:pointer;user-select:none;">${fmtBRL(c.investimento)}</td>
-        <td style="padding:10px 12px;text-align:right;font-size:12px;font-weight:600;color:var(--laranja);cursor:pointer;user-select:none;">${c.leads||0}</td>
-        <td style="padding:10px 12px;text-align:right;font-size:12px;cursor:pointer;user-select:none;">${fmtBRL(c.cpl)}</td>
-        <td style="padding:10px 12px;text-align:right;font-size:12px;font-weight:600;color:#1D9E75;cursor:pointer;user-select:none;" onclick="event.stopPropagation();mkDrillDown('${cn}','reunioes')">${reuC} ▶</td>
-        <td style="padding:10px 12px;text-align:right;font-size:12px;font-weight:600;color:#7C3AED;cursor:pointer;user-select:none;" onclick="event.stopPropagation();mkDrillDown('${cn}','propostas')">${propC} ▶</td>
-        <td style="padding:10px 12px;text-align:right;font-size:12px;cursor:pointer;user-select:none;">${fmtBRL(cReu)}</td>
-        <td style="padding:10px 12px;text-align:right;font-size:12px;font-weight:600;cursor:pointer;user-select:none;color:${convNum>10?'#1D9E75':convNum>5?'var(--laranja)':'#E24B4A'}">${convPct}</td>
-      </tr>`;
+      return `<div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr;padding:10px 14px;border-bottom:1px solid var(--border);cursor:pointer;user-select:none;" onclick="mkDrillDown('${cn}','')" title="Clique para ver todos os leads desta campanha" onmouseover="this.style.background='var(--azul-pale)'" onmouseout="this.style.background=''">
+        <span style="font-size:12px;font-weight:500;color:var(--azul-escuro);cursor:pointer;">${c.nome} <span style="font-size:10px;color:var(--text-muted);">▶</span></span>
+        <span style="font-size:12px;text-align:right;cursor:pointer;">${fmtBRL(c.investimento)}</span>
+        <span style="font-size:12px;font-weight:600;color:var(--laranja);text-align:right;cursor:pointer;">${c.leads||0}</span>
+        <span style="font-size:12px;text-align:right;cursor:pointer;">${fmtBRL(c.cpl)}</span>
+        <span style="font-size:12px;font-weight:600;color:#1D9E75;text-align:right;cursor:pointer;" onclick="event.stopPropagation();mkDrillDown('${cn}','reunioes')">${reuC} ▶</span>
+        <span style="font-size:12px;font-weight:600;color:#7C3AED;text-align:right;cursor:pointer;" onclick="event.stopPropagation();mkDrillDown('${cn}','propostas')">${propC} ▶</span>
+        <span style="font-size:12px;text-align:right;cursor:pointer;">${fmtBRL(cReu)}</span>
+        <span style="font-size:12px;font-weight:600;text-align:right;cursor:pointer;color:${convNum>10?'#1D9E75':convNum>5?'var(--laranja)':'#E24B4A'}">${convPct}</span>
+      </div>`;
     }).join('');
     document.getElementById('mk-tabela').style.display='block';
     mkLoading.style.display='none';
