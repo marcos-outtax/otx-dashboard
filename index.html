@@ -1052,7 +1052,23 @@ async function buscarReunioes(){
       document.getElementById('s-tot').textContent=reunioes.length;
       document.getElementById('s-mkt').textContent=reunioes.filter(ev=>ev.origem==='marketing').length;
       document.getElementById('s-dir').textContent=reunioes.filter(ev=>ev.origem==='direto').length;
-      document.getElementById('cards-r').innerHTML=reunioes.map((ev,i)=>cardR(ev,i)).join('');
+      // Agrupa por data e adiciona separador de dia
+      const porData={};
+      reunioes.forEach((ev,i)=>{
+        const d=ev._data||ev.data||dataHoje();
+        if(!porData[d]) porData[d]=[];
+        porData[d].push({...ev,_idx:i});
+      });
+      const html=Object.keys(porData).sort().map(d=>{
+        const label=new Date(d+'T12:00:00').toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long'});
+        const labelFmt=label.charAt(0).toUpperCase()+label.slice(1);
+        const cards=porData[d].map(ev=>cardR(ev,ev._idx)).join('');
+        return `<div style="margin-bottom:8px;margin-top:16px;">
+          <div style="font-size:12px;font-weight:600;color:var(--azul-medio);padding:6px 0;border-bottom:2px solid var(--azul-claro);margin-bottom:10px;">📅 ${labelFmt}</div>
+          ${cards}
+        </div>`;
+      }).join('');
+      document.getElementById('cards-r').innerHTML=html;
       return;
     }catch(e){
       console.warn('Erro Google Calendar, usando agenda local:',e.message);
@@ -1083,7 +1099,21 @@ async function buscarReunioes(){
   document.getElementById('s-tot').textContent=reunioes.length;
   document.getElementById('s-mkt').textContent=reunioes.filter(r=>r.origem==='marketing').length;
   document.getElementById('s-dir').textContent=reunioes.filter(r=>r.origem==='direto').length;
-  document.getElementById('cards-r').innerHTML=reunioes.map((r,i)=>cardR(r,i)).join('');
+  // Agrupa por data com separador
+  const porData2={};
+  reunioes.forEach((r,i)=>{
+    const d=r._data||dataHoje();
+    if(!porData2[d]) porData2[d]=[];
+    porData2[d].push({...r,_idx:i});
+  });
+  document.getElementById('cards-r').innerHTML=Object.keys(porData2).sort().map(d=>{
+    const label=new Date(d+'T12:00:00').toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long'});
+    const labelFmt=label.charAt(0).toUpperCase()+label.slice(1);
+    return `<div style="margin-bottom:8px;margin-top:16px;">
+      <div style="font-size:12px;font-weight:600;color:var(--azul-medio);padding:6px 0;border-bottom:2px solid var(--azul-claro);margin-bottom:10px;">📅 ${labelFmt}</div>
+      ${porData2[d].map(r=>cardR(r,r._idx)).join('')}
+    </div>`;
+  }).join('');
 }
 
 // ── CNPJ ──────────────────────────────────────────────────
@@ -1215,8 +1245,9 @@ async function buscarRD(email,resId,actId,nome,idx){
       );
     }
 
-    // 3. Se ainda não achou, tenta pelo email do contato como fallback
-    if(!deals.length){
+    // 3. Só tenta pelo email se NÃO for email genérico da empresa
+    const emailsGenericos=['midias.outtax@gmail.com','maiccon@outtax.com.br','marcos@outtax.com.br'];
+    if(!deals.length && !emailsGenericos.includes(email)){
       const cd=await rdFetch('contacts',{email});
       const contact=(cd.contacts||[])[0];
       if(contact){
