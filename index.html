@@ -1250,7 +1250,7 @@ async function buscarRD(email,resId,actId,nome,idx){
         <div class="ib"><div class="l">Campanha</div><div class="v">${pipeline||'-'}</div></div>
       </div>
       <div class="two-col" style="margin-top:8px;">
-        <div class="ib"><div class="l">Valor Mensal</div><div class="v">${deal.amount_montly?'R$ '+Number(deal.amount_montly).toLocaleString('pt-BR'):'-'}</div></div>
+        <div class="ib"><div class="l">Lead criado em</div><div class="v" style="color:#1D9E75;font-weight:600;">${deal.created_at?new Date(deal.created_at).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'}):'-'}</div></div>
         <div class="ib"><div class="l">Responsável</div><div class="v">${deal.user?.name||'-'}</div></div>
       </div>`;
     if(deal.id&&actId){
