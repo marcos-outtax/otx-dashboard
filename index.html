@@ -1235,17 +1235,25 @@ async function buscarRD(email,resId,actId,nome,idx){
   try{
     let deal=null;
 
-    // ESTRATÉGIA 1: Busca negociações diretamente pelo email do cliente
+    // PASSO 1: Busca o contato pelo email do cliente → pega deals desse contato
     if(email && !emailsInternos.includes(email)){
-      const dd=await rdFetch('deals',{contact_emails:email});
-      const dealsEmail=dd.deals||[];
-      if(dealsEmail.length){
-        // Pega o deal mais recente deste email
-        deal=dealsEmail.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at))[0];
+      // GET /contacts?email=X  (parâmetro correto da API v1)
+      const cd=await rdFetch('contacts',{email});
+      const contacts=cd.contacts||[];
+      if(contacts.length){
+        // Pode ter mais de um contato — percorre todos e pega o deal mais recente
+        let todosDeals=[];
+        for(const c of contacts){
+          const dd=await rdFetch('deals',{contact_id:c.id});
+          todosDeals=[...todosDeals,...(dd.deals||[])];
+        }
+        if(todosDeals.length){
+          deal=todosDeals.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at))[0];
+        }
       }
     }
 
-    // ESTRATÉGIA 2: Fallback pelo nome limpo da reunião
+    // PASSO 2: Fallback pelo nome limpo da reunião
     if(!deal){
       const dd2=await rdFetch('deals',{name:nomeLimpo});
       const dealsNome=dd2.deals||[];
@@ -1254,7 +1262,7 @@ async function buscarRD(email,resId,actId,nome,idx){
       }
     }
 
-    // ESTRATÉGIA 3: Fallback pelo primeiro nome
+    // PASSO 3: Fallback pelo primeiro nome
     if(!deal){
       const primeiroNome=nomeLimpo.split(' ')[0];
       if(primeiroNome.length>2){
