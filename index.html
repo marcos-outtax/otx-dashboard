@@ -596,8 +596,8 @@ tr[onclick]:hover td{background:var(--azul-pale)!important}
   <!-- Tabela por campanha -->
   <div id="mk-tabela" style="display:none;background:var(--branco);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:16px;">
     <div style="padding:14px 16px;border-bottom:1px solid var(--border);font-size:12px;font-weight:600;color:var(--azul-escuro);">Detalhamento por Campanha</div>
-    <div style="overflow-x:auto;">
-      <table id="mk-table" style="width:100%;border-collapse:collapse;font-size:12px;">
+    <div style="overflow-x:auto;cursor:pointer;">
+      <table id="mk-table" style="width:100%;border-collapse:collapse;font-size:12px;cursor:pointer;user-select:none;">
         <thead>
           <tr style="background:var(--azul-pale);">
             <th style="padding:10px 14px;text-align:left;font-size:11px;color:var(--text-muted);font-weight:600;">Campanha</th>
@@ -2798,14 +2798,14 @@ async function carregarAnaliseMarketing(){
       const convNum=parseFloat(convPct)||0;
       const cn=c.nome.replace(/'/g,"\\'");
       return `<tr class="tr-clicavel" style="border-bottom:1px solid var(--border);" onclick="mkDrillDown('${cn}','')" title="Clique para ver todos os leads desta campanha">
-        <td style="padding:10px 14px;font-size:12px;font-weight:500;color:var(--azul-escuro);cursor:pointer;">${c.nome} <span style="font-size:10px;color:var(--text-muted);">▶</span></td>
-        <td style="padding:10px 12px;text-align:right;font-size:12px;cursor:pointer;">${fmtBRL(c.investimento)}</td>
-        <td style="padding:10px 12px;text-align:right;font-size:12px;font-weight:600;color:var(--laranja);cursor:pointer;">${c.leads||0}</td>
-        <td style="padding:10px 12px;text-align:right;font-size:12px;cursor:pointer;">${fmtBRL(c.cpl)}</td>
-        <td style="padding:10px 12px;text-align:right;font-size:12px;font-weight:600;color:#1D9E75;cursor:pointer;" onclick="event.stopPropagation();mkDrillDown('${cn}','reunioes')">${reuC} ▶</td>
-        <td style="padding:10px 12px;text-align:right;font-size:12px;font-weight:600;color:#7C3AED;cursor:pointer;" onclick="event.stopPropagation();mkDrillDown('${cn}','propostas')">${propC} ▶</td>
-        <td style="padding:10px 12px;text-align:right;font-size:12px;cursor:pointer;">${fmtBRL(cReu)}</td>
-        <td style="padding:10px 12px;text-align:right;font-size:12px;font-weight:600;cursor:pointer;color:${convNum>10?'#1D9E75':convNum>5?'var(--laranja)':'#E24B4A'}">${convPct}</td>
+        <td style="padding:10px 14px;font-size:12px;font-weight:500;color:var(--azul-escuro);cursor:pointer;user-select:none;">${c.nome} <span style="font-size:10px;color:var(--text-muted);cursor:pointer;">▶</span></td>
+        <td style="padding:10px 12px;text-align:right;font-size:12px;cursor:pointer;user-select:none;">${fmtBRL(c.investimento)}</td>
+        <td style="padding:10px 12px;text-align:right;font-size:12px;font-weight:600;color:var(--laranja);cursor:pointer;user-select:none;">${c.leads||0}</td>
+        <td style="padding:10px 12px;text-align:right;font-size:12px;cursor:pointer;user-select:none;">${fmtBRL(c.cpl)}</td>
+        <td style="padding:10px 12px;text-align:right;font-size:12px;font-weight:600;color:#1D9E75;cursor:pointer;user-select:none;" onclick="event.stopPropagation();mkDrillDown('${cn}','reunioes')">${reuC} ▶</td>
+        <td style="padding:10px 12px;text-align:right;font-size:12px;font-weight:600;color:#7C3AED;cursor:pointer;user-select:none;" onclick="event.stopPropagation();mkDrillDown('${cn}','propostas')">${propC} ▶</td>
+        <td style="padding:10px 12px;text-align:right;font-size:12px;cursor:pointer;user-select:none;">${fmtBRL(cReu)}</td>
+        <td style="padding:10px 12px;text-align:right;font-size:12px;font-weight:600;cursor:pointer;user-select:none;color:${convNum>10?'#1D9E75':convNum>5?'var(--laranja)':'#E24B4A'}">${convPct}</td>
       </tr>`;
     }).join('');
     document.getElementById('mk-tabela').style.display='block';
