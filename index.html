@@ -413,6 +413,9 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 
 <!-- FACEBOOK ADS -->
 <div class="page" id="page-fb">
+  <div class="sec-hdr" style="margin-bottom:10px;">
+    <span class="sec-title">📊 Resumo Geral</span>
+  </div>
   <div class="stats">
     <div class="stat"><div class="num" id="fb-investimento">—</div><div class="lbl">Investimento total</div></div>
     <div class="stat"><div class="num" id="fb-leads">—</div><div class="lbl">Leads gerados</div></div>
@@ -422,6 +425,11 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
     <div class="stat"><div class="num" id="fb-alcance">—</div><div class="lbl">Alcance</div></div>
     <div class="stat"><div class="num" id="fb-impressoes">—</div><div class="lbl">Impressões</div></div>
     <div class="stat"><div class="num" id="fb-ctr">—</div><div class="lbl">CTR médio</div></div>
+  </div>
+  <div class="stats" style="margin-top:-4px;">
+    <div class="stat"><div class="num" id="fb-cpc">—</div><div class="lbl">CPC médio</div></div>
+    <div class="stat"><div class="num" id="fb-taxa-conv">—</div><div class="lbl">Taxa de conversão</div></div>
+    <div class="stat"><div class="num" id="fb-media-diaria">—</div><div class="lbl">Média diária real</div></div>
   </div>
   <div class="filtros">
     <div class="fg">
@@ -2007,7 +2015,7 @@ async function carregarFacebook(){
   const filtroStatus=document.getElementById('fb-filtro-status')?.value||'todas';
 
   document.getElementById('cards-fb').innerHTML=load('Buscando campanhas do Facebook Ads...');
-  ['fb-investimento','fb-leads','fb-cpl','fb-alcance','fb-impressoes','fb-ctr'].forEach(id=>{
+  ['fb-investimento','fb-leads','fb-cpl','fb-alcance','fb-impressoes','fb-ctr','fb-cpc','fb-taxa-conv','fb-media-diaria'].forEach(id=>{
     document.getElementById(id).textContent='...';
   });
 
@@ -2030,6 +2038,9 @@ async function carregarFacebook(){
     document.getElementById('fb-alcance').textContent=fmtNum(totais.alcance);
     document.getElementById('fb-impressoes').textContent=fmtNum(totais.impressoes);
     document.getElementById('fb-ctr').textContent=totais.ctr?Number(totais.ctr).toFixed(2)+'%':'-';
+    document.getElementById('fb-cpc').textContent=totais.cliques&&totais.investimento?fmtBRL(totais.investimento/totais.cliques):'-';
+    document.getElementById('fb-taxa-conv').textContent=totais.taxaConversao?totais.taxaConversao+'%':'-';
+    document.getElementById('fb-media-diaria').textContent=totais.mediaDiaria?fmtBRL(totais.mediaDiaria)+'/dia':'-';
 
     let html='';
     const mostrarAtivas=filtroStatus==='todas'||filtroStatus==='ativas';
@@ -2065,7 +2076,7 @@ async function carregarFacebook(){
 
   }catch(e){
     document.getElementById('cards-fb').innerHTML=`<div class="empty" style="color:#791F1F;">Erro: ${e.message}</div>`;
-    ['fb-investimento','fb-leads','fb-cpl','fb-alcance','fb-impressoes','fb-ctr'].forEach(id=>{
+    ['fb-investimento','fb-leads','fb-cpl','fb-alcance','fb-impressoes','fb-ctr','fb-cpc','fb-taxa-conv','fb-media-diaria'].forEach(id=>{
       document.getElementById(id).textContent='—';
     });
   }
