@@ -229,7 +229,8 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 .importar-area:hover{border-color:var(--azul-medio);color:var(--azul-medio);}
 .analise-importada{font-size:12px;line-height:1.7;color:var(--text);white-space:pre-wrap;background:var(--azul-pale);border-radius:8px;padding:14px;max-height:300px;overflow-y:auto;margin-bottom:12px;}
 .copiado-badge{display:inline-block;background:var(--laranja);color:#fff;font-size:11px;padding:3px 10px;border-radius:20px;margin-left:8px;opacity:0;transition:opacity .3s;}
-/* ── TELA IMPORTAÇÃO ───────────────────────────── */
+tr[onclick]{cursor:pointer!important}
+tr[onclick]:hover td{background:var(--azul-pale)!important}
 .tela-importacao{display:none;position:fixed;inset:0;background:var(--branco);z-index:9998;flex-direction:column;}
 .tela-importacao.aberta{display:flex;}
 .tela-imp-header{background:linear-gradient(135deg,var(--azul-escuro) 0%,var(--azul-medio) 100%);color:#fff;padding:16px 24px;display:flex;justify-content:space-between;align-items:center;font-weight:700;font-size:14px;}
@@ -269,11 +270,11 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
       <span class="nav-label">Tarefas</span>
       <span class="nav-badge" id="bt">—</span>
     </div>
-    <div class="nav-item" id="nav-fb" onclick="showPage('fb',this);carregarFacebook()">
+    <div class="nav-item" id="nav-fb" onclick="showPage('fb',this)">
       <span class="nav-icon">📊</span>
       <span class="nav-label">Facebook Ads</span>
     </div>
-    <div class="nav-item" id="nav-mk" onclick="showPage('mk',this);carregarAnaliseMarketing()">
+    <div class="nav-item" id="nav-mk" onclick="showPage('mk',this)">
       <span class="nav-icon">🎯</span>
       <span class="nav-label">Análise de Marketing</span>
     </div>
@@ -292,6 +293,9 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 
 <!-- REUNIÕES -->
 <div class="page active" id="page-r">
+  <div class="sec-hdr" style="margin-bottom:10px;">
+    <span class="sec-title">📅 Resumo Geral</span>
+  </div>
   <div class="stats">
     <div class="stat"><div class="num" id="s-tot">—</div><div class="lbl">Reuniões comerciais</div></div>
     <div class="stat"><div class="num" id="s-mkt" style="color:#185FA5">—</div><div class="lbl">Via marketing</div></div>
@@ -330,6 +334,9 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 
 <!-- PROPOSTAS -->
 <div class="page" id="page-p">
+  <div class="sec-hdr" style="margin-bottom:10px;">
+    <span class="sec-title">👥 Resumo Geral</span>
+  </div>
   <div class="stats">
     <div class="stat"><div class="num" id="sp-t">—</div><div class="lbl">Leads encontrados</div></div>
     <div class="stat"><div class="num" id="sp-u" style="color:#E24B4A">—</div><div class="lbl">Urgente (+7 dias)</div></div>
@@ -416,6 +423,9 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 
 <!-- TAREFAS -->
 <div class="page" id="page-t">
+  <div class="sec-hdr" style="margin-bottom:10px;">
+    <span class="sec-title">✅ Resumo Geral</span>
+  </div>
   <div class="stats">
     <div class="stat"><div class="num" id="st-total">—</div><div class="lbl">Tarefas abertas</div></div>
     <div class="stat"><div class="num" id="st-atrasadas" style="color:#E24B4A">—</div><div class="lbl">Atrasadas</div></div>
@@ -2773,7 +2783,10 @@ async function carregarAnaliseMarketing(){
   capturarTokenGoogle();
   checkCfg();
   document.getElementById('f-st').value='aberta';
-  irHoje();
+  // Define a data de hoje nos filtros mas não busca automaticamente
+  const hoje=dataHoje();
+  document.getElementById('r-de').value=hoje;
+  document.getElementById('r-ate').value=hoje;
 })();
 </script>
 </body>
