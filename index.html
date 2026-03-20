@@ -2591,7 +2591,8 @@ function limparFiltrosMK(){
 function mkDrillDown(campNome,filtroEstagio){
   const drill=document.getElementById('mk-drill');
 
-  // Sempre limpa o conteúdo anterior primeiro
+  // Limpa IMEDIATAMENTE antes de qualquer lógica
+  drill.style.display='none';
   drill.innerHTML='';
   _mkDrillAberto=campNome+'|'+filtroEstagio;
 
@@ -2620,7 +2621,7 @@ function mkDrillDown(campNome,filtroEstagio){
     } else {
       campAviso=`<div style="font-size:11px;padding:8px 12px;background:#FFF0E0;border-radius:6px;margin-bottom:12px;color:#a85000;">
         ⚠ Cruzamento por campanha não identificado. Mostrando todos os ${filtrados.length} leads do período${filtroEstagio?' neste estágio':''}.
-        <br>Campos campanha nos leads: ${[...new Set(_mkDeals.map(d=>d.campaign?.name||'(vazio)'))].filter(Boolean).slice(0,5).join(', ')||'(nenhum preenchido)'}
+        <br>Campos campanha nos leads: ${[...new Set(_mkDeals.map(d=>d.campaign?.name||'').filter(Boolean))].slice(0,5).join(' | ')||'(nenhum preenchido)'}
       </div>`;
     }
   }
@@ -2628,18 +2629,34 @@ function mkDrillDown(campNome,filtroEstagio){
   const titulos={reunioes:'Reuniões Agendadas',propostas:'Propostas Enviadas',desqualificados:'Desqualificados',semcontato:'Sem Contato'};
   const titulo=filtroEstagio?titulos[filtroEstagio]:'Todos os Leads';
 
+  // Monta o header
+  const header=document.createElement('div');
+  header.style.cssText='display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--border);background:var(--azul-pale);';
+  header.innerHTML=`
+    <span style="font-size:13px;font-weight:600;color:var(--azul-escuro);">${campNome==='all'?'Todas as campanhas':campNome} — ${titulo} (${filtrados.length})</span>
+    <button onclick="document.getElementById('mk-drill').style.display='none';document.getElementById('mk-drill').innerHTML='';_mkDrillAberto=null;" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-muted);">✕</button>`;
+
+  // Monta o body
+  const body=document.createElement('div');
+  body.style.padding='16px';
+
+  if(campAviso) body.innerHTML=campAviso;
+
+  if(filtrados.length===0){
+    body.innerHTML+=`<div class="empty">Nenhum lead encontrado para esta campanha no período selecionado.</div>`;
+  } else {
+    filtrados.forEach((d,i)=>{
+      const di=diasAtras(d.updated_at||d.created_at);
+      const urg=di>7?'urgente':di>=3?'atencao':'ok';
+      const tmp=document.createElement('div');
+      tmp.innerHTML=cardP({...d,di,urg},9000+i);
+      body.appendChild(tmp.firstElementChild);
+    });
+  }
+
+  drill.appendChild(header);
+  drill.appendChild(body);
   drill.style.display='block';
-  drill.innerHTML=`
-    <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--border);background:var(--azul-pale);">
-      <span style="font-size:13px;font-weight:600;color:var(--azul-escuro);">${campNome==='all'?'Todas as campanhas':campNome} — ${titulo} (${filtrados.length})</span>
-      <button onclick="document.getElementById('mk-drill').style.display='none';document.getElementById('mk-drill').innerHTML='';_mkDrillAberto=null;" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-muted);">✕</button>
-    </div>
-    <div style="padding:16px;">
-      ${campAviso}
-      ${filtrados.length
-        ?filtrados.map((d,i)=>{const di=diasAtras(d.updated_at||d.created_at);const urg=di>7?'urgente':di>=3?'atencao':'ok';return cardP({...d,di,urg},9000+i);}).join('')
-        :'<div class="empty">Nenhum lead encontrado para esta seleção.</div>'}
-    </div>`;
   drill.scrollIntoView({behavior:'smooth',block:'start'});
 }
 
