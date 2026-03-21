@@ -2810,7 +2810,7 @@ async function carregarAnaliseMarketing(){
     });
 
     // Para drill-down: todos os deals do período
-    _mkDeals=[...dealsPreVendas,...dealsDestino];
+    _mkDeals=[...dealsPreVendas,...dealsDestino.filter(d=>d.campaign?.name)];
 
     // 3. Filtro por campanha
     const campFiltro=selCamp.value;
@@ -2862,20 +2862,31 @@ async function carregarAnaliseMarketing(){
       return 'semContato';
     }
 
+    // Filtra deals de destino que vieram de campanha do Facebook (têm campaign preenchido)
+    // Isso evita contar leads de outras origens (indicação, direto, etc.)
+    const campsFB=todasCampanhas.map(c=>c.nome.toLowerCase().split(' ').filter(w=>w.length>3)[0]).filter(Boolean);
+    const dealsDestFB = campFiltro==='all'
+      ? dealsDestFilt.filter(d=>{
+          const camp=(d.campaign?.name||'').toLowerCase();
+          // Tem campanha preenchida = veio do Facebook
+          return camp.length>0;
+        })
+      : dealsDestFilt; // se filtrou por campanha específica já está filtrado
+
     let reunioes=0,propostas=0,desqualificados=0;
-    dealsDestFilt.forEach(d=>{
+    dealsDestFB.forEach(d=>{
       const cat=classificarDeal(d);
       if(cat==='reuniao') reunioes++;
       else if(cat==='proposta') propostas++;
       else if(cat==='desqualificado') desqualificados++;
     });
-    // Desqualificados também do Pré-vendas
+    // Desqualificados do Pré-vendas (perdidos antes de chegar ao funil de vendas)
     dealsPreFilt.forEach(d=>{
       const e=(d.deal_stage?.name||'').toLowerCase();
       if(e.includes('perdid')||e.includes('desqualif')) desqualificados++;
     });
 
-    const semContato=totalDealsPreVendas-dealsDestFilt.length;
+    const semContato=totalDealsPreVendas-dealsDestFB.length;
     const totalDeals=totalDealsPreVendas;
     const cpl=fbLeads>0?fbInvest/fbLeads:null;
     const custoReuniao=reunioes>0?fbInvest/reunioes:null;
@@ -2920,7 +2931,7 @@ async function carregarAnaliseMarketing(){
     // 7. Tabela por campanha com drill-down real
     const tbody=document.getElementById('mk-table-body');
     tbody.innerHTML=todasCampanhas.map(c=>{
-      const dealsC=deals.filter(d=>{
+      const dealsC=dealsDestFilt.filter(d=>{
         const camp=(d.campaign?.name||'').toLowerCase();
         const cn=c.nome.toLowerCase();
         return camp.includes(cn.split(' ')[0])||cn.includes((camp||'x').split(' ')[0]);
