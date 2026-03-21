@@ -2944,6 +2944,8 @@ async function carregarAnaliseMarketing(){
     let reunioes=0,propostas=0,desqualificados=0,semContato=0;
     dealsFilt.forEach(d=>{
       const cat=classificarDeal(d);
+      // DEBUG — remover após diagnóstico
+      console.log(`[MK] ${d.name||'?'} | camp="${d.campaign?.name||'SEM CAMPANHA'}" | pipeline="${d._mkt_pipeline||d.deal_pipeline?.name||'?'}" | stage="${d._mkt_stage||d.deal_stage?.name||'?'}" → ${cat}`);
       if(cat==='reuniao') reunioes++;
       else if(cat==='proposta') propostas++;
       else if(cat==='desqualificado') desqualificados++;
