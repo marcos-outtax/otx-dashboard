@@ -2654,27 +2654,40 @@ function mkDrillDown(campNome,filtroEstagio){
   drill.innerHTML='';
   _mkDrillAberto=campNome+'|'+filtroEstagio;
 
-  // Filtra por estágio
+  // Filtra por estágio usando a MESMA função classificarDeal da contagem
   let filtrados=_mkDeals.filter(d=>{
-    if(!filtroEstagio||filtroEstagio==='todos')return true;
-    const est=(d.deal_stage?.name||'').toLowerCase();
+    // Só deals com campanha FB (exceto quando mostra todos do pré-vendas)
+    const temCampanha=d.campaign?.name;
+    const noPreVendas=(d.deal_pipeline?.name||'').toLowerCase().includes('inbound')||
+                      (d.deal_pipeline?.name||'').toLowerCase().includes('pré-venda')||
+                      !d.deal_pipeline?.name;
+
+    if(!filtroEstagio||filtroEstagio==='todos') return true;
+
     if(filtroEstagio==='reunioes'){
-      return (()=>{
-        const e=est;
-        const funil=(d.deal_pipeline?.name||'').toLowerCase();
-        if(e.includes('perdid')||e.includes('desqualif')) return false;
-        if(funil.includes('inbound')||funil.includes('pré-venda')||funil.includes('pre-venda')) return false;
-        if(funil.includes('bpo')) return e.includes('proposta enviada')||e.includes('negociaç');
-        if(funil.includes('contabilidade')) return e.includes('reunião de proposta')||e.includes('reuniao de proposta')||e.includes('enviar proposta')||e.includes('follow')||e.includes('prov.');
-        if(funil.includes('360')&&funil.includes('proj')) return e.includes('reunião de proposta')||e.includes('reuniao de proposta')||e.includes('enviar proposta')||e.includes('follow')||e.startsWith('[c]')||e.startsWith('[m]');
-        if(funil.includes('360')) return e.includes('proposta enviada')||e.includes('apresentaç');
-        if(funil.includes('oportunidade')||funil.includes('30d')) return false;
-        return e.includes('proposta')||e.includes('negociaç')||e.includes('enviar');
-      })();
+      if(!temCampanha||noPreVendas) return false;
+      const e=(d.deal_stage?.name||'').toLowerCase().trim();
+      const funil=(d.deal_pipeline?.name||'').toLowerCase();
+      if(e.includes('perdid')||e.includes('desqualif')||e.includes('proposta fechada')||e.includes('fechada')) return false;
+      if(funil.includes('bpo')||funil.includes('financeiro')) return e.includes('proposta enviada')||e.includes('negociaç');
+      if(funil.includes('contabilidade')) return e.includes('reunião de proposta')||e.includes('reuniao de proposta')||e.includes('enviar proposta')||e.includes('follow')||e.includes('prov.');
+      if(funil.includes('360')||funil.includes('médico')||funil.includes('medico')) return e.includes('reunião de proposta')||e.includes('reuniao de proposta')||e.includes('enviar proposta')||e.includes('proposta enviada')||e.includes('follow')||e.includes('apresentaç')||e.startsWith('[c]')||e.startsWith('[m]');
+      return false;
     }
-    if(filtroEstagio==='propostas') return est.includes('proposta fechada')||est.includes('fechada');
-    if(filtroEstagio==='desqualificados') return est.includes('desqualif')||est.includes('perdid');
-    if(filtroEstagio==='semcontato') return est.includes('reagend')||est.includes('sem contato')||est.includes('novos')||est.includes('sem contato')||est.includes('tentativa');
+    if(filtroEstagio==='propostas'){
+      if(!temCampanha||noPreVendas) return false;
+      const e=(d.deal_stage?.name||'').toLowerCase();
+      return e.includes('proposta fechada')||e.includes('fechada');
+    }
+    if(filtroEstagio==='desqualificados'){
+      const e=(d.deal_stage?.name||'').toLowerCase();
+      return e.includes('desqualif')||e.includes('perdid');
+    }
+    if(filtroEstagio==='semcontato'){
+      if(!noPreVendas) return false;
+      const e=(d.deal_stage?.name||'').toLowerCase();
+      return !e.includes('perdid')&&!e.includes('desqualif');
+    }
     return true;
   });
 
@@ -2836,42 +2849,43 @@ async function carregarAnaliseMarketing(){
       const e=(d.deal_stage?.name||'').toLowerCase().trim();
       const funil=(d.deal_pipeline?.name||'').toLowerCase();
 
+      // PERDIDO/DESQUALIFICADO — qualquer funil
       if(e.includes('perdid')||e.includes('desqualif')) return 'desqualificado';
 
+      // PROPOSTA FECHADA = negócio ganho — qualquer funil
+      if(e.includes('proposta fechada')||e.includes('fechada')||e===('proposta fechada')) return 'proposta';
+
+      // VENDAS BPO FINANCEIRO
+      // Reunião realizada: Proposta Enviada, Negociação
       if(funil.includes('bpo')||funil.includes('financeiro')){
         if(e.includes('proposta enviada')||e.includes('negociaç')) return 'reuniao';
-        if(e.includes('proposta fechada')||e.includes('fechada')) return 'proposta';
         return 'semContato';
       }
+
+      // VENDAS CONTABILIDADE
+      // Reunião realizada: Reunião de Proposta, Enviar Proposta, [T] Follow-up, [C] Prov. fechamento, [M] Prov. fechamento
       if(funil.includes('contabilidade')){
         if(e.includes('reunião de proposta')||e.includes('reuniao de proposta')||
-           e.includes('enviar proposta')||e.includes('follow')||e.includes('prov.')) return 'reuniao';
-        if(e.includes('proposta fechada')||e.includes('fechada')) return 'proposta';
+           e.includes('enviar proposta')||e.includes('follow')||
+           e.includes('prov.')) return 'reuniao';
         return 'semContato';
       }
+
+      // PROJETO 360 + MÉDICOS e VENDAS 360 + MÉDICOS
+      // Reunião realizada: Reunião de proposta, Enviar proposta, Follow-up, [C]..., Proposta enviada, Apresentação
       if(funil.includes('360')||funil.includes('médico')||funil.includes('medico')){
         if(e.includes('reunião de proposta')||e.includes('reuniao de proposta')||
            e.includes('enviar proposta')||e.includes('proposta enviada')||
            e.includes('follow')||e.includes('apresentaç')||
            e.startsWith('[c]')||e.startsWith('[m]')) return 'reuniao';
-        if(e.includes('proposta fechada')||e.includes('fechada')) return 'proposta';
         return 'semContato';
       }
-      // Genérico
-      if(e.includes('proposta')||e.includes('negociaç')||e.includes('follow')||e.includes('enviar')) return 'reuniao';
+
       return 'semContato';
     }
 
-    // Filtra deals de destino que vieram de campanha do Facebook (têm campaign preenchido)
-    // Isso evita contar leads de outras origens (indicação, direto, etc.)
-    const campsFB=todasCampanhas.map(c=>c.nome.toLowerCase().split(' ').filter(w=>w.length>3)[0]).filter(Boolean);
-    const dealsDestFB = campFiltro==='all'
-      ? dealsDestFilt.filter(d=>{
-          const camp=(d.campaign?.name||'').toLowerCase();
-          // Tem campanha preenchida = veio do Facebook
-          return camp.length>0;
-        })
-      : dealsDestFilt; // se filtrou por campanha específica já está filtrado
+    // Filtra apenas deals que vieram do Facebook (têm campaign preenchida)
+    const dealsDestFB = dealsDestFilt.filter(d=>d.campaign?.name);
 
     let reunioes=0,propostas=0,desqualificados=0;
     dealsDestFB.forEach(d=>{
