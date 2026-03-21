@@ -2986,6 +2986,14 @@ async function carregarAnaliseMarketing(){
     const removidos=dealsFBRaw.filter(d=>!nomesFB.has(d.name));
     if(removidos.length) console.log('[MK DEBUG] Removidos na dedup email:', removidos.map(d=>`${d.name} (${d.deal_pipeline?.name||'?'} | ${d.deal_stage?.name||'?'})`).join(' | '));
 
+    // DEBUG — mostra deals no período SEM campanha (podem ser leads FB sem campo preenchido)
+    const dealsSemCampanha=todosDeals.filter(d=>{
+      if(d.campaign?.name) return false;
+      const criado=new Date(d.created_at);
+      return criado>=ini&&criado<=fim;
+    });
+    if(dealsSemCampanha.length) console.log(`[MK SEM CAMP] ${dealsSemCampanha.length} deals no período sem campanha:`, dealsSemCampanha.map(d=>`${d.name} (${d.deal_pipeline?.name||'?'})`).join(' | '));
+
     const totalRastreados=reunioes+propostas+desqualificados+semContato;
     const totalDeals=totalLeadsRD;
 
