@@ -2779,9 +2779,12 @@ async function carregarAnaliseMarketing(){
     });
     if([...selCamp.options].some(o=>o.value===campAtual))selCamp.value=campAtual;
 
-    // 2. BUSCA ÚNICA — deals criados no período com campanha do Facebook
-    // O deal é o MESMO do início ao fim, percorre todos os funis sem mudar de ID
-    // Então basta buscar por created_at no período + campaign preenchida
+    // 2. LÓGICA CORRETA:
+    // O deal é o MESMO ID que percorre todos os funis.
+    // Quando avança do Pré-vendas para Vendas, ele SAI do Pré-vendas e ENTRA no outro funil.
+    // Então: buscar em TODOS os funis, filtrar por created_at no período + campanha FB,
+    // deduplicar por ID → cada lead aparece UMA vez, no funil em que está AGORA.
+    // A soma Pré-vendas + Reuniões + Propostas + Desqualificados = total de leads FB do período.
 
     const ini=new Date(de+'T00:00:00');
     const fim=new Date(ate+'T23:59:59');
@@ -2795,24 +2798,29 @@ async function carregarAnaliseMarketing(){
       '689c9195890719001dedb952', // Oportunidades +30D
     ];
 
-    // Busca todos os funis em paralelo
     mkLoading.innerHTML=load('Buscando leads no RD Station...');
+
+    // Busca todos os funis em paralelo — 6 funis × 5 páginas = 30 requisições
     const todasPaginas=await Promise.all(
-      todosFunisIds.flatMap(fId=>[1,2,3,4,5,6,7,8,9,10].map(p=>
+      todosFunisIds.flatMap(fId=>[1,2,3,4,5].map(p=>
         rdFetch('deals',{deal_pipeline_id:fId,page:String(p)})
       ))
     );
 
-    // Deduplica por ID (deal pode aparecer em múltiplas páginas)
-    const idsVisto=new Set();
-    const todosDeals=todasPaginas.flatMap(p=>p.deals||[]).filter(d=>{
-      if(idsVisto.has(d.id))return false;idsVisto.add(d.id);return true;
+    // Deduplica por ID — pega sempre a versão mais recente (maior updated_at)
+    const dealsMap=new Map();
+    todasPaginas.flatMap(p=>p.deals||[]).forEach(d=>{
+      const existing=dealsMap.get(d.id);
+      if(!existing||new Date(d.updated_at)>new Date(existing.updated_at)){
+        dealsMap.set(d.id,d);
+      }
     });
+    const todosDeals=[...dealsMap.values()];
 
-    // Filtra: criados no período + têm campanha do Facebook
+    // Filtra: criados no período + campanha do Facebook preenchida
     const dealsFB=todosDeals.filter(d=>{
       const criado=new Date(d.created_at);
-      return criado>=ini&&criado<=fim&&d.campaign?.name;
+      return criado>=ini&&criado<=fim&&(d.campaign?.name);
     });
 
     _mkDeals=dealsFB;
@@ -2831,12 +2839,9 @@ async function carregarAnaliseMarketing(){
       if(fbC){fbInvest=fbC.investimento;fbLeads=fbC.leads;}
     }
 
-    // Leads no pré-vendas = ainda estão no funil de entrada
-    const funilPreVendasId='6706b83df4cf270013213222';
     const totalLeadsRD=dealsFilt.length;
-    const leadsPreVendas=dealsFilt.filter(d=>d.deal_pipeline?.id===funilPreVendasId||!d.deal_pipeline?.id).length;
 
-    // 4. Classifica cada deal pelo estágio atual em qualquer funil
+    // 4. Classifica cada deal pelo funil e estágio ATUAL
     function classificarDeal(d){
       const e=(d.deal_stage?.name||'').toLowerCase().trim();
       const funil=(d.deal_pipeline?.name||'').toLowerCase();
@@ -2844,8 +2849,8 @@ async function carregarAnaliseMarketing(){
       // PERDIDO — qualquer funil
       if(e.includes('perdid')||e.includes('desqualif')) return 'desqualificado';
 
-      // PROPOSTA FECHADA = ganhou — qualquer funil
-      if(e.includes('proposta fechada')||e==='proposta fechada') return 'proposta';
+      // PROPOSTA FECHADA — qualquer funil
+      if(e==='proposta fechada'||e.includes('proposta fechada')) return 'proposta';
 
       // VENDAS BPO FINANCEIRO: reunião = Proposta Enviada, Negociação
       if(funil.includes('bpo')||funil.includes('financeiro')){
@@ -2860,7 +2865,7 @@ async function carregarAnaliseMarketing(){
         return 'semContato';
       }
 
-      // PROJETO 360 + MÉDICOS e VENDAS 360: reunião = Reunião de proposta, Enviar proposta, Follow-up, [C], [M], Apresentação
+      // PROJETO 360 e VENDAS 360: reunião = Reunião de proposta, Enviar proposta, Follow-up, [C], [M], Apresentação, Proposta enviada
       if(funil.includes('360')||funil.includes('médico')||funil.includes('medico')){
         if(e.includes('reunião de proposta')||e.includes('reuniao de proposta')||
            e.includes('enviar proposta')||e.includes('proposta enviada')||
@@ -2869,7 +2874,7 @@ async function carregarAnaliseMarketing(){
         return 'semContato';
       }
 
-      // PRÉ-VENDAS e demais: ainda não teve reunião
+      // PRÉ-VENDAS e OPORTUNIDADES: ainda não teve reunião
       return 'semContato';
     }
 
@@ -2891,19 +2896,19 @@ async function carregarAnaliseMarketing(){
     document.getElementById('mk-investimento').textContent=fmtBRL(fbInvest);
     document.getElementById('mk-leads-fb').textContent=fbLeads||'0';
     document.getElementById('mk-cpl').textContent=fmtBRL(cpl);
-    document.getElementById('mk-leads-rd').textContent=totalLeadsRD;
+    document.getElementById('mk-leads-rd').textContent=semContato;
     document.getElementById('mk-reunioes').textContent=reunioes;
     document.getElementById('mk-propostas').textContent=propostas;
     document.getElementById('mk-desqualificados').textContent=desqualificados;
-    document.getElementById('mk-custo-reuniao').textContent=fmtBRL(custoReuniao);
-    document.getElementById('mk-custo-proposta').textContent=fmtBRL(custoProposta);
+    document.getElementById('mk-custo-reuniao').textContent=fmtBRL(reunioes>0?fbInvest/reunioes:null);
+    document.getElementById('mk-custo-proposta').textContent=fmtBRL(propostas>0?fbInvest/propostas:null);
     ['mk-stats','mk-stats2','mk-stats3'].forEach(id=>document.getElementById(id).style.display='grid');
 
-    // 6. Funil visual clicável
+    // 6. Funil visual — equação: FB = Pré-vendas + Reuniões + Propostas + Desqualificados
     const etapas=[
       {nome:'Leads Facebook Ads',qtd:fbLeads,cor:'var(--laranja)',filtro:'todos'},
-      {nome:'Leads no RD (Pré-vendas)',qtd:totalDeals,cor:'var(--azul-medio)',filtro:''},
-      {nome:'Reuniões agendadas',qtd:reunioes,cor:'#1D9E75',filtro:'reunioes'},
+      {nome:'Leads no RD (aguardando reunião)',qtd:semContato,cor:'var(--azul-medio)',filtro:'semcontato'},
+      {nome:'Reuniões realizadas',qtd:reunioes,cor:'#1D9E75',filtro:'reunioes'},
       {nome:'Propostas enviadas',qtd:propostas,cor:'#7C3AED',filtro:'propostas'},
       {nome:'Desqualificados',qtd:desqualificados,cor:'#E24B4A',filtro:'desqualificados'},
     ];
