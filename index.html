@@ -2837,10 +2837,21 @@ async function carregarAnaliseMarketing(){
       });
     }
 
+    const funilPreVendasId='6706b83df4cf270013213222';
+
     const dealsFBRaw=todosDeals.filter(d=>{
       if(!dealVeioDoFacebook(d)) return false;
       const criado=new Date(d.created_at);
-      return criado>=ini&&criado<=fim;
+      const atualizado=new Date(d.updated_at||d.created_at);
+      const noPreVendas=(d.deal_pipeline?.id||'')=== funilPreVendasId||!d.deal_pipeline?.id;
+      if(noPreVendas){
+        // Pré-vendas: só leads criados no período (entrada)
+        return criado>=ini&&criado<=fim;
+      } else {
+        // Funis de destino: criado OU atualizado no período
+        // (lead pode ter entrado em meses anteriores e a reunião ocorreu neste mês)
+        return (criado>=ini&&criado<=fim)||(atualizado>=ini&&atualizado<=fim);
+      }
     });
 
     // Segunda deduplicação por email — mantém o deal do funil mais avançado
@@ -2869,7 +2880,6 @@ async function carregarAnaliseMarketing(){
         // Prefere sempre o funil mais avançado (menor índice na hierarquia)
         if(prioridadeFunil(d)<prioridadeFunil(existing)){
           emailMapFB.set(key,d);
-          console.log(`[MK DEDUP] Substituiu "${existing.name}" (${existing.deal_pipeline?.name}) por "${d.name}" (${d.deal_pipeline?.name})`);
         }
       }
     });
@@ -2970,42 +2980,14 @@ async function carregarAnaliseMarketing(){
     let reunioes=0,propostas=0,desqualificados=0,semContato=0;
     dealsFilt.forEach(d=>{
       const cat=classificarDeal(d);
-      // DEBUG — remover após diagnóstico
-      console.log(`[MK] ${d.name||'?'} | camp="${d.campaign?.name||'SEM CAMPANHA'}" | pipeline="${d._mkt_pipeline||d.deal_pipeline?.name||'?'}" | stage="${d._mkt_stage||d.deal_stage?.name||'?'}" → ${cat}`);
       if(cat==='reuniao') reunioes++;
       else if(cat==='proposta') propostas++;
       else if(cat==='desqualificado') desqualificados++;
       else semContato++;
     });
 
-    // DEBUG ESPECÍFICO — encontra deals que foram removidos na deduplicação
-    console.log('[MK DEBUG] dealsFBRaw nomes:', dealsFBRaw.map(d=>d.name).join(' | '));
-    console.log('[MK DEBUG] dealsFB nomes:', dealsFB.map(d=>d.name).join(' | '));
-    // Mostra quem foi removido
-    const nomesFB=new Set(dealsFB.map(d=>d.name));
-    const removidos=dealsFBRaw.filter(d=>!nomesFB.has(d.name));
-    if(removidos.length) console.log('[MK DEBUG] Removidos na dedup email:', removidos.map(d=>`${d.name} (${d.deal_pipeline?.name||'?'} | ${d.deal_stage?.name||'?'})`).join(' | '));
-
-    // DEBUG — mostra deals no período SEM campanha (podem ser leads FB sem campo preenchido)
-    const dealsSemCampanha=todosDeals.filter(d=>{
-      if(d.campaign?.name) return false;
-      const criado=new Date(d.created_at);
-      return criado>=ini&&criado<=fim;
-    });
-    if(dealsSemCampanha.length) console.log(`[MK SEM CAMP] ${dealsSemCampanha.length} deals no período sem campanha:`, dealsSemCampanha.map(d=>`${d.name} (${d.deal_pipeline?.name||'?'})`).join(' | '));
-
     const totalRastreados=reunioes+propostas+desqualificados+semContato;
     const totalDeals=totalLeadsRD;
-
-    // Diagnóstico visível — mostra a equação completa
-    console.log(`[MK TOTAIS] FB=${fbLeads} | RD rastreados=${totalRastreados} | semContato=${semContato} | reunioes=${reunioes} | propostas=${propostas} | desqualificados=${desqualificados}`);
-    console.log(`[MK DEDUP] dealsFBRaw=${dealsFBRaw.length} → emailMapFB=${dealsFB.length} (removidos ${dealsFBRaw.length-dealsFB.length} duplicatas)`);
-
-    // Alerta se a conta não fecha
-    if(totalRastreados!==fbLeads){
-      console.warn(`[MK ATENÇÃO] Conta não fecha: FB=${fbLeads} mas rastreados=${totalRastreados} (diferença: ${fbLeads-totalRastreados})`);
-    }
-
     const cpl=fbLeads>0?fbInvest/fbLeads:null;
     const custoReuniao=reunioes>0?fbInvest/reunioes:null;
     const custoProposta=propostas>0?fbInvest/propostas:null;
