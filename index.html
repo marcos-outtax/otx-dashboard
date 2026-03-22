@@ -991,30 +991,41 @@ const eventos=data.eventos||[];
 }
 
 function cardReuniao(ev,i){
-  const nm=ev.summary||'Reunião';
-  const inicio=ev.start?.dateTime||ev.start?.date||'';
-  const dt=inicio?new Date(inicio):null;
-  const dataFmt=dt?dt.toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'short'}):'';
-  const horaFmt=dt?dt.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):'';
-  const participantes=(ev.attendees||[]).map(a=>a.email).join(', ')||'—';
-  const meet=ev.hangoutLink||ev.location||'';
+  const nm=ev.nome||ev.summary||'Reunião';
+  const hora=ev.hora||'';
+  const dataEvt=ev._data||'';
+  const dtFmt=dataEvt?new Date(dataEvt+'T12:00:00').toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'short'}):'';
+  const email=ev.email||'';
+  const origem=ev.origem||'marketing';
+  const meet=ev._link||ev.hangoutLink||ev.location||'';
+  const dur=ev.dur||'1h';
+  const orgClass=origem==='marketing'?'av-marketing':'av-direto';
+  const cardClass=origem==='marketing'?'marketing':'direto';
   return `
-<div class="card marketing" style="margin-bottom:8px;">
+<div class="card ${cardClass}" style="margin-bottom:8px;">
   <div class="card-head" onclick="toggle(this)">
-    <div class="av av-marketing">${ini(nm)}</div>
+    <div class="av ${orgClass}">${ini(nm)}</div>
     <div class="card-info">
       <div class="card-name">${nm}</div>
-      <div class="card-sub">${dataFmt} ${horaFmt}</div>
+      <div class="card-sub">${dtFmt} ${hora} · ${dur}${email?' · '+email:''}</div>
     </div>
     <span class="chev">▼</span>
   </div>
   <div class="card-body">
     <div class="cbi">
-      <div class="two-col">
-        <div class="ib"><div class="l">Data</div><div class="v">${dataFmt}</div></div>
-        <div class="ib"><div class="l">Horário</div><div class="v">${horaFmt}</div></div>
+      <div class="three-col">
+        <div class="ib"><div class="l">Data</div><div class="v">${dtFmt}</div></div>
+        <div class="ib"><div class="l">Horário</div><div class="v">${hora}</div></div>
+        <div class="ib"><div class="l">Duração</div><div class="v">${dur}</div></div>
       </div>
-      <div class="ib" style="margin-bottom:8px;"><div class="l">Participantes</div><div class="v">${participantes}</div></div>
+      <div class="two-col">
+        <div class="ib"><div class="l">Email do cliente</div><div class="v">${email||'—'}</div></div>
+        <div class="ib"><div class="l">Organizador</div><div class="v">${ev.org||'—'}</div></div>
+      </div>
+      <div class="orig-bar">
+        <div class="orig-dot ${origem}"></div>
+        <span>${origem==='marketing'?'Lead de Marketing':'Indicação / Direto'}</span>
+      </div>
       ${meet?`<div class="act-row"><a href="${meet}" target="_blank" class="btn btn-p">🎥 Entrar na reunião ↗</a></div>`:''}
     </div>
   </div>
