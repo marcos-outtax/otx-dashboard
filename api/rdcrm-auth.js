@@ -8,7 +8,7 @@ export default async function handler(req, res) {
     });
   }
 
-  const authUrl = `https://api.rd.services/auth/dialog?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}`;
+  const authUrl = `https://api.rd.services/auth/dialog?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code`;
 
   return res.redirect(302, authUrl);
 }
