@@ -1,21 +1,35 @@
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-RD-Token');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Session-Token');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  const token = req.headers['x-rd-token'];
-  if (!token) return res.status(400).json({ erro: 'Token nao fornecido no header X-RD-Token.' });
+  // Valida sessão
+  const sessionToken = req.headers['x-session-token'];
+  const expectedToken = Buffer.from(
+    (process.env.DASHBOARD_USER || '') + ':' + (process.env.DASHBOARD_PASSWORD || '')
+  ).toString('base64');
+  if (!sessionToken || sessionToken !== expectedToken) {
+    return res.status(401).json({ erro: 'Sessão inválida. Faça login novamente.' });
+  }
 
-  // Aceita path e method tanto via query quanto via body (para chamadas POST do frontend)
-  const queryPath = Array.isArray(req.query.path) ? req.query.path.join('/') : req.query.path;
-  const bodyPath  = req.body?.path;
-  const pathStr   = queryPath || bodyPath || 'contacts';
+  // Token do CRM vem da Vercel
+  const token = (process.env.RDCRM_TOKEN_SOCIO || '').trim();
+  if (!token) {
+    return res.status(500).json({ erro: 'Token RDCRM não configurado na Vercel.' });
+  }
 
-  const rdMethod  = req.body?.method || req.method;
-  const rdBody    = req.body?.body || undefined;
+  // Aceita path via query ou body
+  const queryPath = Array.isArray(req.query.path)
+    ? req.query.path.join('/')
+    : req.query.path;
+  const bodyPath = req.body?.path;
+  const pathStr = queryPath || bodyPath || 'contacts';
 
-  // Remove path e method do body para não enviar para o RD
+  const rdMethod = req.body?.method || req.method;
+  const rdBody   = req.body?.body || undefined;
+
+  // Remove path dos query params
   const queryParams = { ...req.query };
   delete queryParams.path;
 
@@ -25,12 +39,18 @@ export default async function handler(req, res) {
   try {
     const opts = {
       method: rdMethod,
-      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      }
     };
-    if (rdMethod === 'POST' && rdBody) opts.body = JSON.stringify(rdBody);
+    if (rdMethod === 'POST' && rdBody) {
+      opts.body = JSON.stringify(rdBody);
+    }
 
     const r = await fetch(url, opts);
     const text = await r.text();
+
     try {
       return res.status(r.status).json(JSON.parse(text));
     } catch {
@@ -39,6 +59,7 @@ export default async function handler(req, res) {
         detalhe: text.substring(0, 300)
       });
     }
+
   } catch (e) {
     return res.status(500).json({ erro: e.message });
   }
