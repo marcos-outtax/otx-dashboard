@@ -13,13 +13,21 @@ if (req.query.teste === '1') {
 }
   // Valida sessão
   const sessionToken = req.headers['x-session-token'];
-  const expectedToken = Buffer.from(
+const expectedToken = Buffer.from(
   (process.env.DASHBOARD_USER || '').trim() + '|' +
   (process.env.DASHBOARD_PASSWORD || '').trim() + '|otx2026'
 ).toString('base64').replace(/[^a-zA-Z0-9]/g, 'x');
 
+// Log para diagnóstico — remover depois
+console.log('TOKEN RECEBIDO:', sessionToken);
+console.log('TOKEN ESPERADO:', expectedToken);
+
 if (!sessionToken || sessionToken !== expectedToken) {
-  return res.status(401).json({ erro: 'Sessão inválida. Faça login novamente.' });
+  return res.status(401).json({ 
+    erro: 'Sessão inválida.',
+    recebido: sessionToken,
+    esperado: expectedToken
+  });
 }
   // Token do CRM vem da Vercel — nunca exposto ao frontend
   const token = (process.env.RDCRM_TOKEN_SOCIO || '').trim();
