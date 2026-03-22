@@ -15,10 +15,9 @@ export default async function handler(req, res) {
     return res.status(401).json({ erro: 'Usuário ou senha incorretos.' });
   }
 
-  // Token fixo gerado a partir de um hash simples — sem base64 de caracteres especiais
-  const sessionToken = Buffer.from(usuarioCorreto + '|' + senhaCorreta + '|otx2026')
-    .toString('base64')
-    .replace(/[^a-zA-Z0-9]/g, 'x');
+  const sessionToken = 'otx-' + Buffer.from(usuarioCorreto + senhaCorreta)
+    .toString('hex')
+    .substring(0, 32);
 
   return res.status(200).json({ ok: true, sessionToken });
 }
