@@ -782,7 +782,9 @@ function fecharCfg() { document.getElementById('mcfg').classList.remove('open');
 
 function conectarGoogle() {
   fecharCfg();
-  window.location.href = '/api/google-auth';
+  // Passa o sessionToken atual para ser preservado durante o OAuth
+  const session = getSessionToken();
+  window.location.href = '/api/google-auth?session=' + encodeURIComponent(session);
 }
 function desconectarGoogle() {
   const c = getCfg();
