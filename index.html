@@ -959,13 +959,20 @@ async function carregarReunioes(){
   if(!de||!ate){alert('Selecione o período.');return;}
   document.getElementById('cards-r').innerHTML=load('Buscando reuniões no Google Agenda...');
   try{
-    const params=new URLSearchParams({
-      accessToken:cfg.googleToken,
-      refreshToken:cfg.googleRefreshToken||'',
-      dateStart:de,
-      dateEnd:ate
-    });
-    const r=await fetch(`/api/google-calendar?${params}`);
+    const timeMin=new Date(de+'T00:00:00').toISOString();
+const timeMax=new Date(ate+'T23:59:59').toISOString();
+const r=await fetch(`/api/google-calendar?timeMin=${encodeURIComponent(timeMin)}&timeMax=${encodeURIComponent(timeMax)}`,{
+  headers:{
+    'X-Google-Token': cfg.googleToken,
+    'X-Google-Refresh-Token': cfg.googleRefreshToken||''
+  }
+});
+const data=await r.json();
+if(data.newAccessToken){
+  const c=getCfg();c.googleToken=data.newAccessToken;
+  localStorage.setItem(K,JSON.stringify(c));
+}
+const eventos=data.eventos||[];    
     const data=await r.json();
     if(!r.ok)throw new Error(data.erro||'Erro ao buscar agenda');
     if(data.newAccessToken){
