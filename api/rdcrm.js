@@ -1,20 +1,46 @@
 export default async function handler(req, res) {
   // CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  // ✅ Token direto do CRM (sem OAuth)
-  const token = (process.env.RDCRM_TOKEN_SOCIO || '').trim();
+  const clientId = process.env.ID_DO_CLIENTE_RDCRM;
+  const clientSecret = process.env.RDCRM_CLIENT_SECRET;
+  let accessToken = process.env.RDCRM_ACCESS_TOKEN;
+  const refreshToken = process.env.RDCRM_REFRESH_TOKEN;
 
-  if (!token) {
+  if (!clientId || !clientSecret || !refreshToken) {
     return res.status(401).json({
-      erro: 'RDCRM_TOKEN_SOCIO não configurado no Vercel'
+      erro: 'Credenciais OAuth não configuradas no Vercel'
     });
   }
 
-  // Montagem do endpoint dinâmico
+  // 🔄 Função para renovar token
+  async function refreshAccessToken() {
+    const response = await fetch('https://crm.rdstation.com/oauth/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        client_id: clientId,
+        client_secret: clientSecret,
+        refresh_token: refreshToken,
+        grant_type: 'refresh_token'
+      })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error('Erro ao renovar token');
+    }
+
+    return data.access_token;
+  }
+
+  // Monta endpoint
   const queryPath = Array.isArray(req.query.path)
     ? req.query.path.join('/')
     : req.query.path;
@@ -26,32 +52,30 @@ export default async function handler(req, res) {
 
   const qs = new URLSearchParams(queryParams).toString();
 
-  // ✅ Endpoint correto do CRM
-  const url = `https://crm.rdstation.com/api/v1/${pathStr}${qs ? '?' + qs : ''}`;
+  const url = `https://crm.rdstation.com/api/v2/${pathStr}${qs ? '?' + qs : ''}`;
+
+  async function fetchComToken(token) {
+    return fetch(url, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+  }
 
   try {
-    const r = await fetch(url, {
-      method: req.method,
-      headers: {
-        'X-Auth-Token': token,
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
-      ...(req.method === 'POST' && req.body
-        ? { body: JSON.stringify(req.body) }
-        : {}),
-    });
+    let response = await fetchComToken(accessToken);
 
-    const text = await r.text();
-
-    try {
-      return res.status(r.status).json(JSON.parse(text));
-    } catch {
-      return res.status(r.status).json({
-        erro: `Resposta não JSON (status ${r.status})`,
-        detalhe: text.substring(0, 300)
-      });
+    // 🔁 Se token expirou, renova automaticamente
+    if (response.status === 401) {
+      accessToken = await refreshAccessToken();
+      response = await fetchComToken(accessToken);
     }
+
+    const data = await response.json();
+
+    return res.status(response.status).json(data);
 
   } catch (e) {
     return res.status(500).json({
