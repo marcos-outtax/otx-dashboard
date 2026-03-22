@@ -27,7 +27,7 @@ export default async function handler(req, res) {
   const qs = new URLSearchParams(queryParams).toString();
 
   // ✅ Endpoint correto do RD CRM (OAuth v2)
-  const url = `https://api.rd.services/platform/${pathStr}${qs ? '?' + qs : ''}`;
+  const url = `https://crm.rdstation.com/api/v1/${pathStr}${qs ? '?' + qs : ''}`;
 
   try {
     let r = await fetch(url, {
