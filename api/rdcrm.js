@@ -4,7 +4,13 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Session-Token');
   if (req.method === 'OPTIONS') return res.status(200).end();
-
+  // ROTA DE TESTE TEMPORÁRIA — remover após diagnóstico
+if (req.query.teste === '1') {
+  const tokenTeste = (process.env.RDCRM_TOKEN_SOCIO || '').trim();
+  const r = await fetch('https://crm.rdstation.com/api/v1/deal_pipelines?token=' + tokenTeste);
+  const d = await r.json();
+  return res.status(r.status).json(d);
+}
   // Valida sessão
   const sessionToken = req.headers['x-session-token'];
   const expectedToken = Buffer.from(
