@@ -7,12 +7,13 @@ export default async function handler(req, res) {
   // Valida sessão
   const sessionToken = req.headers['x-session-token'];
   const expectedToken = Buffer.from(
-    (process.env.DASHBOARD_USER || '') + ':' + (process.env.DASHBOARD_PASSWORD || '')
-  ).toString('base64');
-  if (!sessionToken || sessionToken !== expectedToken) {
-    return res.status(401).json({ erro: 'Sessão inválida. Faça login novamente.' });
-  }
+  (process.env.DASHBOARD_USER || '').trim() + '|' +
+  (process.env.DASHBOARD_PASSWORD || '').trim() + '|otx2026'
+).toString('base64').replace(/[^a-zA-Z0-9]/g, 'x');
 
+if (!sessionToken || sessionToken !== expectedToken) {
+  return res.status(401).json({ erro: 'Sessão inválida. Faça login novamente.' });
+}
   // Token do CRM vem da Vercel
   const token = (process.env.RDCRM_TOKEN_SOCIO || '').trim();
   if (!token) {
