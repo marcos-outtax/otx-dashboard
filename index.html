@@ -818,11 +818,12 @@ function atualizarStatusGoogle() {
 }
 function capturarTokenGoogle() {
   const params = new URLSearchParams(window.location.search);
-  const token  = params.get('google_access_token');
-  const refresh= params.get('google_refresh_token');
-  const email  = params.get('google_email');
-  const name   = params.get('google_name');
-  const erro   = params.get('google_error');
+  const token        = params.get('google_access_token');
+  const refresh      = params.get('google_refresh_token');
+  const email        = params.get('google_email');
+  const name         = params.get('google_name');
+  const erro         = params.get('google_error');
+  const sessionViaUrl= params.get('session_token');
 
   if (erro) {
     alert('Erro ao conectar Google Agenda: ' + erro);
@@ -831,15 +832,13 @@ function capturarTokenGoogle() {
   }
 
   if (token) {
-    // Lê o objeto atual do localStorage ANTES de qualquer modificação
-    // Preserva o sessionToken obrigatoriamente
     const c = getCfg();
-    const sessionAtual = c.sessionToken || '';
+    // Usa o sessionToken da URL (mais confiável) ou o do localStorage
+    const sessionFinal = sessionViaUrl || c.sessionToken || '';
 
-    // Monta o novo objeto preservando a sessão
     const novoEstado = {
       ...c,
-      sessionToken: sessionAtual,
+      sessionToken: sessionFinal,
       googleToken: token,
       googleEmail: email || '',
       googleName: name  || '',
@@ -849,8 +848,7 @@ function capturarTokenGoogle() {
     localStorage.setItem(K, JSON.stringify(novoEstado));
     window.history.replaceState({}, '', '/');
 
-    // Só inicializa o dashboard se a sessão ainda for válida
-    if (!sessionAtual) {
+    if (!sessionFinal) {
       mostrarLogin();
       return;
     }
