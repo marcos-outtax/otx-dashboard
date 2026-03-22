@@ -30,18 +30,21 @@ export default async function handler(req, res) {
       return res.redirect('/?google_error=' + encodeURIComponent(tokenData.error || 'token_error'));
     }
 
-    const userRes = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+    // Busca email e nome do usuário
+    const userRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
       headers: { Authorization: `Bearer ${tokenData.access_token}` },
     });
     const userData = await userRes.json();
 
-    // Devolve o sessionToken via URL para garantir que não seja perdido
+    const email = userData.email || userData.sub || '';
+    const name  = userData.name  || userData.given_name || '';
+
     const params = new URLSearchParams({
-      google_access_token: tokenData.access_token,
+      google_access_token:  tokenData.access_token,
       google_refresh_token: tokenData.refresh_token || '',
-      google_email: userData.email || '',
-      google_name: userData.name || '',
-      session_token: state || '',
+      google_email:         email,
+      google_name:          name,
+      session_token:        state || '',
     });
 
     return res.redirect(`/?${params.toString()}`);
