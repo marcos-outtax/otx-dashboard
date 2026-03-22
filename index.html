@@ -878,8 +878,15 @@ const ini     = n => (n || '?').split(' ').slice(0, 2).map(x => x[0]).join('').t
 const diasAtras = d => d ? Math.floor((Date.now() - new Date(d)) / 864e5) : 0;
 const load    = msg => `<div class="loading"><div class="dot"></div><div class="dot"></div><div class="dot"></div><span style="margin-left:4px;">${msg}</span></div>`;
 function fc(v) { v=v.replace(/\D/g,'').slice(0,14); if(v.length<=2)return v; if(v.length<=5)return v.slice(0,2)+'.'+v.slice(2); if(v.length<=8)return v.slice(0,2)+'.'+v.slice(2,5)+'.'+v.slice(5); if(v.length<=12)return v.slice(0,2)+'.'+v.slice(2,5)+'.'+v.slice(5,8)+'/'+v.slice(8); return v.slice(0,2)+'.'+v.slice(2,5)+'.'+v.slice(5,8)+'/'+v.slice(8,12)+'-'+v.slice(12,14); }
-function toggle(h) { const b=h.nextElementSibling,c=h.querySelector('.chev'),o=b.classList.contains('open'); b.classList.toggle('open',!o); c.style.transform=o?'':'rotate(180deg)'; }
-function swTab(t, id) { const p=t.closest('.cbi'); p.querySelectorAll('.tab').forEach(x=>x.classList.remove('active')); p.querySelectorAll('.tp').forEach(x=>x.classList.remove('active')); t.classList.add('active'); document.getElementById(id).classList.add('active'); }
+function toggle(h){
+  const b=h.nextElementSibling;
+  if(!b)return;
+  const c=h.querySelector('.chev');
+  const o=b.classList.contains('open');
+  b.classList.toggle('open',!o);
+  if(c)c.style.transform=o?'':'rotate(180deg)';
+}
+  function swTab(t, id) { const p=t.closest('.cbi'); p.querySelectorAll('.tab').forEach(x=>x.classList.remove('active')); p.querySelectorAll('.tp').forEach(x=>x.classList.remove('active')); t.classList.add('active'); document.getElementById(id).classList.add('active'); }
 function dataHoje() { return new Date().toISOString().split('T')[0]; }
 function fmtData(str) { if(!str)return''; const d=new Date(str+'T12:00:00'); return d.toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long',year:'numeric'}); }
 
@@ -1065,10 +1072,10 @@ async function carregarPropostas(){
   const respFiltro=document.getElementById('f-resp')?.value||'all';
   const funilId=document.getElementById('f-funil')?.value||'all';
   const params={};
-  if(status==='ganha'){params.win='true';}
-  else if(status==='perdida'){params.win='false';params.lost='true';}
-  else if(status==='aberta'){params.win='false';params.lost='false';}
-  if(funilId!=='all') params.deal_pipeline_id=funilId;
+  if(status==='ganha') params.win='true';
+// perdida e aberta são filtrados no frontend pelo nome do estágio
+// não passamos win=false pois a API v1 não filtra corretamente
+    if(funilId!=='all') params.deal_pipeline_id=funilId;
   const titulos={ganha:'✅ Propostas ganhas',perdida:'❌ Propostas perdidas',aberta:'🔄 Propostas em andamento',all:'📋 Todas as negociações'};
   document.getElementById('prop-titulo').textContent=titulos[status]||'Propostas';
   document.getElementById('cards-p').innerHTML=load('Buscando propostas...');
@@ -1100,9 +1107,18 @@ async function carregarPropostas(){
 
     // Filtro por estágio "perdida" via nome (fallback)
     let filtradosSt=com;
-    if(status==='aberta') filtradosSt=com.filter(d=>!(d.deal_stage?.name||'').toLowerCase().includes('perdid'));
-    else if(status==='perdida') filtradosSt=com.filter(d=>(d.deal_stage?.name||'').toLowerCase().includes('perdid'));
-
+if(status==='aberta'){
+  filtradosSt=com.filter(d=>{
+    const e=(d.deal_stage?.name||'').toLowerCase();
+    return !e.includes('perdid') && d.win!==true;
+  });
+} else if(status==='perdida'){
+  filtradosSt=com.filter(d=>{
+    const e=(d.deal_stage?.name||'').toLowerCase();
+    return e.includes('perdid') || d.lost===true;
+  });
+}
+// ganha já veio filtrado pela API com win=true
     const filtradosResp=respFiltro==='all'?filtradosSt:filtradosSt.filter(d=>d.user?.id===respFiltro||d.user?._id===respFiltro);
     const estagioFiltro=document.getElementById('f-estagio')?.value||'all';
     const filtradosEst=estagioFiltro==='all'?filtradosResp:filtradosResp.filter(d=>(d.deal_stage?.name||'')===estagioFiltro);
@@ -1497,10 +1513,14 @@ async function carregarAnaliseMarketing(){
 
     // Busca funis dinâmicos e Facebook em paralelo
     const [funis, fbRes] = await Promise.all([
-      carregarFunis(),
-      fetch(`/api/meta-ads?dateStart=${de}&dateEnd=${ate}`)
-    ]);
+  carregarFunis(),
+  fetch(`/api/meta-ads?dateStart=${de}&dateEnd=${ate}`)
+]);
 
+if(!funis||funis.length===0){
+  throw new Error('Não foi possível carregar os funis do RD CRM. Verifique a conexão.');
+}
+   
     const fbData=await fbRes.json();
     if(!fbRes.ok)throw new Error(fbData.erro||'Erro no Facebook Ads');
     const todasCampanhas=[...(fbData.ativas||[]),...(fbData.pausadas||[])].filter(c=>c.investimento>0);
