@@ -954,7 +954,6 @@ function limparFiltrosReunioes(){
   document.getElementById('r-de').value='';
   document.getElementById('r-ate').value='';
 }
-
 async function carregarReunioes(){
   const cfg=getCfg();
   if(!cfg.googleToken){
@@ -967,26 +966,20 @@ async function carregarReunioes(){
   document.getElementById('cards-r').innerHTML=load('Buscando reuniões no Google Agenda...');
   try{
     const timeMin=new Date(de+'T00:00:00').toISOString();
-const timeMax=new Date(ate+'T23:59:59').toISOString();
-const r=await fetch(`/api/google-calendar?timeMin=${encodeURIComponent(timeMin)}&timeMax=${encodeURIComponent(timeMax)}`,{
-  headers:{
-    'X-Google-Token': cfg.googleToken,
-    'X-Google-Refresh-Token': cfg.googleRefreshToken||''
-  }
-});
-const data=await r.json();
-if(data.newAccessToken){
-  const c=getCfg();c.googleToken=data.newAccessToken;
-  localStorage.setItem(K,JSON.stringify(c));
-}
-const eventos=data.eventos||[];    
+    const timeMax=new Date(ate+'T23:59:59').toISOString();
+    const r=await fetch(`/api/google-calendar?timeMin=${encodeURIComponent(timeMin)}&timeMax=${encodeURIComponent(timeMax)}`,{
+      headers:{
+        'X-Google-Token': cfg.googleToken,
+        'X-Google-Refresh-Token': cfg.googleRefreshToken||''
+      }
+    });
     const data=await r.json();
     if(!r.ok)throw new Error(data.erro||'Erro ao buscar agenda');
     if(data.newAccessToken){
       const c=getCfg();c.googleToken=data.newAccessToken;
       localStorage.setItem(K,JSON.stringify(c));
     }
-    const eventos=data.events||[];
+    const eventos=data.eventos||[];
     if(!eventos.length){
       document.getElementById('cards-r').innerHTML='<div class="empty">Nenhuma reunião encontrada no período.</div>';
       return;
@@ -996,7 +989,6 @@ const eventos=data.eventos||[];
     document.getElementById('cards-r').innerHTML=`<div class="empty" style="color:#791F1F;">Erro: ${e.message}</div>`;
   }
 }
-
 function cardReuniao(ev,i){
   const nm=ev.nome||ev.summary||'Reunião';
   const hora=ev.hora||'';
