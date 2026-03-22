@@ -821,19 +821,38 @@ function capturarTokenGoogle() {
   const email  = params.get('google_email');
   const name   = params.get('google_name');
   const erro   = params.get('google_error');
+
   if (erro) {
     alert('Erro ao conectar Google Agenda: ' + erro);
     window.history.replaceState({}, '', '/');
     return;
   }
+
   if (token) {
+    // Lê o objeto atual do localStorage ANTES de qualquer modificação
+    // Preserva o sessionToken obrigatoriamente
     const c = getCfg();
-    c.googleToken = token;
-    if (refresh) c.googleRefreshToken = refresh;
-    c.googleEmail = email || '';
-    c.googleName  = name  || '';
-    localStorage.setItem(K, JSON.stringify(c));
+    const sessionAtual = c.sessionToken || '';
+
+    // Monta o novo objeto preservando a sessão
+    const novoEstado = {
+      ...c,
+      sessionToken: sessionAtual,
+      googleToken: token,
+      googleEmail: email || '',
+      googleName: name  || '',
+    };
+    if (refresh) novoEstado.googleRefreshToken = refresh;
+
+    localStorage.setItem(K, JSON.stringify(novoEstado));
     window.history.replaceState({}, '', '/');
+
+    // Só inicializa o dashboard se a sessão ainda for válida
+    if (!sessionAtual) {
+      mostrarLogin();
+      return;
+    }
+
     checkCfg();
     alert('✅ Google Agenda conectado! Clique em Buscar para carregar suas reuniões.');
   }
