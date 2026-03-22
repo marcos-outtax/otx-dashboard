@@ -1,6 +1,6 @@
 const CLIENT_ID = '1027473122132-bb82qm1hh54qtrc11uuffcbe0d9ltmu4.apps.googleusercontent.com';
 const REDIRECT_URI = 'https://otx-dashborad.vercel.app/api/google-callback';
-const SCOPES = 'https://www.googleapis.com/auth/calendar.readonly';
+const SCOPES = 'https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile';
 
 export default function handler(req, res) {
   const sessionToken = req.query.session || '';
