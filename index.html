@@ -914,7 +914,6 @@ async function crmFetch(path, params = {}, method = 'GET', body = null) {
   if (data.erro) throw new Error(data.erro);
   return data;
 }
-
 // Mantém rdFetch como alias de crmFetch para compatibilidade
 // com funções existentes que ainda usam rdFetch
 const rdFetch = crmFetch;
