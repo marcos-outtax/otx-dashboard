@@ -763,7 +763,7 @@ async function buscarLeadPorEmail(email, idCard, btn){
   container.innerHTML=load('Buscando no RD CRM...');
   try{
     // Passo 1 — busca contato pelo email
-    const contatos=await crmFetch('contacts',{email:encodeURIComponent(email)});
+   const contatos=await crmFetch('contacts',{query:email});    
     const contato=(contatos.contacts||[])[0];
     if(!contato||!contato._id){
       container.innerHTML=`<div style="font-size:12px;color:var(--text-muted);background:var(--azul-pale);padding:10px 12px;border-radius:8px;">Lead não encontrada no RD.</div>`;
