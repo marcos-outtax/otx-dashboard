@@ -762,36 +762,37 @@ async function buscarLeadPorEmail(email, idCard, btn){
   const container=document.getElementById('rd-result-'+idCard);
   container.innerHTML=load('Buscando no RD CRM...');
   try{
-    const emailsInternos=['midias.outtax@gmail.com','maiccon@outtax.com.br','marcos@outtax.com.br'];
-    let deals=[];
+    const emailBusca=email.toLowerCase().trim();
 
-    if(email && !emailsInternos.includes(email.toLowerCase())){
-      const cd=await crmFetch('contacts',{email:email});
-      const lista=cd.contacts||[];
-
-      // Filtra pelo email exato dentro do array emails do contato
-      const contato=lista.find(c=>{
-        const emailsC=(c.emails||[]).map(e=>(e.email||'').toLowerCase());
-        return emailsC.includes(email.toLowerCase());
-      })||lista[0];
-
-      if(contato){
-        // Usa contact.id (sem underscore) — padrão da API v1
-        const contactId=contato.id||contato._id||'';
-        if(contactId){
-          const dd=await crmFetch('deals',{contact_id:contactId});
-          deals=dd.deals||[];
-        }
-      }
+    // ESTRATÉGIA 1 — busca nos deals já carregados em memória (_dealsCarregados)
+    // Esses deals já têm os contatos com emails dentro deles
+    let deal=null;
+    if(_dealsCarregados && _dealsCarregados.length){
+      deal=_dealsCarregados.find(d=>{
+        return (d.contacts||[]).some(c=>
+          (c.emails||[]).some(e=>(e.email||'').toLowerCase()===emailBusca)
+        );
+      });
     }
 
-    if(!deals.length){
-      container.innerHTML=`<div style="font-size:12px;color:var(--text-muted);background:var(--azul-pale);padding:10px 12px;border-radius:8px;">Lead não encontrada no RD.</div>`;
+    // ESTRATÉGIA 2 — busca nova via API passando o email como query no campo name do deal
+    // A API v1 do RD CRM não filtra contacts por email diretamente
+    // mas podemos buscar todos os deals e filtrar pelo email do contato
+    if(!deal){
+      const allDeals=await crmFetch('deals',{});
+      const lista=allDeals.deals||[];
+      deal=lista.find(d=>{
+        return (d.contacts||[]).some(c=>
+          (c.emails||[]).some(e=>(e.email||'').toLowerCase()===emailBusca)
+        );
+      });
+    }
+
+    if(!deal){
+      container.innerHTML=`<div style="font-size:12px;color:var(--text-muted);background:var(--azul-pale);padding:10px 12px;border-radius:8px;">Lead não encontrada no RD. Email: ${email}</div>`;
       return;
     }
 
-    // Usa o deal mais recente
-    const deal=deals.sort((a,b)=>new Date(b.updated_at||b.created_at)-new Date(a.updated_at||a.created_at))[0];
     const dealId=deal._id||deal.id||'';
     const dealNome=deal.name||'Negociação';
     const funil=deal.deal_pipeline?.name||deal._pipeline_name||'—';
@@ -835,6 +836,7 @@ async function buscarLeadPorEmail(email, idCard, btn){
     container.innerHTML=`<div style="font-size:12px;color:#791F1F;background:#FCEBEB;padding:10px 12px;border-radius:8px;">Erro: ${e.message}</div>`;
   }
 }
+
 async function consultarCnpjReuniao(idCard, dealId, dealNome, funil, estagio){
   const raw=document.getElementById('cnpj-reuniao-'+idCard)?.value.replace(/\D/g,'')||'';
   if(raw.length!==14){alert('CNPJ inválido.');return;}
