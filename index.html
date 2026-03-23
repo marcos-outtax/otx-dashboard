@@ -762,21 +762,25 @@ async function buscarLeadPorEmail(email, idCard, btn){
   const container=document.getElementById('rd-result-'+idCard);
   container.innerHTML=load('Buscando no RD CRM...');
   try{
-    // Passo 1 — busca contato pelo email
-   const contatos=await crmFetch('contacts',{query:email});    
-    const contato=(contatos.contacts||[])[0];
-    if(!contato||!contato._id){
-      container.innerHTML=`<div style="font-size:12px;color:var(--text-muted);background:var(--azul-pale);padding:10px 12px;border-radius:8px;">Lead não encontrada no RD.</div>`;
-      return;
-    }
-
-    // Passo 2 — busca deals do contato
-    const dealsData=await crmFetch('deals',{contact_id:contato._id});
-    const deals=(dealsData.deals||[]);
-    if(!deals.length){
-      container.innerHTML=`<div style="font-size:12px;color:var(--text-muted);background:var(--azul-pale);padding:10px 12px;border-radius:8px;">Contato encontrado mas sem negociação no RD.</div>`;
-      return;
-    }
+    // Busca deals diretamente pelo email do contato
+const dealsData=await crmFetch('deals',{contact_email:email});
+const deals=(dealsData.deals||[]);
+if(!deals.length){
+  // Tenta busca alternativa pelo nome do contato via contacts
+  const contatos=await crmFetch('contacts',{email:email});
+  const contato=(contatos.contacts||[])[0];
+  if(!contato||!contato._id){
+    container.innerHTML=`<div style="font-size:12px;color:var(--text-muted);background:var(--azul-pale);padding:10px 12px;border-radius:8px;">Lead não encontrada no RD.</div>`;
+    return;
+  }
+  const dealsData2=await crmFetch('deals',{contact_id:contato._id});
+  const deals2=(dealsData2.deals||[]);
+  if(!deals2.length){
+    container.innerHTML=`<div style="font-size:12px;color:var(--text-muted);background:var(--azul-pale);padding:10px 12px;border-radius:8px;">Contato encontrado mas sem negociação no RD.</div>`;
+    return;
+  }
+  deals.push(...deals2);
+}
 
     // Usa o deal mais recente
     const deal=deals.sort((a,b)=>new Date(b.updated_at||b.created_at)-new Date(a.updated_at||a.created_at))[0];
