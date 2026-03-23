@@ -1,127 +1,51 @@
 export default async function handler(req, res) {
+  // CORS (permite acesso do frontend)
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Session-Token');
-  if (req.method === 'OPTIONS') return res.status(200).end();
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-  // Valida sessão
-  const sessionToken = req.headers['x-session-token'];
-  const usuarioCorreto = (process.env.DASHBOARD_USER || '').trim();
-  const senhaCorreta   = (process.env.DASHBOARD_PASSWORD || '').trim();
-  const expectedToken  = 'otx-' + Buffer.from(usuarioCorreto + senhaCorreta)
-    .toString('hex')
-    .substring(0, 32);
-
-  if (!sessionToken || sessionToken !== expectedToken) {
-    return res.status(401).json({ erro: 'Sessão inválida. Faça login novamente.' });
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
   }
 
-  // Token do CRM vem da Vercel — nunca exposto ao frontend
-  const token = (process.env.RDCRM_TOKEN_SOCIO || '').trim();
+  const token = (process.env.RDCRM_ACCESS_TOKEN || '').trim();
+
   if (!token) {
-    return res.status(500).json({ erro: 'Token RDCRM não configurado na Vercel.' });
+    return res.status(401).json({
+      erro: 'RDCRM_ACCESS_TOKEN não configurado no Vercel'
+    });
   }
 
-  // Monta o path
-  const queryPath = Array.isArray(req.query.path)
-    ? req.query.path.join('/')
-    : req.query.path;
-  const pathStr = queryPath || 'deals';
+  // endpoint dinâmico
+  const path = req.query.path || 'deals';
 
-  // Remove path dos query params
-  const queryParams = { ...req.query };
-  delete queryParams.path;
+  const url = `https://api.rd.services/crm/v1/${path}`;
 
-  // ── PAGINAÇÃO AUTOMÁTICA para deals ──────────────────────
-  // Busca todas as páginas sem número fixo — nenhum lead é perdido
-  if (req.method === 'GET' && pathStr === 'deals') {
-    try {
-      const allDeals = [];
-      const ids = new Set();
-      let page = 1;
-      const limit = 200; // máximo da API
-
-      while (true) {
-        const qs = new URLSearchParams({
-          token,
-          ...queryParams,
-          page: String(page),
-          limit: String(limit)
-        }).toString();
-
-        const url = `https://crm.rdstation.com/api/v1/deals?${qs}`;
-        const response = await fetch(url, {
-          headers: { 'Accept': 'application/json' }
-        });
-
-        if (!response.ok) {
-          const err = await response.json().catch(() => ({}));
-          return res.status(response.status).json({
-            erro: 'Erro na API RD CRM',
-            detalhe: err
-          });
-        }
-
-        const data = await response.json();
-        const deals = data.deals || [];
-
-        // Deduplicação por ID
-        deals.forEach(d => {
-          if (!ids.has(d._id)) {
-            ids.add(d._id);
-            allDeals.push(d);
-          }
-        });
-
-        // Para quando vier menos que o limite — última página
-        if (deals.length < limit) break;
-        page++;
-      }
-
-      return res.status(200).json({ deals: allDeals, total: allDeals.length });
-
-    } catch (e) {
-      return res.status(500).json({ erro: 'Erro interno', detalhe: e.message });
-    }
-  }
-
-  // ── DEMAIS ENDPOINTS (deal_pipelines, deal_stages, tasks, activities) ──
   try {
-    const method = req.method;
-    const qs = new URLSearchParams({ token, ...queryParams }).toString();
-    const url = `https://crm.rdstation.com/api/v1/${pathStr}?${qs}`;
-
-    const opts = {
-      method,
+    const response = await fetch(url, {
+      method: 'GET',
       headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
       }
-    };
+    });
 
-    // Para POST (ex: gravar atividade no deal)
-    if (method === 'POST' && req.body) {
-      opts.body = JSON.stringify(req.body);
-    }
-
-    const response = await fetch(url, opts);
     const text = await response.text();
 
     try {
       const data = JSON.parse(text);
-      // Normaliza deal_pipelines — garante sempre {deal_pipelines:[...]}
-      if (pathStr === 'deal_pipelines' && Array.isArray(data)) {
-        return res.status(response.status).json({ deal_pipelines: data });
-      }
       return res.status(response.status).json(data);
     } catch {
       return res.status(response.status).json({
-        erro: `RD CRM retornou status ${response.status}`,
+        erro: 'Resposta não JSON',
         detalhe: text.substring(0, 300)
       });
     }
 
   } catch (e) {
-    return res.status(500).json({ erro: 'Erro interno', detalhe: e.message });
+    return res.status(500).json({
+      erro: 'Erro interno',
+      detalhe: e.message
+    });
   }
 }
