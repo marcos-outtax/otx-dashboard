@@ -20,7 +20,6 @@ export default async function handler(req, res) {
   const until = dateEnd || hoje.toISOString().split('T')[0];
   const timeRange = JSON.stringify({ since, until });
 
-  // Calcula dias do período para média diária real
   const diasPeriodo = Math.max(1, Math.round((new Date(until) - new Date(since)) / (864e5)) + 1);
 
   try {
@@ -40,8 +39,8 @@ export default async function handler(req, res) {
       };
     });
 
-    // 2. Busca insights com paginação completa
-    const insightsFields = 'campaign_id,campaign_name,impressions,clicks,spend,reach,cpc,ctr,actions';
+    // 2. Busca insights — inclui leadgen_grouped para contar leads de formulário nativo
+    const insightsFields = 'campaign_id,campaign_name,impressions,clicks,spend,reach,cpc,ctr,actions,action_values';
     let insightsUrl = `https://graph.facebook.com/v19.0/${actId}/insights?fields=${encodeURIComponent(insightsFields)}&time_range=${encodeURIComponent(timeRange)}&level=campaign&limit=100&access_token=${token}`;
     let todosInsights = [];
     let paginas = 0;
@@ -61,9 +60,13 @@ export default async function handler(req, res) {
       idsComInsights.add(c.campaign_id);
 
       const actions = c.actions || [];
-      const leads = parseInt(actions.find(a => a.action_type === 'lead')?.value || '0');
-      const leadsPixel = parseInt(actions.find(a => a.action_type === 'offsite_conversion.fb_pixel_lead')?.value || '0');
-      const totalLeads = Math.max(leads, leadsPixel);
+
+      // leadgen_grouped = leads de formulário nativo do Facebook (mesmo método da empresa de marketing)
+      const leadsFormulario = parseInt(actions.find(a => a.action_type === 'leadgen_grouped')?.value || '0');
+      // fallback: lead genérico se não tiver leadgen_grouped
+      const leadsFallback = parseInt(actions.find(a => a.action_type === 'lead')?.value || '0');
+      const totalLeads = leadsFormulario || leadsFallback;
+
       const spend = parseFloat(c.spend || 0);
       const cliques = parseInt(c.clicks || 0);
       const impressoes = parseInt(c.impressions || 0);
@@ -73,6 +76,7 @@ export default async function handler(req, res) {
       const cpl = totalLeads > 0 ? spend / totalLeads : null;
       const taxaConversao = cliques > 0 ? (totalLeads / cliques * 100) : null;
       const mediaDiaria = spend > 0 ? spend / diasPeriodo : null;
+      const cpm = impressoes > 0 ? (spend / impressoes * 1000) : null;
 
       return {
         id: c.campaign_id,
@@ -83,6 +87,7 @@ export default async function handler(req, res) {
         alcance, impressoes, cliques,
         ctr: ctr.toFixed(2),
         cpc: cpc.toFixed(2),
+        cpm: cpm ? parseFloat(cpm.toFixed(2)) : null,
         leads: totalLeads,
         cpl: cpl ? parseFloat(cpl.toFixed(2)) : null,
         taxaConversao: taxaConversao ? parseFloat(taxaConversao.toFixed(2)) : null,
@@ -98,7 +103,7 @@ export default async function handler(req, res) {
           id: info.id, nome: info.nome, status: info.status,
           investimento: 0, mediaDiaria: null,
           alcance: 0, impressoes: 0, cliques: 0,
-          ctr: '0', cpc: '0', leads: 0, cpl: null, taxaConversao: null,
+          ctr: '0', cpc: '0', cpm: null, leads: 0, cpl: null, taxaConversao: null,
           inicio: info.inicio, fim: info.fim,
           semDadosNoPeriodo: true
         });
@@ -121,6 +126,7 @@ export default async function handler(req, res) {
 
     totais.cpl = totais.leads > 0 ? parseFloat((totais.investimento / totais.leads).toFixed(2)) : null;
     totais.ctr = totais.impressoes > 0 ? ((totais.cliques / totais.impressoes) * 100).toFixed(2) : '0';
+    totais.cpm = totais.impressoes > 0 ? parseFloat((totais.investimento / totais.impressoes * 1000).toFixed(2)) : null;
     totais.taxaConversao = totais.cliques > 0 ? parseFloat((totais.leads / totais.cliques * 100).toFixed(2)) : null;
     totais.mediaDiaria = totais.investimento > 0 ? parseFloat((totais.investimento / diasPeriodo).toFixed(2)) : null;
 
