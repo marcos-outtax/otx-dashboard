@@ -1332,14 +1332,26 @@ async function carregarAnaliseMarketing(){
       return nomesCampsFB.some(nomeFB=>{const palavrasFB=nomeFB.replace(/\[.*?\]/g,'').trim().split(/\s+/).filter(p=>p.length>3);return palavrasFB.some(p=>campDeal.includes(p));});
     }
     function prioridadeFunil(d){return funis.findIndex(f=>(f._id||f.id)===d._pipeline_id);}
+    // deals do Facebook — para cruzamento com campanhas (stats e tabela)
     const dealsFBPeriodo=todosDealsRaw.filter(d=>{if(!dealVeioDoFacebook(d))return false;const criado=new Date(d.created_at);return criado>=ini&&criado<=fim;});
-    const emailDedup=new Map();
+    const emailDedupFB=new Map();
     dealsFBPeriodo.forEach(d=>{
       const email=(d.contacts||[]).find(c=>c.emails?.length)?.emails?.[0]?.email||('id:'+(d._id||d.id));
-      const existing=emailDedup.get(email);
-      if(!existing||prioridadeFunil(d)<prioridadeFunil(existing)){emailDedup.set(email,d);}
+      const existing=emailDedupFB.get(email);
+      if(!existing||prioridadeFunil(d)<prioridadeFunil(existing)){emailDedupFB.set(email,d);}
     });
-    const dealsFB=[...emailDedup.values()];_mkDeals=dealsFB;
+    const dealsFB=[...emailDedupFB.values()];_mkDeals=dealsFB;
+
+    // TODOS os deals do período — para o pipeline (independente de campanha)
+    const todosPeriodo=todosDealsRaw.filter(d=>{const criado=new Date(d.created_at);return criado>=ini&&criado<=fim;});
+    const emailDedupAll=new Map();
+    todosPeriodo.forEach(d=>{
+      const email=(d.contacts||[]).find(c=>c.emails?.length)?.emails?.[0]?.email||('id:'+(d._id||d.id));
+      const existing=emailDedupAll.get(email);
+      if(!existing||prioridadeFunil(d)<prioridadeFunil(existing)){emailDedupAll.set(email,d);}
+    });
+    const todosDeduped=[...emailDedupAll.values()];
+
     const campFiltro=selCamp.value;let dealsFilt=dealsFB;
     let fbInvest=fbTotais.investimento||0,fbLeads=fbTotais.leads||0;
     if(campFiltro!=='all'){
@@ -1385,8 +1397,10 @@ async function carregarAnaliseMarketing(){
       tbodyEl.appendChild(row);
     });
     document.getElementById('mk-tabela').style.display='block';
+    // Pipeline usa TODOS os deals do período (não filtra por campanha FB)
+    const dealsParaPipeline=campFiltro==='all'?todosDeduped:dealsFilt;
     const porFunil={};
-    dealsFilt.forEach(d=>{
+    dealsParaPipeline.forEach(d=>{
       const fid=d._pipeline_id||'outros';const fnome=d._pipeline_name||d.deal_pipeline?.name||'Outros';
       const est=d.deal_stage?.name||'Sem estágio';
       if(!porFunil[fid])porFunil[fid]={nome:fnome,estagios:{}};
