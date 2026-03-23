@@ -454,17 +454,17 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
     </div>
     <div id="mk-loading" style="display:none"></div>
     <div id="mk-empty" style="display:none" class="empty">Selecione o período e clique em Analisar.</div>
-    <div id="mk-stats" style="display:none;gap:10px;margin-bottom:16px">
+    <div id="mk-stats" style="display:none;margin-bottom:16px">
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:10px;">
         <div class="stat"><div class="num" id="mk-investimento">—</div><div class="lbl">Investimento FB</div></div>
         <div class="stat"><div class="num" id="mk-leads-fb">—</div><div class="lbl">Leads FB</div></div>
         <div class="stat"><div class="num" id="mk-cpl">—</div><div class="lbl">CPL</div></div>
       </div>
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:10px;">
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">
         <div class="stat" style="border-top-color:#7C3AED"><div class="num" id="mk-cpm" style="color:#7C3AED">—</div><div class="lbl">CPM</div></div>
         <div class="stat" style="border-top-color:#1D9E75"><div class="num" id="mk-roas" style="color:#1D9E75">—</div><div class="lbl">ROAS</div></div>
-        <div class="stat" style="border-top-color:#E24B4A"><div class="num" id="mk-valor-perdido" style="color:#E24B4A">—</div><div class="lbl">Valor Perdido</div></div>
-        <div class="stat" style="border-top-color:var(--laranja)"><div class="num" id="mk-valor-aberto" style="color:var(--laranja)">—</div><div class="lbl">Valor em Aberto</div></div>
+        <div class="stat" style="border-top-color:#E24B4A"><div class="num" id="mk-valor-perdido" style="color:#E24B4A">—</div><div class="lbl">Valor Perdido RD</div></div>
+        <div class="stat" style="border-top-color:var(--laranja)"><div class="num" id="mk-valor-aberto" style="color:var(--laranja)">—</div><div class="lbl">Valor em Aberto RD</div></div>
       </div>
     </div>
     <div id="mk-tabela" style="display:none;background:var(--branco);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:16px;">
@@ -1313,34 +1313,37 @@ async function carregarAnaliseMarketing(){
       const fbC=todasCampanhas.find(c=>c.nome===campFiltro);if(fbC){fbInvest=fbC.investimento;fbLeads=fbC.leads;}
     }
     const cpl=fbLeads>0?fbInvest/fbLeads:null;
-    // CPM total
     const cpmTotal=fbTotais.impressoes>0?(fbTotais.investimento/fbTotais.impressoes*1000):null;
-    // ROAS e valores do RD no período
-    const todosDealsRDPeriodo=todosDealsRaw.filter(d=>{const criado=new Date(d.created_at);return criado>=ini&&criado<=fim;});
-    const valorVendido=todosDealsRDPeriodo.filter(d=>d.win===true).reduce((s,d)=>s+Number(d.amount_montly||0),0);
-    const valorAberto=todosDealsRDPeriodo.filter(d=>!d.win&&!(d.deal_stage?.name||'').toLowerCase().includes('perdid')).reduce((s,d)=>s+Number(d.amount_montly||0),0);
-    const roas=fbInvest>0&&valorVendido>0?(valorVendido/fbInvest):null;
+    const todosDealsRDPer=todosDealsRaw.filter(d=>{const cr=new Date(d.created_at);return cr>=ini&&cr<=fim;});
+    const valVendido=todosDealsRDPer.filter(d=>d.win===true).reduce((s,d)=>s+Number(d.amount_montly||0),0);
+    const valAberto=todosDealsRDPer.filter(d=>!d.win&&!((d.deal_stage&&d.deal_stage.name)||'').toLowerCase().includes('perdid')).reduce((s,d)=>s+Number(d.amount_montly||0),0);
+    const valPerdido=todosDealsRDPer.filter(d=>((d.deal_stage&&d.deal_stage.name)||'').toLowerCase().includes('perdid')).reduce((s,d)=>s+Number(d.amount_montly||0),0);
+    const roas=fbInvest>0&&valVendido>0?(valVendido/fbInvest):null;
     document.getElementById('mk-investimento').textContent=fmtBRL(fbInvest);
     document.getElementById('mk-leads-fb').textContent=fbLeads||'0';
     document.getElementById('mk-cpl').textContent=fmtBRL(cpl);
     document.getElementById('mk-cpm').textContent=cpmTotal?fmtBRL(cpmTotal):'-';
     document.getElementById('mk-roas').textContent=roas?roas.toFixed(2)+'x':'-';
-    document.getElementById('mk-valor-perdido').textContent=fmtBRL(fbTotais.investimento>0?fbTotais.investimento:0);
-    document.getElementById('mk-valor-aberto').textContent=valorAberto>0?fmtBRL(valorAberto):'-';
+    document.getElementById('mk-valor-perdido').textContent=valPerdido>0?fmtBRL(valPerdido):'-';
+    document.getElementById('mk-valor-aberto').textContent=valAberto>0?fmtBRL(valAberto):'-';
     document.getElementById('mk-stats').style.display='block';
     const tbody=document.getElementById('mk-table-body');
-    tbody.innerHTML=todasCampanhas.map(c=>{
-      const cn=c.nome.replace(/'/g,"\\'");
+    tbody.innerHTML=todasCampanhas.map(function(c){
       const cpmC=c.impressoes>0?(c.investimento/c.impressoes*1000):null;
-      const palavrasCampC=c.nome.toLowerCase().replace(/\[.*?\]/g,'').trim().split(/\s+/).filter(p=>p.length>3);
-      const leadsRDC=dealsFB.filter(d=>{const camp=(d.campaign?.name||'').toLowerCase();return palavrasCampC.some(p=>camp.includes(p));}).length;
-      return `<div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;padding:10px 14px;border-bottom:1px solid var(--border);cursor:pointer;" onclick="mkDrillCampanha('${cn}')" onmouseover="this.style.background='var(--azul-pale)'" onmouseout="this.style.background=''">
-        <span style="font-size:12px;font-weight:500;color:var(--azul-escuro);">${c.nome} <span style="font-size:10px;color:var(--text-muted);">▶ ${leadsRDC} leads no RD</span></span>
-        <span style="font-size:12px;text-align:right;">${fmtBRL(c.investimento)}</span>
-        <span style="font-size:12px;font-weight:600;color:var(--laranja);text-align:right;">${c.leads||0}</span>
-        <span style="font-size:12px;text-align:right;">${fmtBRL(c.cpl)}</span>
-        <span style="font-size:12px;text-align:right;">${cpmC?fmtBRL(cpmC):'-'}</span>
-      </div>`;
+      const pwC=c.nome.toLowerCase().replace(/\[.*?\]/g,'').trim().split(/\s+/).filter(function(p){return p.length>3;});
+      const lRD=dealsFB.filter(function(d){const cm=((d.campaign&&d.campaign.name)||'').toLowerCase();return pwC.some(function(p){return cm.includes(p);});}).length;
+      const cnEsc=c.nome.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+      const row=document.createElement('div');
+      row.style.cssText='display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;padding:10px 14px;border-bottom:1px solid var(--border);cursor:pointer;';
+      row.onmouseover=function(){this.style.background='var(--azul-pale)';};
+      row.onmouseout=function(){this.style.background='';};
+      row.onclick=(function(nome){return function(){mkDrillCampanha(nome);};})(c.nome);
+      row.innerHTML='<span style="font-size:12px;font-weight:500;color:var(--azul-escuro);">'+c.nome+' <span style="font-size:10px;color:var(--text-muted);">▶ '+lRD+' leads no RD</span></span>'
+        +'<span style="font-size:12px;text-align:right;">'+fmtBRL(c.investimento)+'</span>'
+        +'<span style="font-size:12px;font-weight:600;color:var(--laranja);text-align:right;">'+(c.leads||0)+'</span>'
+        +'<span style="font-size:12px;text-align:right;">'+fmtBRL(c.cpl)+'</span>'
+        +'<span style="font-size:12px;text-align:right;">'+(cpmC?fmtBRL(cpmC):'-')+'</span>';
+      return row.outerHTML;
     }).join('');
     document.getElementById('mk-tabela').style.display='block';
     const porFunil={};
@@ -1405,6 +1408,7 @@ async function carregarAnaliseMarketing(){
   }
 }
 
+
 function mkDrillCampanha(campNome){
   const drill=document.getElementById('mk-camp-drill');
   if(drill.dataset.camp===campNome&&drill.style.display!=='none'){
@@ -1413,7 +1417,7 @@ function mkDrillCampanha(campNome){
   drill.dataset.camp=campNome;
   const palavras=campNome.toLowerCase().replace(/\[.*?\]/g,'').trim().split(/\s+/).filter(function(p){return p.length>3;});
   const filtrados=_mkDeals.filter(function(d){
-    const camp=(d.campaign&&d.campaign.name?d.campaign.name:'').toLowerCase();
+    const camp=((d.campaign&&d.campaign.name)||'').toLowerCase();
     return palavras.some(function(p){return camp.includes(p);});
   });
   function corEstD(e){
@@ -1431,86 +1435,79 @@ function mkDrillCampanha(campNome){
   const porFunilD={};
   filtrados.forEach(function(d){
     const fid=d._pipeline_id||'outros';
-    const fnome=d._pipeline_name||(d.deal_pipeline&&d.deal_pipeline.name?d.deal_pipeline.name:'Outros');
-    const est=(d.deal_stage&&d.deal_stage.name?d.deal_stage.name:'Sem estágio');
+    const fnome=d._pipeline_name||((d.deal_pipeline&&d.deal_pipeline.name)||'Outros');
+    const est=(d.deal_stage&&d.deal_stage.name)||'Sem estágio';
     if(!porFunilD[fid])porFunilD[fid]={nome:fnome,estagios:{}};
     if(!porFunilD[fid].estagios[est])porFunilD[fid].estagios[est]=[];
     porFunilD[fid].estagios[est].push(d);
   });
   let idx=Date.now()%100000;
-  const drillEl=document.createElement('div');
-  // Header
+  const wrap=document.createElement('div');
   const hdr=document.createElement('div');
   hdr.style.cssText='display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:var(--azul-pale);border-bottom:1px solid var(--border);';
-  const hdrTitle=document.createElement('span');
-  hdrTitle.style.cssText='font-size:13px;font-weight:600;color:var(--azul-escuro);';
-  hdrTitle.textContent='📣 '+campNome+' — '+filtrados.length+' lead'+(filtrados.length!==1?'s':'')+' no RD';
-  const hdrBtn=document.createElement('button');
-  hdrBtn.style.cssText='background:none;border:none;font-size:18px;cursor:pointer;color:var(--text-muted);';
-  hdrBtn.textContent='✕';
-  hdrBtn.onclick=function(){drill.style.display='none';drill.innerHTML='';drill.dataset.camp='';};
-  hdr.appendChild(hdrTitle);hdr.appendChild(hdrBtn);
-  drillEl.appendChild(hdr);
-  const body=document.createElement('div');
-  body.style.padding='12px';
+  const t=document.createElement('span');
+  t.style.cssText='font-size:13px;font-weight:600;color:var(--azul-escuro);';
+  t.textContent='📣 '+campNome+' — '+filtrados.length+' lead'+(filtrados.length!==1?'s':'')+' no RD';
+  const x=document.createElement('button');
+  x.style.cssText='background:none;border:none;font-size:18px;cursor:pointer;color:var(--text-muted);';
+  x.textContent='✕';
+  x.onclick=function(){drill.style.display='none';drill.innerHTML='';drill.dataset.camp='';};
+  hdr.appendChild(t);hdr.appendChild(x);wrap.appendChild(hdr);
+  const body=document.createElement('div');body.style.padding='12px';
   if(!filtrados.length){
-    const empty=document.createElement('div');
-    empty.className='empty';
-    empty.textContent='Nenhum lead do RD encontrado para esta campanha no período.';
-    body.appendChild(empty);
+    const em=document.createElement('div');em.className='empty';
+    em.textContent='Nenhum lead do RD encontrado para esta campanha no período.';
+    body.appendChild(em);
   } else {
     Object.keys(porFunilD).forEach(function(fid){
       const funil=porFunilD[fid];
       const total=Object.values(funil.estagios).flat().length;
-      const fBody='mkcf-'+(++idx);
-      const funilWrap=document.createElement('div');
-      funilWrap.style.cssText='background:var(--branco);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;overflow:hidden;';
-      const funilHdr=document.createElement('div');
-      funilHdr.style.cssText='padding:11px 14px;background:linear-gradient(135deg,var(--azul-escuro),var(--azul-medio));color:#fff;display:flex;align-items:center;justify-content:space-between;cursor:pointer;';
-      funilHdr.innerHTML='<span style="font-size:12px;font-weight:600;">'+funil.nome+'</span><div style="display:flex;gap:8px;align-items:center;"><span style="font-size:11px;background:rgba(255,255,255,.2);padding:2px 8px;border-radius:20px;">'+total+' lead'+(total!==1?'s':'')+'</span><span id="chv-'+fBody+'" style="font-size:10px;opacity:.8;transition:transform .2s;">▼</span></div>';
-      const funilBody=document.createElement('div');
-      funilBody.id=fBody;funilBody.style.display='none';funilBody.style.padding='10px';
-      funilHdr.onclick=function(){
-        const op=funilBody.style.display!=='none';
-        funilBody.style.display=op?'none':'block';
-        const chv=document.getElementById('chv-'+fBody);
-        if(chv)chv.style.transform=op?'':'rotate(180deg)';
+      const fBodyId='mkcf-'+(++idx);
+      const fw=document.createElement('div');
+      fw.style.cssText='background:var(--branco);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;overflow:hidden;';
+      const fh=document.createElement('div');
+      fh.style.cssText='padding:11px 14px;background:linear-gradient(135deg,var(--azul-escuro),var(--azul-medio));color:#fff;display:flex;align-items:center;justify-content:space-between;cursor:pointer;';
+      fh.innerHTML='<span style="font-size:12px;font-weight:600;">'+funil.nome+'</span>'
+        +'<div style="display:flex;gap:8px;align-items:center;">'
+        +'<span style="font-size:11px;background:rgba(255,255,255,.2);padding:2px 8px;border-radius:20px;">'+total+' lead'+(total!==1?'s':'')+'</span>'
+        +'<span id="fchv-'+fBodyId+'" style="font-size:10px;opacity:.8;transition:transform .2s;">▼</span></div>';
+      const fb=document.createElement('div');fb.id=fBodyId;fb.style.cssText='display:none;padding:10px;';
+      fh.onclick=function(){
+        const op=fb.style.display!=='none';fb.style.display=op?'none':'block';
+        const chv=document.getElementById('fchv-'+fBodyId);if(chv)chv.style.transform=op?'':'rotate(180deg)';
       };
       Object.keys(funil.estagios).sort(function(a,b){return(a.toLowerCase().includes('perdid')?1:0)-(b.toLowerCase().includes('perdid')?1:0);}).forEach(function(est){
         const leads=funil.estagios[est];const cor=corEstD(est);const eid='mkce-'+(++idx);
-        const estWrap=document.createElement('div');
-        estWrap.style.cssText='border:1px solid var(--border);border-radius:8px;margin-bottom:6px;overflow:hidden;';
-        const estHdr=document.createElement('div');
-        estHdr.style.cssText='display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;background:var(--branco);';
-        estHdr.innerHTML='<div style="width:9px;height:9px;border-radius:50%;background:'+cor+';flex-shrink:0;"></div><span style="font-size:12px;font-weight:600;color:var(--text);flex:1;">'+est+'</span><span style="font-size:11px;font-weight:700;color:'+cor+';background:'+cor+'18;padding:2px 10px;border-radius:20px;">'+leads.length+'</span><span id="chv2-'+eid+'" style="font-size:10px;color:var(--text-muted);transition:transform .2s;">▼</span>';
-        const estBody=document.createElement('div');
-        estBody.id=eid;estBody.style.cssText='display:none;border-top:1px solid var(--border);padding:10px;';
-        estHdr.onmouseover=function(){this.style.background='var(--azul-pale)';};
-        estHdr.onmouseout=function(){this.style.background='var(--branco)';};
-        estHdr.onclick=function(){
-          const op=estBody.style.display!=='none';
-          estBody.style.display=op?'none':'block';
-          const chv2=document.getElementById('chv2-'+eid);
-          if(chv2)chv2.style.transform=op?'':'rotate(180deg)';
+        const ew=document.createElement('div');
+        ew.style.cssText='border:1px solid var(--border);border-radius:8px;margin-bottom:6px;overflow:hidden;';
+        const eh=document.createElement('div');
+        eh.style.cssText='display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;background:var(--branco);';
+        eh.innerHTML='<div style="width:9px;height:9px;border-radius:50%;background:'+cor+';flex-shrink:0;"></div>'
+          +'<span style="font-size:12px;font-weight:600;color:var(--text);flex:1;">'+est+'</span>'
+          +'<span style="font-size:11px;font-weight:700;color:'+cor+';background:'+cor+'18;padding:2px 10px;border-radius:20px;">'+leads.length+'</span>'
+          +'<span id="echv-'+eid+'" style="font-size:10px;color:var(--text-muted);transition:transform .2s;">▼</span>';
+        const eb=document.createElement('div');eb.id=eid;eb.style.cssText='display:none;border-top:1px solid var(--border);padding:10px;';
+        eh.onmouseover=function(){this.style.background='var(--azul-pale)';};
+        eh.onmouseout=function(){this.style.background='var(--branco)';};
+        eh.onclick=function(){
+          const op=eb.style.display!=='none';eb.style.display=op?'none':'block';
+          const chv=document.getElementById('echv-'+eid);if(chv)chv.style.transform=op?'':'rotate(180deg)';
         };
-        leads.forEach(function(d,i){
+        leads.forEach(function(d){
           const di=diasAtras(d.updated_at||d.created_at);const urg=di>7?'urgente':di>=3?'atencao':'ok';
-          const tmp=document.createElement('div');tmp.innerHTML=cardP({...d,di,urg},++idx);
-          if(tmp.firstElementChild)estBody.appendChild(tmp.firstElementChild);
+          const tmp=document.createElement('div');tmp.innerHTML=cardP(Object.assign({},d,{di:di,urg:urg}),++idx);
+          if(tmp.firstElementChild)eb.appendChild(tmp.firstElementChild);
         });
-        estWrap.appendChild(estHdr);estWrap.appendChild(estBody);
-        funilBody.appendChild(estWrap);
+        ew.appendChild(eh);ew.appendChild(eb);fb.appendChild(ew);
       });
-      funilWrap.appendChild(funilHdr);funilWrap.appendChild(funilBody);
-      body.appendChild(funilWrap);
+      fw.appendChild(fh);fw.appendChild(fb);body.appendChild(fw);
     });
   }
-  drillEl.appendChild(body);
-  drill.innerHTML='';drill.appendChild(drillEl);
+  wrap.appendChild(body);
+  drill.innerHTML='';drill.appendChild(wrap);
   drill.style.display='block';
   drill.scrollIntoView({behavior:'smooth',block:'start'});
 }
-
 
 function mkDrillDown(campNome,filtroEstagio){
   const drill=document.getElementById('mk-drill');drill.style.display='none';drill.innerHTML='';_mkDrillAberto=campNome+'|'+filtroEstagio;
