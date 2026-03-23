@@ -679,20 +679,42 @@ const rdFetch=crmFetch;
 
 // ── FUNIS DINÂMICOS ───────────────────────────────────────
 let _funisCacheados=null;
+// Funis conhecidos como fallback (caso API não retorne)
+const _funisConhecidos=[
+  {_id:'6706b83df4cf270013213222',name:'Pré-vendas [Inbound]'},
+  {_id:'6706b8464c9f220026c047c1',name:'Vendas Contabilidade'},
+  {_id:'65c4078fa051670017a8b25d',name:'Vendas BPO Financeiro'},
+  {_id:'671931f51da141001338787c',name:'Projeto 360 + médicos'},
+  {_id:'689c91211ee005001ae35f53',name:'Vendas 360 + Médicos'},
+  {_id:'689c9195890719001dedb952',name:'Oportunidades >30D'},
+];
 async function carregarFunis(){
   if(_funisCacheados)return _funisCacheados;
   try{
     const data=await crmFetch('deal_pipelines');
     // Normaliza: API pode retornar array direto ou {deal_pipelines:[...]}
     const funis=Array.isArray(data)?data:(data.deal_pipelines||[]);
-    _funisCacheados=funis;
+    if(funis.length>0){
+      _funisCacheados=funis;
+      const sel=document.getElementById('f-funil');
+      if(sel){
+        sel.innerHTML='<option value="all">Todos os funis</option>';
+        funis.forEach(f=>{const opt=document.createElement('option');opt.value=f._id||f.id;opt.textContent=f.name;sel.appendChild(opt);});
+      }
+      return funis;
+    }
+    throw new Error('Sem funis na resposta');
+  }catch(e){
+    // Fallback: usa funis conhecidos
+    console.warn('Usando funis locais como fallback:',e.message);
+    _funisCacheados=_funisConhecidos;
     const sel=document.getElementById('f-funil');
     if(sel){
       sel.innerHTML='<option value="all">Todos os funis</option>';
-      funis.forEach(f=>{const opt=document.createElement('option');opt.value=f._id||f.id;opt.textContent=f.name;sel.appendChild(opt);});
+      _funisConhecidos.forEach(f=>{const opt=document.createElement('option');opt.value=f._id;opt.textContent=f.name;sel.appendChild(opt);});
     }
-    return funis;
-  }catch(e){console.error('Erro ao carregar funis:',e.message);return[];}
+    return _funisConhecidos;
+  }
 }
 
 // ── REUNIÕES ──────────────────────────────────────────────
@@ -1340,11 +1362,14 @@ async function carregarAnaliseMarketing(){
     document.getElementById('mk-valor-aberto').textContent=valAberto>0?fmtBRL(valAberto):'-';
     document.getElementById('mk-stats').style.display='block';
     const tbody=document.getElementById('mk-table-body');
-    tbody.innerHTML=todasCampanhas.map(function(c){
+    // Armazena campanhas para uso no drill
+    window._mkCampanhas=todasCampanhas;
+    const tbodyEl=document.getElementById('mk-table-body');
+    tbodyEl.innerHTML='';
+    todasCampanhas.forEach(function(c,ci){
       const cpmC=c.impressoes>0?(c.investimento/c.impressoes*1000):null;
       const pwC=c.nome.toLowerCase().replace(/\[.*?\]/g,'').trim().split(/\s+/).filter(function(p){return p.length>3;});
       const lRD=dealsFB.filter(function(d){const cm=((d.campaign&&d.campaign.name)||'').toLowerCase();return pwC.some(function(p){return cm.includes(p);});}).length;
-      const cnEsc=c.nome.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
       const row=document.createElement('div');
       row.style.cssText='display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;padding:10px 14px;border-bottom:1px solid var(--border);cursor:pointer;';
       row.onmouseover=function(){this.style.background='var(--azul-pale)';};
@@ -1355,8 +1380,8 @@ async function carregarAnaliseMarketing(){
         +'<span style="font-size:12px;font-weight:600;color:var(--laranja);text-align:right;">'+(c.leads||0)+'</span>'
         +'<span style="font-size:12px;text-align:right;">'+fmtBRL(c.cpl)+'</span>'
         +'<span style="font-size:12px;text-align:right;">'+(cpmC?fmtBRL(cpmC):'-')+'</span>';
-      return row.outerHTML;
-    }).join('');
+      tbodyEl.appendChild(row);
+    });
     document.getElementById('mk-tabela').style.display='block';
     const porFunil={};
     dealsFilt.forEach(d=>{
