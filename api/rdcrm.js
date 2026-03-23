@@ -17,39 +17,91 @@ export default async function handler(req, res) {
   const queryParams = { ...req.query };
   delete queryParams.path;
 
-  // Passa token como query param — igual ao rd.js que funcionava
-  const qs = new URLSearchParams({ token, ...queryParams }).toString();
-  const url = `https://crm.rdstation.com/api/v1/${pathStr}?${qs}`;
-
-  try {
-    const opts = {
-      method: req.method === 'POST' ? 'POST' : 'GET',
-      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }
-    };
-
-    if (req.method === 'POST' && req.body) {
-      opts.body = JSON.stringify(req.body);
-    }
-
-    const response = await fetch(url, opts);
-    const text = await response.text();
-
+  // POST — sem paginação
+  if (req.method === 'POST') {
+    const qs = new URLSearchParams({ token, ...queryParams }).toString();
+    const url = `https://crm.rdstation.com/api/v1/${pathStr}?${qs}`;
     try {
-      const data = JSON.parse(text);
+      const r = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify(req.body)
+      });
+      const text = await r.text();
+      try { return res.status(r.status).json(JSON.parse(text)); }
+      catch { return res.status(r.status).json({ erro: 'Resposta não JSON', detalhe: text.substring(0,300) }); }
+    } catch(e) {
+      return res.status(500).json({ erro: 'Erro interno', detalhe: e.message });
+    }
+  }
 
-      // Normaliza deal_pipelines — API retorna array direto
-      if (pathStr === 'deal_pipelines' && Array.isArray(data)) {
-        return res.status(response.status).json({ deal_pipelines: data });
+  // GET com paginação automática para endpoints de lista
+  const ENDPOINTS_PAGINADOS = ['deals', 'contacts', 'tasks', 'activities'];
+  const precisaPaginar = ENDPOINTS_PAGINADOS.some(ep => pathStr === ep || pathStr.startsWith(ep + '/') === false && pathStr === ep);
+
+  // deal_pipelines e outros endpoints simples — sem paginação
+  if (!precisaPaginar || pathStr !== 'deals') {
+    const qs = new URLSearchParams({ token, ...queryParams }).toString();
+    const url = `https://crm.rdstation.com/api/v1/${pathStr}?${qs}`;
+    try {
+      const r = await fetch(url, {
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }
+      });
+      const text = await r.text();
+      try {
+        const data = JSON.parse(text);
+        // Normaliza deal_pipelines — API retorna array direto
+        if (pathStr === 'deal_pipelines' && Array.isArray(data)) {
+          return res.status(r.status).json({ deal_pipelines: data });
+        }
+        return res.status(r.status).json(data);
+      } catch {
+        return res.status(r.status).json({ erro: 'Resposta não JSON', detalhe: text.substring(0,300) });
+      }
+    } catch(e) {
+      return res.status(500).json({ erro: 'Erro interno', detalhe: e.message });
+    }
+  }
+
+  // GET /deals — paginação automática completa
+  try {
+    const limit = 200;
+    let page = 1;
+    let todosDeals = [];
+    let continuar = true;
+
+    while (continuar) {
+      const params = { token, ...queryParams, limit: String(limit), page: String(page) };
+      const qs = new URLSearchParams(params).toString();
+      const url = `https://crm.rdstation.com/api/v1/deals?${qs}`;
+
+      const r = await fetch(url, {
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }
+      });
+
+      if (!r.ok) {
+        const text = await r.text();
+        try { return res.status(r.status).json(JSON.parse(text)); }
+        catch { return res.status(r.status).json({ erro: 'Erro na API RD', detalhe: text.substring(0,300) }); }
       }
 
-      return res.status(response.status).json(data);
-    } catch {
-      return res.status(response.status).json({
-        erro: 'Resposta não JSON',
-        detalhe: text.substring(0, 300)
-      });
+      const data = await r.json();
+      const deals = data.deals || [];
+      todosDeals = todosDeals.concat(deals);
+
+      // Para quando vier menos que o limite — última página
+      if (deals.length < limit) {
+        continuar = false;
+      } else {
+        page++;
+        // Segurança: máximo 15 páginas (3000 deals)
+        if (page > 15) continuar = false;
+      }
     }
-  } catch (e) {
+
+    return res.status(200).json({ deals: todosDeals, total: todosDeals.length });
+
+  } catch(e) {
     return res.status(500).json({ erro: 'Erro interno', detalhe: e.message });
   }
 }
