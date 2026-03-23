@@ -402,10 +402,13 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
           <option value="30" selected>Últimos 30 dias</option>
           <option value="60">Últimos 60 dias</option>
           <option value="90">Últimos 90 dias</option>
+          <option value="custom">Personalizado</option>
         </select>
       </div>
-      <div class="fg"><label>De</label><input type="date" id="fb-de"></div>
-      <div class="fg"><label>Até</label><input type="date" id="fb-ate"></div>
+      <div class="fg" id="fb-datas-custom" style="display:flex;gap:8px;">
+        <div class="fg"><label>De</label><input type="date" id="fb-de"></div>
+        <div class="fg"><label>Até</label><input type="date" id="fb-ate"></div>
+      </div>
       <div class="fg"><label>Status</label>
         <select id="fb-filtro-status">
           <option value="todas">Todas</option>
@@ -1146,7 +1149,16 @@ async function carregarTarefas(){
 
 // ── FACEBOOK ADS ──────────────────────────────────────────
 let _fbDadosAtual=null;
-function aplicarPeriodoFB(dias){if(!dias)return;const hoje=new Date();const de=new Date();de.setDate(hoje.getDate()-parseInt(dias));document.getElementById('fb-de').value=de.toISOString().split('T')[0];document.getElementById('fb-ate').value=hoje.toISOString().split('T')[0];}
+function aplicarPeriodoFB(dias){
+  if(!dias)return;
+  const custom=document.getElementById('fb-datas-custom');
+  if(dias==='custom'){if(custom)custom.style.display='flex';return;}
+  if(custom)custom.style.display='flex';
+  const hoje=new Date();const de=new Date();
+  de.setDate(hoje.getDate()-parseInt(dias));
+  document.getElementById('fb-de').value=de.toISOString().split('T')[0];
+  document.getElementById('fb-ate').value=hoje.toISOString().split('T')[0];
+}
 function limparFiltrosFB(){document.getElementById('fb-periodo').value='30';aplicarPeriodoFB('30');}
 
 async function carregarFacebook(){
@@ -1267,14 +1279,14 @@ async function carregarAnaliseMarketing(){
   try{
     const fmtBRL=v=>v!=null&&v>0?'R$ '+Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2}):'-';
     const ini=new Date(de+'T00:00:00');const fim=new Date(ate+'T23:59:59');
-    // Força recarregar funis se cache vazio
-    if(!_funisCacheados)_funisCacheados=null;
+    // Força recarregar funis (limpa cache para buscar sempre atualizado)
+    _funisCacheados=null;
     const[funis,fbRes]=await Promise.all([carregarFunis(),fetch(`/api/meta-ads?dateStart=${de}&dateEnd=${ate}`)]);
     if(!funis||funis.length===0){
       mkLoading.style.display='none';
       mkEmpty.style.display='block';
-      mkEmpty.innerHTML=`<div style="color:#791F1F;">Não foi possível carregar os funis. Verifique se está logado e tente novamente.</div>`;
-      return;
+      mkEmpty.innerHTML='<div style="color:#E24B4A;background:#FCEBEB;padding:12px;border-radius:8px;">Não foi possível carregar os funis do RD CRM. Verifique se o token está configurado corretamente na Vercel.</div>';
+      // Continua mesmo sem funis para mostrar pelo menos os dados do Facebook
     }
     const fbData=await fbRes.json();
     if(!fbRes.ok)throw new Error(fbData.erro||'Erro no Facebook Ads');
@@ -1284,11 +1296,13 @@ async function carregarAnaliseMarketing(){
     selCamp.innerHTML='<option value="all">Todas as campanhas</option>';
     todasCampanhas.forEach(c=>{const opt=document.createElement('option');opt.value=c.nome;opt.textContent=c.nome;selCamp.appendChild(opt);});
     if([...selCamp.options].some(o=>o.value===campAtual))selCamp.value=campAtual;
-    const todasRespostas=await Promise.all(funis.map(f=>crmFetch('deals',{deal_pipeline_id:f._id||f.id})));
     const todosDealsRaw=[];
-    funis.forEach((f,fi)=>{
-      (todasRespostas[fi]?.deals||[]).forEach(d=>{d._pipeline_id=f._id||f.id;d._pipeline_name=f.name;todosDealsRaw.push(d);});
-    });
+    if(funis&&funis.length>0){
+      const todasRespostas=await Promise.all(funis.map(f=>crmFetch('deals',{deal_pipeline_id:f._id||f.id}).catch(()=>({deals:[]}))));
+      funis.forEach((f,fi)=>{
+        (todasRespostas[fi]?.deals||[]).forEach(d=>{d._pipeline_id=f._id||f.id;d._pipeline_name=f.name;todosDealsRaw.push(d);});
+      });
+    }
     const nomesCampsFB=todasCampanhas.map(c=>c.nome.toLowerCase());
     function dealVeioDoFacebook(d){
       const campDeal=(d.campaign?.name||'').toLowerCase().trim();if(!campDeal)return false;
