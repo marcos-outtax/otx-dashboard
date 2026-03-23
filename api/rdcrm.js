@@ -1,46 +1,50 @@
 export default async function handler(req, res) {
-  // CORS (permite acesso do frontend)
+  // CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  if (req.method === 'OPTIONS') return res.status(200).end();
 
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-
-  const token = (process.env.RDCRM_ACCESS_TOKEN || '').trim();
+  const token = (process.env.RDCRM_TOKEN_SOCIO || '').trim();
 
   if (!token) {
     return res.status(401).json({
-      erro: 'RDCRM_ACCESS_TOKEN não configurado no Vercel'
+      erro: 'Token RDCRM não configurado no Vercel'
     });
   }
 
-  // endpoint dinâmico
-  const path = req.query.path || 'deals';
+  const queryPath = Array.isArray(req.query.path)
+    ? req.query.path.join('/')
+    : req.query.path;
 
-  const url = `https://api.rd.services/crm/v1/${path}`;
+  const pathStr = queryPath || 'deals';
+
+  const queryParams = { ...req.query };
+  delete queryParams.path;
+
+  const qs = new URLSearchParams(queryParams).toString();
+
+  const url = `https://crm.rdstation.com/api/v1/${pathStr}${qs ? '?' + qs : ''}`;
 
   try {
     const response = await fetch(url, {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
+        'X-Auth-Token': token,
+        'Accept': 'application/json'
       }
     });
 
-    const text = await response.text();
+    const data = await response.json();
 
-    try {
-      const data = JSON.parse(text);
-      return res.status(response.status).json(data);
-    } catch {
+    if (!response.ok) {
       return res.status(response.status).json({
-        erro: 'Resposta não JSON',
-        detalhe: text.substring(0, 300)
+        erro: 'Erro na API RD',
+        detalhe: data
       });
     }
+
+    return res.status(200).json(data);
 
   } catch (e) {
     return res.status(500).json({
