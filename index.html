@@ -707,7 +707,6 @@ async function carregarReunioes(){
     document.getElementById('cards-r').innerHTML=eventos.map((ev,i)=>cardReuniao(ev,i)).join('');
   }catch(e){document.getElementById('cards-r').innerHTML=`<div class="empty" style="color:#791F1F;">Erro: ${e.message}</div>`;}
 }
-
 function cardReuniao(ev,i){
   const nm=ev.nome||ev.summary||'Reunião';
   const hora=ev.hora||'';
@@ -719,6 +718,7 @@ function cardReuniao(ev,i){
   const dur=ev.dur||'1h';
   const orgClass=origem==='marketing'?'av-marketing':'av-direto';
   const cardClass=origem==='marketing'?'marketing':'direto';
+  const idCard='ev-'+i;
   return `
 <div class="card ${cardClass}" style="margin-bottom:8px;">
   <div class="card-head" onclick="toggle(this)">
@@ -744,12 +744,272 @@ function cardReuniao(ev,i){
         <div class="orig-dot ${origem}"></div>
         <span>${origem==='marketing'?'Lead de Marketing':'Indicação / Direto'}</span>
       </div>
-      ${meet?`<div class="act-row"><a href="${meet}" target="_blank" class="btn btn-p">🎥 Entrar na reunião ↗</a></div>`:''}
+      ${meet?`<div class="act-row" style="margin-bottom:12px;"><a href="${meet}" target="_blank" class="btn btn-p">🎥 Entrar na reunião ↗</a></div>`:''}
+
+      <!-- BLOCO RD STATION -->
+      ${email?`
+      <div style="border-top:1px solid var(--border);padding-top:12px;margin-top:4px;">
+        <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">Negociação no RD CRM</div>
+        <div id="rd-result-${idCard}">
+          <button class="btn btn-p" style="font-size:11px;" onclick="buscarLeadPorEmail('${email}','${idCard}',this)">🔍 Buscar lead no RD</button>
+        </div>
+      </div>`:''}
     </div>
   </div>
 </div>`;
 }
+async function buscarLeadPorEmail(email, idCard, btn){
+  const container=document.getElementById('rd-result-'+idCard);
+  container.innerHTML=load('Buscando no RD CRM...');
+  try{
+    // Passo 1 — busca contato pelo email
+    const contatos=await crmFetch('contacts',{email:encodeURIComponent(email)});
+    const contato=(contatos.contacts||[])[0];
+    if(!contato||!contato._id){
+      container.innerHTML=`<div style="font-size:12px;color:var(--text-muted);background:var(--azul-pale);padding:10px 12px;border-radius:8px;">Lead não encontrada no RD.</div>`;
+      return;
+    }
 
+    // Passo 2 — busca deals do contato
+    const dealsData=await crmFetch('deals',{contact_id:contato._id});
+    const deals=(dealsData.deals||[]);
+    if(!deals.length){
+      container.innerHTML=`<div style="font-size:12px;color:var(--text-muted);background:var(--azul-pale);padding:10px 12px;border-radius:8px;">Contato encontrado mas sem negociação no RD.</div>`;
+      return;
+    }
+
+    // Usa o deal mais recente
+    const deal=deals.sort((a,b)=>new Date(b.updated_at||b.created_at)-new Date(a.updated_at||a.created_at))[0];
+    const dealId=deal._id||deal.id||'';
+    const dealNome=deal.name||'Negociação';
+    const funil=deal.deal_pipeline?.name||deal._pipeline_name||'—';
+    const estagio=deal.deal_stage?.name||'—';
+    const empresa=(deal.contacts||[])[0]?.organization_name||'—';
+    const di=diasAtras(deal.updated_at||deal.created_at);
+
+    // Salva o deal para uso na análise IA
+    window['_dealReuniao_'+idCard]=deal;
+
+    container.innerHTML=`
+<div style="background:var(--azul-pale);border-radius:8px;padding:12px 14px;margin-bottom:10px;">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+    <div>
+      <div style="font-size:13px;font-weight:600;color:var(--azul-escuro);">${dealNome}</div>
+      <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">${empresa}</div>
+    </div>
+    <a href="https://crm.rdstation.com/app/deals/${dealId}" target="_blank" class="btn btn-p" style="font-size:11px;padding:5px 12px;flex-shrink:0;">Abrir no RD ↗</a>
+  </div>
+  <div class="two-col" style="margin-bottom:8px;">
+    <div class="ib"><div class="l">Funil</div><div class="v">${funil}</div></div>
+    <div class="ib"><div class="l">Estágio</div><div class="v">${estagio}</div></div>
+  </div>
+  <div class="two-col" style="margin-bottom:10px;">
+    <div class="ib"><div class="l">Última atualização</div><div class="v">${di===0?'Hoje':di===1?'1 dia':di+' dias atrás'}</div></div>
+    <div class="ib"><div class="l">Responsável</div><div class="v">${deal.user?.name||'—'}</div></div>
+  </div>
+
+  <!-- CNPJ e Análise IA -->
+  <div style="border-top:1px solid var(--border);padding-top:10px;">
+    <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">Consulta CNPJ + Análise Tributária</div>
+    <div style="display:flex;gap:8px;margin-bottom:8px;">
+      <input type="text" id="cnpj-reuniao-${idCard}" placeholder="00.000.000/0000-00" maxlength="18"
+        oninput="this.value=fc(this.value)"
+        onkeydown="if(event.key==='Enter')consultarCnpjReuniao('${idCard}','${dealId}','${dealNome}','${funil}','${estagio}')"
+        style="flex:1;padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:12px;">
+      <button class="btn btn-p" style="font-size:11px;" onclick="consultarCnpjReuniao('${idCard}','${dealId}','${dealNome}','${funil}','${estagio}')">🔍 Consultar</button>
+    </div>
+    <div id="cnpj-reuniao-result-${idCard}"></div>
+  </div>
+</div>`;
+
+  }catch(e){
+    container.innerHTML=`<div style="font-size:12px;color:#791F1F;background:#FCEBEB;padding:10px 12px;border-radius:8px;">Erro: ${e.message}</div>`;
+  }
+}
+
+async function consultarCnpjReuniao(idCard, dealId, dealNome, funil, estagio){
+  const raw=document.getElementById('cnpj-reuniao-'+idCard)?.value.replace(/\D/g,'')||'';
+  if(raw.length!==14){alert('CNPJ inválido.');return;}
+  const resultEl=document.getElementById('cnpj-reuniao-result-'+idCard);
+  resultEl.innerHTML=load('Consultando Receita Federal...');
+  try{
+    const r=await fetch(`/api/cnpj?cnpj=${raw}`);
+    const d=await r.json();
+    if(!r.ok)throw new Error(d.erro||'Erro ao consultar CNPJ');
+    const sit=d.situacao_cadastral||'';
+    const sitCor=sit.toLowerCase().includes('ativa')?'#1D9E75':'#E24B4A';
+    resultEl.innerHTML=`
+<div style="background:var(--branco);border:1px solid var(--border);border-radius:8px;padding:12px;margin-top:4px;">
+  <div class="two-col">
+    <div class="ib"><div class="l">Razão Social</div><div class="v">${d.razao_social||'-'}</div></div>
+    <div class="ib"><div class="l">Situação</div><div class="v" style="color:${sitCor};font-weight:700;">${sit||'-'}</div></div>
+  </div>
+  <div class="two-col">
+    <div class="ib"><div class="l">CNAE Principal</div><div class="v">${d.cnae_fiscal_descricao?`<span class="cnae-code">${d.cnae_fiscal}</span>${d.cnae_fiscal_descricao}`:'-'}</div></div>
+    <div class="ib"><div class="l">Porte</div><div class="v">${d.porte||'-'}</div></div>
+  </div>
+  <div class="two-col">
+    <div class="ib"><div class="l">Município/UF</div><div class="v">${d.municipio||'-'} / ${d.uf||'-'}</div></div>
+    <div class="ib"><div class="l">Capital Social</div><div class="v">${d.capital_social?'R$ '+Number(d.capital_social).toLocaleString('pt-BR'):'-'}</div></div>
+  </div>
+  <div class="act-row" style="margin-top:8px;">
+    <button class="btn btn-p" style="font-size:11px;" onclick="abrirAnaliseIAReuniao('${idCard}','${dealId}',${JSON.stringify({
+      razao_social:d.razao_social,
+      cnpj:d.cnpj,
+      cnae_cod:d.cnae_fiscal,
+      cnae_desc:d.cnae_fiscal_descricao,
+      porte:d.porte,
+      municipio:d.municipio,
+      uf:d.uf,
+      capital:d.capital_social,
+      funil:'${funil}',
+      estagio:'${estagio}',
+      nome:'${dealNome}',
+      dealId:'${dealId}'
+    }).replace(/"/g,'&quot;').replace(/'/g,'&#39;')})">🤖 Análise Tributária com IA</button>
+  </div>
+</div>`;
+  }catch(e){
+    resultEl.innerHTML=`<div style="font-size:12px;color:#791F1F;background:#FCEBEB;padding:10px 12px;border-radius:8px;">Erro: ${e.message}</div>`;
+  }
+}
+
+function abrirAnaliseIAReuniao(idCard, dealId, dados){
+  // Inclui o dealId nos dados para salvar no RD depois
+  _dadosReuniaoAtual={...dados, dealId};
+  _llmAtiva='chatgpt';
+  document.querySelectorAll('.llm-btn').forEach(b=>b.classList.remove('ativo'));
+  document.querySelectorAll('.llm-btn')[0]?.classList.add('ativo');
+  gerarPromptAI(_dadosReuniaoAtual);
+  document.getElementById('modal-ai').style.display='flex';
+  document.getElementById('prompt-section').style.display='block';
+}
+async function buscarLeadPorEmail(email, idCard, btn){
+  const container=document.getElementById('rd-result-'+idCard);
+  container.innerHTML=load('Buscando no RD CRM...');
+  try{
+    // Passo 1 — busca contato pelo email
+    const contatos=await crmFetch('contacts',{email:encodeURIComponent(email)});
+    const contato=(contatos.contacts||[])[0];
+    if(!contato||!contato._id){
+      container.innerHTML=`<div style="font-size:12px;color:var(--text-muted);background:var(--azul-pale);padding:10px 12px;border-radius:8px;">Lead não encontrada no RD.</div>`;
+      return;
+    }
+
+    // Passo 2 — busca deals do contato
+    const dealsData=await crmFetch('deals',{contact_id:contato._id});
+    const deals=(dealsData.deals||[]);
+    if(!deals.length){
+      container.innerHTML=`<div style="font-size:12px;color:var(--text-muted);background:var(--azul-pale);padding:10px 12px;border-radius:8px;">Contato encontrado mas sem negociação no RD.</div>`;
+      return;
+    }
+
+    // Usa o deal mais recente
+    const deal=deals.sort((a,b)=>new Date(b.updated_at||b.created_at)-new Date(a.updated_at||a.created_at))[0];
+    const dealId=deal._id||deal.id||'';
+    const dealNome=deal.name||'Negociação';
+    const funil=deal.deal_pipeline?.name||deal._pipeline_name||'—';
+    const estagio=deal.deal_stage?.name||'—';
+    const empresa=(deal.contacts||[])[0]?.organization_name||'—';
+    const di=diasAtras(deal.updated_at||deal.created_at);
+
+    // Salva o deal para uso na análise IA
+    window['_dealReuniao_'+idCard]=deal;
+
+    container.innerHTML=`
+<div style="background:var(--azul-pale);border-radius:8px;padding:12px 14px;margin-bottom:10px;">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+    <div>
+      <div style="font-size:13px;font-weight:600;color:var(--azul-escuro);">${dealNome}</div>
+      <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">${empresa}</div>
+    </div>
+    <a href="https://crm.rdstation.com/app/deals/${dealId}" target="_blank" class="btn btn-p" style="font-size:11px;padding:5px 12px;flex-shrink:0;">Abrir no RD ↗</a>
+  </div>
+  <div class="two-col" style="margin-bottom:8px;">
+    <div class="ib"><div class="l">Funil</div><div class="v">${funil}</div></div>
+    <div class="ib"><div class="l">Estágio</div><div class="v">${estagio}</div></div>
+  </div>
+  <div class="two-col" style="margin-bottom:10px;">
+    <div class="ib"><div class="l">Última atualização</div><div class="v">${di===0?'Hoje':di===1?'1 dia':di+' dias atrás'}</div></div>
+    <div class="ib"><div class="l">Responsável</div><div class="v">${deal.user?.name||'—'}</div></div>
+  </div>
+
+  <!-- CNPJ e Análise IA -->
+  <div style="border-top:1px solid var(--border);padding-top:10px;">
+    <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">Consulta CNPJ + Análise Tributária</div>
+    <div style="display:flex;gap:8px;margin-bottom:8px;">
+      <input type="text" id="cnpj-reuniao-${idCard}" placeholder="00.000.000/0000-00" maxlength="18"
+        oninput="this.value=fc(this.value)"
+        onkeydown="if(event.key==='Enter')consultarCnpjReuniao('${idCard}','${dealId}','${dealNome}','${funil}','${estagio}')"
+        style="flex:1;padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:12px;">
+      <button class="btn btn-p" style="font-size:11px;" onclick="consultarCnpjReuniao('${idCard}','${dealId}','${dealNome}','${funil}','${estagio}')">🔍 Consultar</button>
+    </div>
+    <div id="cnpj-reuniao-result-${idCard}"></div>
+  </div>
+</div>`;
+
+  }catch(e){
+    container.innerHTML=`<div style="font-size:12px;color:#791F1F;background:#FCEBEB;padding:10px 12px;border-radius:8px;">Erro: ${e.message}</div>`;
+  }
+}
+
+async function consultarCnpjReuniao(idCard, dealId, dealNome, funil, estagio){
+  const raw=document.getElementById('cnpj-reuniao-'+idCard)?.value.replace(/\D/g,'')||'';
+  if(raw.length!==14){alert('CNPJ inválido.');return;}
+  const resultEl=document.getElementById('cnpj-reuniao-result-'+idCard);
+  resultEl.innerHTML=load('Consultando Receita Federal...');
+  try{
+    const r=await fetch(`/api/cnpj?cnpj=${raw}`);
+    const d=await r.json();
+    if(!r.ok)throw new Error(d.erro||'Erro ao consultar CNPJ');
+    const sit=d.situacao_cadastral||'';
+    const sitCor=sit.toLowerCase().includes('ativa')?'#1D9E75':'#E24B4A';
+    resultEl.innerHTML=`
+<div style="background:var(--branco);border:1px solid var(--border);border-radius:8px;padding:12px;margin-top:4px;">
+  <div class="two-col">
+    <div class="ib"><div class="l">Razão Social</div><div class="v">${d.razao_social||'-'}</div></div>
+    <div class="ib"><div class="l">Situação</div><div class="v" style="color:${sitCor};font-weight:700;">${sit||'-'}</div></div>
+  </div>
+  <div class="two-col">
+    <div class="ib"><div class="l">CNAE Principal</div><div class="v">${d.cnae_fiscal_descricao?`<span class="cnae-code">${d.cnae_fiscal}</span>${d.cnae_fiscal_descricao}`:'-'}</div></div>
+    <div class="ib"><div class="l">Porte</div><div class="v">${d.porte||'-'}</div></div>
+  </div>
+  <div class="two-col">
+    <div class="ib"><div class="l">Município/UF</div><div class="v">${d.municipio||'-'} / ${d.uf||'-'}</div></div>
+    <div class="ib"><div class="l">Capital Social</div><div class="v">${d.capital_social?'R$ '+Number(d.capital_social).toLocaleString('pt-BR'):'-'}</div></div>
+  </div>
+  <div class="act-row" style="margin-top:8px;">
+    <button class="btn btn-p" style="font-size:11px;" onclick="abrirAnaliseIAReuniao('${idCard}','${dealId}',${JSON.stringify({
+      razao_social:d.razao_social,
+      cnpj:d.cnpj,
+      cnae_cod:d.cnae_fiscal,
+      cnae_desc:d.cnae_fiscal_descricao,
+      porte:d.porte,
+      municipio:d.municipio,
+      uf:d.uf,
+      capital:d.capital_social,
+      funil:'${funil}',
+      estagio:'${estagio}',
+      nome:'${dealNome}',
+      dealId:'${dealId}'
+    }).replace(/"/g,'&quot;').replace(/'/g,'&#39;')})">🤖 Análise Tributária com IA</button>
+  </div>
+</div>`;
+  }catch(e){
+    resultEl.innerHTML=`<div style="font-size:12px;color:#791F1F;background:#FCEBEB;padding:10px 12px;border-radius:8px;">Erro: ${e.message}</div>`;
+  }
+}
+
+function abrirAnaliseIAReuniao(idCard, dealId, dados){
+  // Inclui o dealId nos dados para salvar no RD depois
+  _dadosReuniaoAtual={...dados, dealId};
+  _llmAtiva='chatgpt';
+  document.querySelectorAll('.llm-btn').forEach(b=>b.classList.remove('ativo'));
+  document.querySelectorAll('.llm-btn')[0]?.classList.add('ativo');
+  gerarPromptAI(_dadosReuniaoAtual);
+  document.getElementById('modal-ai').style.display='flex';
+  document.getElementById('prompt-section').style.display='block';
+}
 // ── PROPOSTAS ────────────────────────────────────────────
 let _dealsCarregados=[];
 let _estagioAtivo=null;
