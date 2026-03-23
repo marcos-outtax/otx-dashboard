@@ -663,14 +663,12 @@ function dataHoje(){return new Date().toISOString().split('T')[0];}
 
 // ── API RD CRM ────────────────────────────────────────────
 async function crmFetch(path,params={},method='GET',body=null){
-  if(!verificarSessao())throw new Error('Sessão expirada. Faça login novamente.');
   const qs=Object.keys(params).length?'&'+new URLSearchParams(params):'';
   const url=`/api/rdcrm?path=${encodeURIComponent(path)}${qs}`;
   const opts={method,headers:{'Content-Type':'application/json','X-Session-Token':getSessionToken()}};
   if(body)opts.body=JSON.stringify(body);
   const r=await fetch(url,opts);
   const data=await r.json();
-  if(r.status===401){fazerLogout();throw new Error('Sessão expirada. Faça login novamente.');}
   if(data.erro)throw new Error(data.erro);
   return data;
 }
