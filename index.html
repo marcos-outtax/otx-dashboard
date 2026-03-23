@@ -463,9 +463,10 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
         <div class="stat"><div class="num" id="mk-leads-fb">—</div><div class="lbl">Leads FB</div></div>
         <div class="stat"><div class="num" id="mk-cpl">—</div><div class="lbl">CPL</div></div>
       </div>
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;">
         <div class="stat" style="border-top-color:#7C3AED"><div class="num" id="mk-cpm" style="color:#7C3AED">—</div><div class="lbl">CPM</div></div>
         <div class="stat" style="border-top-color:#1D9E75"><div class="num" id="mk-roas" style="color:#1D9E75">—</div><div class="lbl">ROAS</div></div>
+        <div class="stat" style="border-top-color:#1D9E75"><div class="num" id="mk-valor-vendido" style="color:#1D9E75">—</div><div class="lbl">Valor Vendido RD</div></div>
         <div class="stat" style="border-top-color:#E24B4A"><div class="num" id="mk-valor-perdido" style="color:#E24B4A">—</div><div class="lbl">Valor Perdido RD</div></div>
         <div class="stat" style="border-top-color:var(--laranja)"><div class="num" id="mk-valor-aberto" style="color:var(--laranja)">—</div><div class="lbl">Valor em Aberto RD</div></div>
       </div>
@@ -1358,6 +1359,7 @@ async function carregarAnaliseMarketing(){
     document.getElementById('mk-cpl').textContent=fmtBRL(cpl);
     document.getElementById('mk-cpm').textContent=cpmTotal?fmtBRL(cpmTotal):'-';
     document.getElementById('mk-roas').textContent=roas?roas.toFixed(2)+'x':'-';
+    document.getElementById('mk-valor-vendido').textContent=valVendido>0?fmtBRL(valVendido):'-';
     document.getElementById('mk-valor-perdido').textContent=valPerdido>0?fmtBRL(valPerdido):'-';
     document.getElementById('mk-valor-aberto').textContent=valAberto>0?fmtBRL(valAberto):'-';
     document.getElementById('mk-stats').style.display='block';
