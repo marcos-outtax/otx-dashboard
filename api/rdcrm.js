@@ -9,57 +9,46 @@ export default async function handler(req, res) {
     return res.status(401).json({ erro: 'RDCRM_TOKEN_SOCIO não configurado no Vercel' });
   }
 
-  const queryPath = Array.isArray(req.query.path)
-    ? req.query.path.join('/')
-    : req.query.path;
-  const pathStr = queryPath || 'deals';
-
-  // POST
+  // POST — o path vem no body, não na query
   if (req.method === 'POST') {
     const body = req.body || {};
 
+    // Path vem no body para POST
+    let finalPath = body.path || 'deals';
+    delete body.path;
+
     // Compatibilidade formato antigo: path=activities com deal_id no body
-    let finalPath = pathStr;
-    if (pathStr === 'activities' && body.deal_id) {
+    if (finalPath === 'activities' && body.deal_id) {
       finalPath = `deals/${body.deal_id}/activities`;
+      delete body.deal_id;
     }
 
-    // Passa token via query param — mesmo método do GET que funciona
     const qs = new URLSearchParams({ token }).toString();
     const url = `https://crm.rdstation.com/api/v1/${finalPath}?${qs}`;
-
-    // Body limpo — remove campos de controle interno
-    const rdBody = { ...body };
-    delete rdBody.path;
-    // Mantém deal_id no body pois alguns endpoints precisam
 
     try {
       const r = await fetch(url, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'X-Auth-Token': token  // tenta também via header
-        },
-        body: JSON.stringify(rdBody)
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify(body)
       });
       const text = await r.text();
-      // Retorna diagnóstico completo para debug
-      const parsed = (() => { try { return JSON.parse(text); } catch { return { raw: text }; } })();
-      return res.status(r.status).json({
-        ...parsed,
-        _debug: { url: url.replace(token, '***'), body: rdBody }
-      });
+      try { return res.status(r.status).json(JSON.parse(text)); }
+      catch { return res.status(r.status).json({ erro: 'Resposta não JSON', detalhe: text.substring(0, 300) }); }
     } catch (e) {
       return res.status(500).json({ erro: 'Erro interno', detalhe: e.message });
     }
   }
 
-  // GET com paginação automática para deals
+  // GET — path vem na query string
+  const queryPath = Array.isArray(req.query.path)
+    ? req.query.path.join('/')
+    : (req.query.path || 'deals');
+
   const queryParams = { ...req.query };
   delete queryParams.path;
 
-  if (pathStr === 'deals') {
+  if (queryPath === 'deals') {
     try {
       const limit = 200;
       let page = 1;
@@ -90,17 +79,17 @@ export default async function handler(req, res) {
     }
   }
 
-  // GET simples — contacts, deal_pipelines, tasks, etc.
+  // GET simples
   try {
     const qs = new URLSearchParams({ token, ...queryParams }).toString();
-    const url = `https://crm.rdstation.com/api/v1/${pathStr}?${qs}`;
+    const url = `https://crm.rdstation.com/api/v1/${queryPath}?${qs}`;
     const r = await fetch(url, {
       headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }
     });
     const text = await r.text();
     try {
       const data = JSON.parse(text);
-      if (pathStr === 'deal_pipelines' && Array.isArray(data)) {
+      if (queryPath === 'deal_pipelines' && Array.isArray(data)) {
         return res.status(r.status).json({ deal_pipelines: data });
       }
       return res.status(r.status).json(data);
