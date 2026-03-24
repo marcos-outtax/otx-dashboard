@@ -14,35 +14,42 @@ export default async function handler(req, res) {
     : req.query.path;
   const pathStr = queryPath || 'deals';
 
-  // POST — atividades e outros endpoints de escrita
+  // POST
   if (req.method === 'POST') {
     const body = req.body || {};
-    // Se path=activities no body (formato antigo), converte para deals/{id}/activities
+
+    // Compatibilidade formato antigo: path=activities com deal_id no body
     let finalPath = pathStr;
     if (pathStr === 'activities' && body.deal_id) {
       finalPath = `deals/${body.deal_id}/activities`;
     }
 
+    // Passa token via query param — mesmo método do GET que funciona
     const qs = new URLSearchParams({ token }).toString();
     const url = `https://crm.rdstation.com/api/v1/${finalPath}?${qs}`;
 
-    // Monta o body para a API do RD
-    const rdBody = {};
-    if (body.text) rdBody.text = body.text;
-    if (body.deal_id && finalPath.includes('activities')) rdBody.deal_id = body.deal_id;
+    // Body limpo — remove campos de controle interno
+    const rdBody = { ...body };
+    delete rdBody.path;
+    // Mantém deal_id no body pois alguns endpoints precisam
 
     try {
       const r = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-Auth-Token': token  // tenta também via header
+        },
         body: JSON.stringify(rdBody)
       });
       const text = await r.text();
-      try {
-        return res.status(r.status).json(JSON.parse(text));
-      } catch {
-        return res.status(r.status).json({ erro: 'Resposta não JSON', detalhe: text.substring(0, 300) });
-      }
+      // Retorna diagnóstico completo para debug
+      const parsed = (() => { try { return JSON.parse(text); } catch { return { raw: text }; } })();
+      return res.status(r.status).json({
+        ...parsed,
+        _debug: { url: url.replace(token, '***'), body: rdBody }
+      });
     } catch (e) {
       return res.status(500).json({ erro: 'Erro interno', detalhe: e.message });
     }
@@ -83,7 +90,7 @@ export default async function handler(req, res) {
     }
   }
 
-  // GET simples para outros endpoints (contacts, deal_pipelines, tasks, etc.)
+  // GET simples — contacts, deal_pipelines, tasks, etc.
   try {
     const qs = new URLSearchParams({ token, ...queryParams }).toString();
     const url = `https://crm.rdstation.com/api/v1/${pathStr}?${qs}`;
