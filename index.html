@@ -871,7 +871,7 @@ async function consultarCnpjReuniao(idCard, dealId, dealNome, funil, estagio){
     <div class="ib"><div class="l">Capital Social</div><div class="v">${d.capital_social?'R$ '+Number(d.capital_social).toLocaleString('pt-BR'):'-'}</div></div>
   </div>
   <div class="act-row" style="margin-top:8px;">
-    <button class="btn btn-p" style="font-size:11px;" onclick="abrirAnaliseIAReuniao('${idCard}','${dealId}',window._cnpjDados_${idCard})">🤖 Análise Tributária com IA</button>
+    <button class="btn btn-p" style="font-size:11px;" onclick="abrirAnaliseIAReuniao('${idCard}','${dealId}',window['_cnpjDados_${idCard}'])">🤖 Análise Tributária com IA</button>
   </div>
 </div>`;
   // Armazena os dados do CNPJ para uso na análise IA
@@ -1694,12 +1694,15 @@ async function gravarNoRD(btnEl){
   const analise=document.getElementById('ti-analise').textContent;
   const dealId=dados.dealId||dados.deal?.id||dados.deal?._id||'';
   const btn=btnEl||document.querySelector('.tela-imp-footer button:last-child');
-  if(!dealId){alert('Deal ID não encontrado. Abra a negociação no RD CRM antes de gravar.');return;}
+  console.log('gravarNoRD — dados:', JSON.stringify(dados));
+  console.log('gravarNoRD — dealId:', dealId);
+  if(!dealId){alert('Deal ID não encontrado. Verifique se buscou o lead no RD antes de gravar.');if(btn){btn.textContent='💾 Gravar no RD Station';btn.disabled=false;}return;}
   const nota='📊 ANÁLISE TRIBUTÁRIA — '+new Date().toLocaleDateString('pt-BR')+'\n\n'+analise+'\n\n—\nGerado pelo Outtax Dashboard';
   if(btn){btn.textContent='⏳ Gravando...';btn.disabled=true;}
   try{
     const r=await fetch('/api/rdcrm',{method:'POST',headers:{'Content-Type':'application/json','X-Session-Token':getSessionToken()},body:JSON.stringify({path:'deals/'+dealId+'/activities',text:nota})});
     const data=await r.json();
+    console.log('gravarNoRD — resposta:', r.status, JSON.stringify(data));
     if(r.ok&&!data.erro){
       if(btn){btn.textContent='✅ Gravado!';btn.style.background='#1D9E75';}
       setTimeout(()=>fecharTelaImportacao(),2000);
