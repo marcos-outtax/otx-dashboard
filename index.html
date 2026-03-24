@@ -856,8 +856,28 @@ async function consultarCnpjReuniao(idCard, dealId, dealNome, funil, estagio){
     if(!r.ok)throw new Error(d.erro||'Erro ao consultar CNPJ');
     const sit=d.situacao_cadastral||'';
     const sitCor=sit.toLowerCase().includes('ativa')?'#1D9E75':'#E24B4A';
-    resultEl.innerHTML=`
-<div style="background:var(--branco);border:1px solid var(--border);border-radius:8px;padding:12px;margin-top:4px;">
+
+    // Armazena dados usando idCard real (não string literal)
+    const dadosCnpj={
+      razao_social:d.razao_social,
+      cnpj:d.cnpj,
+      cnae_cod:d.cnae_fiscal,
+      cnae_desc:d.cnae_fiscal_descricao,
+      porte:d.porte,
+      municipio:d.municipio,
+      uf:d.uf,
+      capital:d.capital_social,
+      funil:funil,
+      estagio:estagio,
+      nome:dealNome,
+      dealId:dealId
+    };
+    window['_cnpjDados_'+idCard]=dadosCnpj;
+
+    // Monta resultado sem passar dados via onclick — usa closure via window
+    const wrap=document.createElement('div');
+    wrap.style.cssText='background:var(--branco);border:1px solid var(--border);border-radius:8px;padding:12px;margin-top:4px;';
+    wrap.innerHTML=`
   <div class="two-col">
     <div class="ib"><div class="l">Razão Social</div><div class="v">${d.razao_social||'-'}</div></div>
     <div class="ib"><div class="l">Situação</div><div class="v" style="color:${sitCor};font-weight:700;">${sit||'-'}</div></div>
@@ -870,25 +890,20 @@ async function consultarCnpjReuniao(idCard, dealId, dealNome, funil, estagio){
     <div class="ib"><div class="l">Município/UF</div><div class="v">${d.municipio||'-'} / ${d.uf||'-'}</div></div>
     <div class="ib"><div class="l">Capital Social</div><div class="v">${d.capital_social?'R$ '+Number(d.capital_social).toLocaleString('pt-BR'):'-'}</div></div>
   </div>
-  <div class="act-row" style="margin-top:8px;">
-    <button class="btn btn-p" style="font-size:11px;" onclick="abrirAnaliseIAReuniao('${idCard}','${dealId}',window['_cnpjDados_${idCard}'])">🤖 Análise Tributária com IA</button>
-  </div>
-</div>`;
-  // Armazena os dados do CNPJ para uso na análise IA
-  window['_cnpjDados_${idCard}']={
-    razao_social:d.razao_social,
-    cnpj:d.cnpj,
-    cnae_cod:d.cnae_fiscal,
-    cnae_desc:d.cnae_fiscal_descricao,
-    porte:d.porte,
-    municipio:d.municipio,
-    uf:d.uf,
-    capital:d.capital_social,
-    funil:'${funil}',
-    estagio:'${estagio}',
-    nome:'${dealNome}',
-    dealId:'${dealId}'
-  };
+  <div class="act-row" style="margin-top:8px;"></div>`;
+
+    // Botão com addEventListener — sem passar dados via onclick string
+    const btn=document.createElement('button');
+    btn.className='btn btn-p';
+    btn.style.fontSize='11px';
+    btn.textContent='🤖 Análise Tributária com IA';
+    btn.addEventListener('click', function(){
+      abrirAnaliseIAReuniao(idCard, dealId, window['_cnpjDados_'+idCard]);
+    });
+    wrap.querySelector('.act-row').appendChild(btn);
+    resultEl.innerHTML='';
+    resultEl.appendChild(wrap);
+
   }catch(e){
     resultEl.innerHTML=`<div style="font-size:12px;color:#791F1F;background:#FCEBEB;padding:10px 12px;border-radius:8px;">Erro: ${e.message}</div>`;
   }
