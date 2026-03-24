@@ -564,7 +564,7 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
   </div>
   <div class="tela-imp-footer">
     <button onclick="fecharTelaImportacao()" style="padding:10px 20px;border-radius:8px;border:1px solid #e5e5e5;background:#fff;cursor:pointer;font-size:13px;">Cancelar</button>
-    <button onclick="gravarNoRD()" style="padding:10px 24px;border-radius:8px;border:none;background:#1D9E75;color:#fff;font-weight:600;cursor:pointer;font-size:13px;">💾 Gravar no RD Station</button>
+    <button onclick="gravarNoRD(this)" style="padding:10px 24px;border-radius:8px;border:none;background:#1D9E75;color:#fff;font-weight:600;cursor:pointer;font-size:13px;">💾 Gravar no RD Station</button>
   </div>
 </div>
 
@@ -1675,7 +1675,7 @@ function processarAnaliseImportada(){
   const texto=document.getElementById('txt-colar-ai').value.trim();
   if(!texto){alert('Cole ou importe o texto da análise primeiro.');return;}
   const dados=_dadosReuniaoAtual||{};
-  document.getElementById('ti-nome').textContent=dados.nome||dados.razao_social||'-';
+  document.getElementById('ti-nome').textContent=dados.nome||dados.razao_social||dados.dealNome||'-';
   document.getElementById('ti-dados').innerHTML=`
     <strong>Cliente:</strong> ${dados.nome||dados.razao_social||'-'}<br>
     <strong>CNPJ:</strong> ${dados.cnpj||'-'}<br>
@@ -1687,18 +1687,27 @@ function processarAnaliseImportada(){
 }
 function fecharTelaImportacao(){document.getElementById('tela-importacao').classList.remove('aberta');}
 
-async function gravarNoRD(){
+async function gravarNoRD(btnEl){
   const dados=_dadosReuniaoAtual||{};
   const analise=document.getElementById('ti-analise').textContent;
   const dealId=dados.dealId||dados.deal?.id||dados.deal?._id||'';
+  const btn=btnEl||document.querySelector('.tela-imp-footer button:last-child');
   if(!dealId){alert('Deal ID não encontrado. Abra a negociação no RD CRM antes de gravar.');return;}
-  const nota=`📊 ANÁLISE TRIBUTÁRIA — ${new Date().toLocaleDateString('pt-BR')}\n\n${analise}\n\n—\nGerado pelo Outtax Dashboard`;
+  const nota='📊 ANÁLISE TRIBUTÁRIA — '+new Date().toLocaleDateString('pt-BR')+'\n\n'+analise+'\n\n—\nGerado pelo Outtax Dashboard';
+  if(btn){btn.textContent='⏳ Gravando...';btn.disabled=true;}
   try{
-    const btn=event.target;btn.textContent='⏳ Gravando...';btn.disabled=true;
-    const r=await fetch('/api/rdcrm',{method:'POST',headers:{'Content-Type':'application/json','X-Session-Token':getSessionToken()},body:JSON.stringify({path:'activities',deal_id:dealId,text:nota})});
-    if(r.ok){btn.textContent='✅ Gravado!';btn.style.background='#1D9E75';setTimeout(()=>fecharTelaImportacao(),2000);}
-    else{const e=await r.json();throw new Error(e.erro||'Erro ao gravar');}
-  }catch(e){alert('Erro ao gravar no RD: '+e.message);event.target.textContent='💾 Gravar no RD Station';event.target.disabled=false;}
+    const r=await fetch('/api/rdcrm',{method:'POST',headers:{'Content-Type':'application/json','X-Session-Token':getSessionToken()},body:JSON.stringify({path:'deals/'+dealId+'/activities',text:nota})});
+    const data=await r.json();
+    if(r.ok&&!data.erro){
+      if(btn){btn.textContent='✅ Gravado!';btn.style.background='#1D9E75';}
+      setTimeout(()=>fecharTelaImportacao(),2000);
+    }else{
+      throw new Error(data.erro||JSON.stringify(data.detalhe)||'Erro ao gravar');
+    }
+  }catch(e){
+    alert('Erro ao gravar no RD: '+e.message);
+    if(btn){btn.textContent='💾 Gravar no RD Station';btn.disabled=false;btn.style.background='';}
+  }
 }
 
 // ── INICIALIZAÇÃO ─────────────────────────────────────────
