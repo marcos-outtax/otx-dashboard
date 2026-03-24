@@ -680,41 +680,22 @@ const rdFetch=crmFetch;
 
 // ── FUNIS DINÂMICOS ───────────────────────────────────────
 let _funisCacheados=null;
-// Funis conhecidos como fallback (caso API não retorne)
-const _funisConhecidos=[
-  {_id:'6706b83df4cf270013213222',name:'Pré-vendas [Inbound]'},
-  {_id:'6706b8464c9f220026c047c1',name:'Vendas Contabilidade'},
-  {_id:'65c4078fa051670017a8b25d',name:'Vendas BPO Financeiro'},
-  {_id:'671931f51da141001338787c',name:'Projeto 360 + médicos'},
-  {_id:'689c91211ee005001ae35f53',name:'Vendas 360 + Médicos'},
-  {_id:'689c9195890719001dedb952',name:'Oportunidades >30D'},
-];
 async function carregarFunis(){
   if(_funisCacheados)return _funisCacheados;
   try{
     const data=await crmFetch('deal_pipelines');
     // Normaliza: API pode retornar array direto ou {deal_pipelines:[...]}
     const funis=Array.isArray(data)?data:(data.deal_pipelines||[]);
-    if(funis.length>0){
-      _funisCacheados=funis;
-      const sel=document.getElementById('f-funil');
-      if(sel){
-        sel.innerHTML='<option value="all">Todos os funis</option>';
-        funis.forEach(f=>{const opt=document.createElement('option');opt.value=f._id||f.id;opt.textContent=f.name;sel.appendChild(opt);});
-      }
-      return funis;
-    }
-    throw new Error('Sem funis na resposta');
-  }catch(e){
-    // Fallback: usa funis conhecidos
-    console.warn('Usando funis locais como fallback:',e.message);
-    _funisCacheados=_funisConhecidos;
+    _funisCacheados=funis;
     const sel=document.getElementById('f-funil');
     if(sel){
       sel.innerHTML='<option value="all">Todos os funis</option>';
-      _funisConhecidos.forEach(f=>{const opt=document.createElement('option');opt.value=f._id;opt.textContent=f.name;sel.appendChild(opt);});
+      funis.forEach(f=>{const opt=document.createElement('option');opt.value=f._id||f.id;opt.textContent=f.name;sel.appendChild(opt);});
     }
-    return _funisConhecidos;
+    return funis;
+  }catch(e){
+    console.error('Erro ao carregar funis:',e.message);
+    return[];
   }
 }
 
@@ -796,34 +777,27 @@ async function buscarLeadPorEmail(email, idCard, btn){
   const container=document.getElementById('rd-result-'+idCard);
   container.innerHTML=load('Buscando no RD CRM...');
   try{
-    const emailBusca=email.toLowerCase().trim();
-
-    // ESTRATÉGIA 1 — busca nos deals já carregados em memória (_dealsCarregados)
-    // Esses deals já têm os contatos com emails dentro deles
+    const emailsInternos=['midias.outtax@gmail.com','maiccon@outtax.com.br','marcos@outtax.com.br'];
     let deal=null;
-    if(_dealsCarregados && _dealsCarregados.length){
-      deal=_dealsCarregados.find(d=>{
-        return (d.contacts||[]).some(c=>
-          (c.emails||[]).some(e=>(e.email||'').toLowerCase()===emailBusca)
-        );
-      });
-    }
 
-    // ESTRATÉGIA 2 — busca nova via API passando o email como query no campo name do deal
-    // A API v1 do RD CRM não filtra contacts por email diretamente
-    // mas podemos buscar todos os deals e filtrar pelo email do contato
-    if(!deal){
-      const allDeals=await crmFetch('deals',{});
-      const lista=allDeals.deals||[];
-      deal=lista.find(d=>{
-        return (d.contacts||[]).some(c=>
-          (c.emails||[]).some(e=>(e.email||'').toLowerCase()===emailBusca)
-        );
-      });
+    if(email && !emailsInternos.includes(email.toLowerCase())){
+      // Busca contato diretamente por email — funciona com modo desenvolvedor ativo
+      const cd=await crmFetch('contacts',{email:email});
+      const contato=(cd.contacts||[])[0];
+      if(contato){
+        const contactId=contato.id||contato._id||'';
+        if(contactId){
+          const dd=await crmFetch('deals',{contact_id:contactId});
+          const deals=dd.deals||[];
+          if(deals.length){
+            deal=deals.sort((a,b)=>new Date(b.updated_at||b.created_at)-new Date(a.updated_at||a.created_at))[0];
+          }
+        }
+      }
     }
 
     if(!deal){
-      container.innerHTML=`<div style="font-size:12px;color:var(--text-muted);background:var(--azul-pale);padding:10px 12px;border-radius:8px;">Lead não encontrada no RD. Email: ${email}</div>`;
+      container.innerHTML=`<div style="font-size:12px;color:var(--text-muted);background:var(--azul-pale);padding:10px 12px;border-radius:8px;">Lead não encontrada no RD.</div>`;
       return;
     }
 
@@ -1308,8 +1282,8 @@ async function carregarAnaliseMarketing(){
     if(!funis||funis.length===0){
       mkLoading.style.display='none';
       mkEmpty.style.display='block';
-      mkEmpty.innerHTML='<div style="color:#E24B4A;background:#FCEBEB;padding:12px;border-radius:8px;">Não foi possível carregar os funis do RD CRM. Verifique se o token está configurado corretamente na Vercel.</div>';
-      // Continua mesmo sem funis para mostrar pelo menos os dados do Facebook
+      mkEmpty.innerHTML='<div style="color:#E24B4A;background:#FCEBEB;padding:12px;border-radius:8px;">Não foi possível carregar os funis do RD CRM.</div>';
+      return;
     }
     const fbData=await fbRes.json();
     if(!fbRes.ok)throw new Error(fbData.erro||'Erro no Facebook Ads');
