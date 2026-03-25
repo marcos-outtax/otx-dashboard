@@ -784,11 +784,19 @@ async function buscarLeadPorEmail(email, idCard, btn){
       // Busca contato diretamente por email — funciona com modo desenvolvedor ativo
       const cd=await crmFetch('contacts',{email:email});
       const emailBusca=email.toLowerCase().trim();
-      // Filtra pelo contato cujo email bate EXATAMENTE — evita pegar outro contato da lista
-      const contato=(cd.contacts||[]).find(c=>{
-        const emails=c.emails||[];
-        return emails.some(e=>(e.email||'').toLowerCase().trim()===emailBusca);
-      }) || (cd.contacts||[])[0]; // fallback para [0] se a API não retornar campo emails
+      const listaContatos=cd.contacts||[];
+
+      // Tenta encontrar o contato cujo email bate EXATAMENTE
+      // A API do RD pode retornar o email em diferentes estruturas
+      const contato=listaContatos.find(c=>{
+        // Estrutura 1: c.emails = [{email: '...'}]
+        const porArray=(c.emails||[]).some(e=>(e.email||'').toLowerCase().trim()===emailBusca);
+        // Estrutura 2: c.email = '...' (campo direto)
+        const porDireto=(c.email||'').toLowerCase().trim()===emailBusca;
+        return porArray||porDireto;
+      });
+
+      // Só prossegue se encontrou o contato CERTO — sem fallback que pode trazer lead errada
       if(contato){
         const contactId=contato.id||contato._id||'';
         if(contactId){
