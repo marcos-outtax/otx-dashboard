@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR"><!-- v2 -->
+<html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -783,19 +783,15 @@ async function buscarLeadPorEmail(email, idCard, btn){
     if(email && !emailsInternos.includes(email.toLowerCase())){
       // Busca contato diretamente por email — funciona com modo desenvolvedor ativo
       const cd=await crmFetch('contacts',{email:email});
-      // A API do RD busca pelo email e retorna o contato correto (total:1)
-      // Confiamos no resultado da API — ela já faz o match, mesmo com typo no email do calendário
-      const emailBusca=email.toLowerCase().trim();
-      const contato=(cd.contacts||[]).find(c=>(c.emails||[]).some(e=>(e.email||'').toLowerCase().trim()===emailBusca))||null;
-
+      const contato=(cd.contacts||[])[0];
       if(contato){
-        const contactId=contato.id||contato._id||'';
-        if(contactId){
-          const dd=await crmFetch('deals',{contact_id:contactId});
-          const deals=dd.deals||[];
-          if(deals.length){
-            deal=deals.sort((a,b)=>new Date(b.updated_at||b.created_at)-new Date(a.updated_at||a.created_at))[0];
-          }
+        // O deal correto já vem embutido no contato — usa o ID dele para buscar detalhes completos
+        const dealRef=(contato.deals||[])[0];
+        if(dealRef){
+          const dealId=dealRef._id||dealRef.id||'';
+          // Busca o deal pelo ID diretamente — garante que é o deal certo
+          const dd=await crmFetch('deals/'+dealId,{});
+          deal=dd||null;
         }
       }
     }
