@@ -785,12 +785,12 @@ async function buscarLeadPorEmail(email, idCard, btn){
       const cd=await crmFetch('contacts',{email:email});
       // A API do RD busca pelo email e retorna o contato correto (total:1)
       // Confiamos no resultado da API — ela já faz o match, mesmo com typo no email do calendário
-      const contato=(cd.contacts||[])[0]||null;
+      const emailBusca=email.toLowerCase().trim();
+      const contato=(cd.contacts||[]).find(c=>(c.emails||[]).some(e=>(e.email||'').toLowerCase().trim()===emailBusca))||null;
 
       if(contato){
         const contactId=contato.id||contato._id||'';
         if(contactId){
-          // Busca deals completos do contato — contact_id garante que são do contato correto
           const dd=await crmFetch('deals',{contact_id:contactId});
           const deals=dd.deals||[];
           if(deals.length){
