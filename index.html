@@ -1117,19 +1117,19 @@ async function carregarTarefas(){
     let tasks=[];
     const ids=new Set();
     const dedup=arr=>arr.filter(t=>{if(ids.has(t._id||t.id))return false;ids.add(t._id||t.id);return true;});
-    if(status==='open'){const data=await crmFetch('tasks',{done:'false'});tasks=dedup(data.tasks||[]);}
-    else if(status==='done'){const data=await crmFetch('tasks',{done:'true'});tasks=dedup(data.tasks||[]);}
+    if(status==='open'){const data=await crmFetch('tasks',{done:'false',limit:'200'});tasks=dedup(data.tasks||[]);}
+    else if(status==='done'){const data=await crmFetch('tasks',{done:'true',limit:'200'});tasks=dedup(data.tasks||[]);}
     else{
-      const[ab,co]=await Promise.all([crmFetch('tasks',{done:'false'}),crmFetch('tasks',{done:'true'})]);
+      const[ab,co]=await Promise.all([crmFetch('tasks',{done:'false',limit:'200'}),crmFetch('tasks',{done:'true',limit:'200'})]);
       tasks=dedup([...(ab.tasks||[]),...(co.tasks||[])]);
     }
     const hoje=new Date();hoje.setHours(0,0,0,0);
     if(dtDe){const ini=new Date(dtDe+'T00:00:00');tasks=tasks.filter(t=>new Date(t.date)>=ini);}
     if(dtAte){const fim=new Date(dtAte+'T23:59:59');tasks=tasks.filter(t=>new Date(t.date)<=fim);}
     if(tipo!=='all'){
-      const mapTipo={proposta:['proposta'],reuniao:['reuni'],whatsapp:['whatsapp','whats','retorno','retornar'],reagendamento:['reagend'],tentativa:['tentativa']};
+      const mapTipo={proposta:['proposta'],reuniao:['reuni'],whatsapp:['whatsapp','whats','retono','retornar'],reagendamento:['reagend'],tentativa:['tentativa']};
       const palavras=mapTipo[tipo]||[];
-      tasks=tasks.filter(t=>palavras.some(p=>(t.subject||'').toLowerCase().includes(p)));
+      tasks=tasks.filter(t=>palavras.some(p=>(t.subject||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').includes(p.normalize('NFD').replace(/[̀-ͯ]/g,''))));
     }
     const com=tasks.map(t=>{
       const dt=new Date(t.date);dt.setHours(0,0,0,0);
