@@ -783,29 +783,17 @@ async function buscarLeadPorEmail(email, idCard, btn){
     if(email && !emailsInternos.includes(email.toLowerCase())){
       // Busca contato diretamente por email — funciona com modo desenvolvedor ativo
       const cd=await crmFetch('contacts',{email:email});
-      const emailBusca=email.toLowerCase().trim();
-      const listaContatos=cd.contacts||[];
-      console.log('RD contacts raw:', JSON.stringify(cd).substring(0,2000));
+      // A API do RD busca pelo email e retorna o contato correto (total:1)
+      // Confiamos no resultado da API — ela já faz o match, mesmo com typo no email do calendário
+      const contato=(cd.contacts||[])[0]||null;
 
-      // Tenta encontrar o contato cujo email bate EXATAMENTE
-      // A API do RD pode retornar o email em diferentes estruturas
-      const contato=listaContatos.find(c=>{
-        // Estrutura 1: c.emails = [{email: '...'}]
-        const porArray=(c.emails||[]).some(e=>(e.email||'').toLowerCase().trim()===emailBusca);
-        // Estrutura 2: c.email = '...' (campo direto)
-        const porDireto=(c.email||'').toLowerCase().trim()===emailBusca;
-        return porArray||porDireto;
-      });
-
-      // Só prossegue se encontrou o contato CERTO — sem fallback que pode trazer lead errada
       if(contato){
         const contactId=contato.id||contato._id||'';
         if(contactId){
-          // Busca deals do contato específico — contact_id garante que são do contato correto
+          // Busca deals completos do contato — contact_id garante que são do contato correto
           const dd=await crmFetch('deals',{contact_id:contactId});
           const deals=dd.deals||[];
           if(deals.length){
-            // Pega o deal mais recente do contato
             deal=deals.sort((a,b)=>new Date(b.updated_at||b.created_at)-new Date(a.updated_at||a.created_at))[0];
           }
         }
