@@ -269,6 +269,7 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
   </nav>
   <div class="sidebar-footer">
     <button class="btn-cfg" onclick="abrirCfg()">⚙ Configurações</button>
+    <button id="btn-admin-usuarios" class="btn-cfg" style="margin-top:8px;display:none;" onclick="abrirGerenciarUsuarios()">👥 Usuários</button>
     <button class="btn-cfg" style="margin-top:8px;background:rgba(255,100,100,.15);border-color:rgba(255,100,100,.3)" onclick="fazerLogout()">🚪 Sair</button>
   </div>
 </div>
@@ -588,6 +589,7 @@ async function fazerLogin(){
     const data=await r.json();
     if(!r.ok||!data.sessionToken){errEl.textContent=data.erro||'Usuário ou senha incorretos.';errEl.classList.add('show');return;}
     const c=getCfg();c.sessionToken=data.sessionToken;
+    c.nomeUsuario=data.nome||usuario;c.isAdmin=data.admin===true;
     localStorage.setItem(K,JSON.stringify(c));
     ocultarLogin();inicializar();
   }catch(e){errEl.textContent='Erro ao conectar. Tente novamente.';errEl.classList.add('show');}
@@ -1740,9 +1742,92 @@ async function gravarNoRD(btnEl){
   }
 }
 
+// ── GERENCIAR USUÁRIOS ───────────────────────────────────────
+function abrirGerenciarUsuarios(){
+  carregarListaUsuarios();
+  document.getElementById('m-usuarios').classList.add('open');
+}
+function fecharGerenciarUsuarios(){
+  document.getElementById('m-usuarios').classList.remove('open');
+  document.getElementById('nu-usuario').value='';
+  document.getElementById('nu-nome').value='';
+  document.getElementById('nu-senha').value='';
+  document.getElementById('nu-admin').value='false';
+  document.getElementById('nu-erro').style.display='none';
+}
+
+async function carregarListaUsuarios(){
+  const el=document.getElementById('lista-usuarios');
+  el.innerHTML=load('Carregando usuários...');
+  try{
+    const r=await fetch('/api/admin-users',{headers:{'X-Session-Token':getSessionToken()}});
+    const d=await r.json();
+    if(!r.ok)throw new Error(d.erro||'Erro ao carregar');
+    const usuarios=d.usuarios||[];
+    el.innerHTML=`
+<div style="background:var(--azul-pale);border-radius:8px;overflow:hidden;margin-bottom:4px;">
+  <div style="display:grid;grid-template-columns:1fr 1fr 80px 60px;padding:8px 12px;font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;">
+    <span>Usuário</span><span>Nome</span><span>Perfil</span><span></span>
+  </div>
+  ${usuarios.map(u=>`
+  <div style="display:grid;grid-template-columns:1fr 1fr 80px 60px;padding:10px 12px;border-top:1px solid var(--border);background:var(--branco);align-items:center;">
+    <span style="font-size:12px;font-weight:600;color:var(--azul-escuro);">${u.usuario}</span>
+    <span style="font-size:12px;color:var(--text-muted);">${u.nome}</span>
+    <span style="font-size:11px;">${u.admin?'<span style="background:var(--azul-claro);color:var(--azul-escuro);padding:2px 8px;border-radius:20px;font-weight:600;">Admin</span>':'<span style="background:#f0f0f0;color:#6b6b6b;padding:2px 8px;border-radius:20px;">Usuário</span>'}</span>
+    <span><button onclick="removerUsuario('${u.usuario}')" style="background:none;border:1px solid #E24B4A;color:#E24B4A;border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer;">🗑</button></span>
+  </div>`).join('')}
+</div>`;
+  }catch(e){
+    el.innerHTML=`<div style="font-size:12px;color:#791F1F;background:#FCEBEB;padding:10px 12px;border-radius:8px;">${e.message}</div>`;
+  }
+}
+
+async function adicionarUsuario(){
+  const usuario=document.getElementById('nu-usuario').value.trim();
+  const nome=document.getElementById('nu-nome').value.trim();
+  const senha=document.getElementById('nu-senha').value.trim();
+  const admin=document.getElementById('nu-admin').value==='true';
+  const erroEl=document.getElementById('nu-erro');
+  erroEl.style.display='none';
+  if(!usuario||!senha){erroEl.textContent='Usuário e senha obrigatórios.';erroEl.style.display='block';return;}
+  try{
+    const r=await fetch('/api/admin-users',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','X-Session-Token':getSessionToken()},
+      body:JSON.stringify({usuario,senha,nome:nome||usuario,admin})
+    });
+    const d=await r.json();
+    if(!r.ok)throw new Error(d.erro||'Erro ao adicionar');
+    document.getElementById('nu-usuario').value='';
+    document.getElementById('nu-nome').value='';
+    document.getElementById('nu-senha').value='';
+    document.getElementById('nu-admin').value='false';
+    carregarListaUsuarios();
+    alert('✅ Usuário adicionado! Aguarde ~30s para o deploy entrar em vigor.');
+  }catch(e){erroEl.textContent=e.message;erroEl.style.display='block';}
+}
+
+async function removerUsuario(usuario){
+  if(!confirm(`Remover o usuário "${usuario}"? Esta ação não pode ser desfeita.`))return;
+  try{
+    const r=await fetch('/api/admin-users',{
+      method:'DELETE',
+      headers:{'Content-Type':'application/json','X-Session-Token':getSessionToken()},
+      body:JSON.stringify({usuario})
+    });
+    const d=await r.json();
+    if(!r.ok)throw new Error(d.erro||'Erro ao remover');
+    carregarListaUsuarios();
+    alert('✅ Usuário removido! Aguarde ~30s para o deploy entrar em vigor.');
+  }catch(e){alert('Erro: '+e.message);}
+}
+
 // ── INICIALIZAÇÃO ─────────────────────────────────────────
 async function inicializar(){
   document.getElementById('td').textContent=new Date().toLocaleDateString('pt-BR',{weekday:'short',day:'numeric',month:'short'});
+  // Mostra botão de usuários só para admin
+  const btnAdmin=document.getElementById('btn-admin-usuarios');
+  if(btnAdmin)btnAdmin.style.display=getCfg().isAdmin?'flex':'none';
   const params=new URLSearchParams(window.location.search);
   const temRetornoGoogle=params.get('google_access_token')||params.get('google_error');
   if(temRetornoGoogle)capturarTokenGoogle();
@@ -1781,5 +1866,33 @@ async function inicializar(){
   inicializar();
 })();
 </script>
+<!-- MODAL GERENCIAR USUÁRIOS -->
+<div class="modal-ov" id="m-usuarios">
+  <div class="modal" style="max-width:520px;">
+    <h3>👥 Gerenciar Usuários</h3>
+    <p>Adicione ou remova usuários com acesso ao dashboard.</p>
+    <div id="lista-usuarios" style="margin-bottom:16px;"></div>
+    <div style="border-top:1px solid var(--border);padding-top:16px;">
+      <div style="font-size:12px;font-weight:600;color:var(--azul-escuro);margin-bottom:10px;">+ Adicionar usuário</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+        <div class="fg"><label>Usuário (login)</label><input type="text" id="nu-usuario" placeholder="ex: joao" style="padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:12px;width:100%;"></div>
+        <div class="fg"><label>Nome completo</label><input type="text" id="nu-nome" placeholder="ex: João Silva" style="padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:12px;width:100%;"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+        <div class="fg"><label>Senha</label><input type="password" id="nu-senha" placeholder="••••••••" style="padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:12px;width:100%;"></div>
+        <div class="fg"><label>Perfil</label>
+          <select id="nu-admin" style="padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:12px;width:100%;">
+            <option value="false">Usuário comum</option>
+            <option value="true">Administrador</option>
+          </select>
+        </div>
+      </div>
+      <div id="nu-erro" style="display:none;font-size:12px;color:#791F1F;background:#FCEBEB;padding:8px 12px;border-radius:8px;margin-bottom:8px;"></div>
+      <button class="btn btn-p" style="width:100%;" onclick="adicionarUsuario()">✅ Adicionar usuário</button>
+    </div>
+    <div class="modal-ft"><button class="btn-cancel" onclick="fecharGerenciarUsuarios()">Fechar</button></div>
+  </div>
+</div>
+
 </body>
 </html>
