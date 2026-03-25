@@ -783,7 +783,12 @@ async function buscarLeadPorEmail(email, idCard, btn){
     if(email && !emailsInternos.includes(email.toLowerCase())){
       // Busca contato diretamente por email — funciona com modo desenvolvedor ativo
       const cd=await crmFetch('contacts',{email:email});
-      const contato=(cd.contacts||[])[0];
+      const emailBusca=email.toLowerCase().trim();
+      // Filtra pelo contato cujo email bate EXATAMENTE — evita pegar outro contato da lista
+      const contato=(cd.contacts||[]).find(c=>{
+        const emails=c.emails||[];
+        return emails.some(e=>(e.email||'').toLowerCase().trim()===emailBusca);
+      }) || (cd.contacts||[])[0]; // fallback para [0] se a API não retornar campo emails
       if(contato){
         const contactId=contato.id||contato._id||'';
         if(contactId){
