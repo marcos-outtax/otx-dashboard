@@ -785,6 +785,7 @@ async function buscarLeadPorEmail(email, idCard, btn){
       const cd=await crmFetch('contacts',{email:email});
       const emailBusca=email.toLowerCase().trim();
       const listaContatos=cd.contacts||[];
+      console.log('RD contacts raw:', JSON.stringify(cd).substring(0,2000));
 
       // Tenta encontrar o contato cujo email bate EXATAMENTE
       // A API do RD pode retornar o email em diferentes estruturas
