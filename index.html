@@ -790,7 +790,13 @@ async function buscarLeadPorEmail(email, idCard, btn){
           const dd=await crmFetch('deals',{contact_id:contactId});
           const deals=dd.deals||[];
           if(deals.length){
-            deal=deals.sort((a,b)=>new Date(b.updated_at||b.created_at)-new Date(a.updated_at||a.created_at))[0];
+            // Prioriza deals dos funis de marketing (Pré-vendas e Vendas Contabilidade)
+            const funisMarketing=['6706b83df4cf270013213222','6706b8464c9f220026c047c1'];
+            const dealsMkt=deals.filter(d=>funisMarketing.includes(d._pipeline_id||d.deal_pipeline?._id||d.deal_pipeline?.id||''));
+            // Se tem deal no funil de marketing, pega o mais recente deles
+            // Senão pega o deal mais recente de qualquer funil
+            const pool=dealsMkt.length?dealsMkt:deals;
+            deal=pool.sort((a,b)=>new Date(b.updated_at||b.created_at)-new Date(a.updated_at||a.created_at))[0];
           }
         }
       }
