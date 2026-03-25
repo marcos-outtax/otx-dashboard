@@ -7,14 +7,15 @@ export default async function handler(req, res) {
   const token = (process.env.RDCRM_TOKEN_SOCIO || '').trim();
   if (!token) return res.status(401).json({ erro: 'RDCRM_TOKEN_SOCIO não configurado' });
 
+  // ── POST ──────────────────────────────────────────────────
+  // Usado para gravar atividades/anotações no RD CRM
+  // Body: { path: 'activities', deal_id: '...', text: '...' }
   if (req.method === 'POST') {
     const body = { ...req.body } || {};
     const finalPath = body.path || 'activities';
     delete body.path;
 
-    const qs = new URLSearchParams({ token }).toString();
-    const url = `https://crm.rdstation.com/api/v1/${finalPath}?${qs}`;
-
+    const url = `https://crm.rdstation.com/api/v1/${finalPath}?token=${token}`;
     try {
       const r = await fetch(url, {
         method: 'POST',
@@ -23,42 +24,113 @@ export default async function handler(req, res) {
       });
       const text = await r.text();
       try { return res.status(r.status).json(JSON.parse(text)); }
-      catch { return res.status(r.status).json({ erro: 'Resposta não JSON', detalhe: text.substring(0,300) }); }
-    } catch(e) {
+      catch { return res.status(r.status).json({ erro: 'Resposta não JSON', detalhe: text.substring(0, 300) }); }
+    } catch (e) {
       return res.status(500).json({ erro: 'Erro interno', detalhe: e.message });
     }
   }
 
-  // GET
-  const queryPath = Array.isArray(req.query.path) ? req.query.path.join('/') : (req.query.path || 'deals');
+  // ── GET ───────────────────────────────────────────────────
+  const queryPath = Array.isArray(req.query.path)
+    ? req.query.path.join('/')
+    : (req.query.path || 'deals');
+
   const queryParams = { ...req.query };
   delete queryParams.path;
 
-  if (queryPath === 'deals') {
-    try {
-      const limit = 200; let page = 1; let todosDeals = []; let continuar = true;
-      while (continuar) {
-        const qs = new URLSearchParams({ token, ...queryParams, limit: String(limit), page: String(page) }).toString();
-        const r = await fetch(`https://crm.rdstation.com/api/v1/deals?${qs}`, { headers: { 'Accept': 'application/json' } });
-        if (!r.ok) { const t = await r.text(); try { return res.status(r.status).json(JSON.parse(t)); } catch { return res.status(r.status).json({ erro: t.substring(0,300) }); } }
-        const data = await r.json();
-        const deals = data.deals || [];
-        todosDeals = todosDeals.concat(deals);
-        if (deals.length < limit) continuar = false;
-        else { page++; if (page > 15) continuar = false; }
+  // Helper: GET simples sem paginação
+  async function getSimples(path, params) {
+    const qs = new URLSearchParams({ token, ...params }).toString();
+    const r = await fetch(`https://crm.rdstation.com/api/v1/${path}?${qs}`, {
+      headers: { 'Accept': 'application/json' }
+    });
+    const text = await r.text();
+    try { return { status: r.status, data: JSON.parse(text) }; }
+    catch { return { status: r.status, data: { erro: 'Resposta não JSON', detalhe: text.substring(0, 300) } }; }
+  }
+
+  // Helper: GET com paginação automática para deals
+  async function getDealsComPaginacao(params) {
+    const limit = 200;
+    let page = 1;
+    let todosDeals = [];
+    let continuar = true;
+    while (continuar) {
+      const qs = new URLSearchParams({ token, ...params, limit: String(limit), page: String(page) }).toString();
+      const r = await fetch(`https://crm.rdstation.com/api/v1/deals?${qs}`, {
+        headers: { 'Accept': 'application/json' }
+      });
+      if (!r.ok) {
+        const t = await r.text();
+        try { return { erro: true, status: r.status, data: JSON.parse(t) }; }
+        catch { return { erro: true, status: r.status, data: { erro: t.substring(0, 300) } }; }
       }
-      return res.status(200).json({ deals: todosDeals, total: todosDeals.length });
-    } catch(e) { return res.status(500).json({ erro: e.message }); }
+      const data = await r.json();
+      const deals = data.deals || [];
+      todosDeals = todosDeals.concat(deals);
+      if (deals.length < limit) continuar = false;
+      else { page++; if (page > 15) continuar = false; }
+    }
+    return { erro: false, data: { deals: todosDeals, total: todosDeals.length } };
   }
 
   try {
-    const qs = new URLSearchParams({ token, ...queryParams }).toString();
-    const r = await fetch(`https://crm.rdstation.com/api/v1/${queryPath}?${qs}`, { headers: { 'Accept': 'application/json' } });
-    const text = await r.text();
-    try {
-      const data = JSON.parse(text);
-      if (queryPath === 'deal_pipelines' && Array.isArray(data)) return res.status(r.status).json({ deal_pipelines: data });
-      return res.status(r.status).json(data);
-    } catch { return res.status(r.status).json({ erro: 'Resposta não JSON', detalhe: text.substring(0,300) }); }
-  } catch(e) { return res.status(500).json({ erro: e.message }); }
+    // ── CASO 1: deal_pipelines ─────────────────────────────
+    // Aba: Funis / Análise Marketing
+    // Comportamento: GET simples, normaliza array para objeto
+    if (queryPath === 'deal_pipelines') {
+      const { status, data } = await getSimples('deal_pipelines', queryParams);
+      if (Array.isArray(data)) return res.status(status).json({ deal_pipelines: data });
+      return res.status(status).json(data);
+    }
+
+    // ── CASO 2: contacts ───────────────────────────────────
+    // Aba: Reuniões (busca por email)
+    // Comportamento: GET simples
+    if (queryPath === 'contacts') {
+      const { status, data } = await getSimples('contacts', queryParams);
+      return res.status(status).json(data);
+    }
+
+    // ── CASO 3: tasks ──────────────────────────────────────
+    // Aba: Tarefas (done=true ou done=false)
+    // Comportamento: GET simples
+    if (queryPath === 'tasks') {
+      const { status, data } = await getSimples('tasks', queryParams);
+      return res.status(status).json(data);
+    }
+
+    // ── CASO 4: deals com contact_id ───────────────────────
+    // Aba: Reuniões (busca deals de um contato específico)
+    // Comportamento: GET simples — não pagina, filtra por contato
+    if (queryPath === 'deals' && queryParams.contact_id) {
+      const { status, data } = await getSimples('deals', { ...queryParams, limit: '50' });
+      return res.status(status).json(data);
+    }
+
+    // ── CASO 5: deals com deal_pipeline_id ─────────────────
+    // Aba: Análise Marketing e Propostas (busca deals de um funil)
+    // Comportamento: paginação completa
+    if (queryPath === 'deals' && queryParams.deal_pipeline_id) {
+      const result = await getDealsComPaginacao(queryParams);
+      if (result.erro) return res.status(result.status).json(result.data);
+      return res.status(200).json(result.data);
+    }
+
+    // ── CASO 6: deals geral ────────────────────────────────
+    // Aba: Propostas (busca geral com filtros de data/status)
+    // Comportamento: paginação completa
+    if (queryPath === 'deals') {
+      const result = await getDealsComPaginacao(queryParams);
+      if (result.erro) return res.status(result.status).json(result.data);
+      return res.status(200).json(result.data);
+    }
+
+    // ── CASO 7: qualquer outro endpoint ────────────────────
+    const { status, data } = await getSimples(queryPath, queryParams);
+    return res.status(status).json(data);
+
+  } catch (e) {
+    return res.status(500).json({ erro: 'Erro interno', detalhe: e.message });
+  }
 }
