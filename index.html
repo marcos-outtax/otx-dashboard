@@ -1650,12 +1650,12 @@ async function buscarCNPJ(){
     </div>
     ${cnaes.length?`<div class="ib" style="margin-bottom:8px;"><div class="l">CNAEs Secundários</div><div class="v">${cnaes.map(c=>`<div class="cnae-row"><span class="cnae-code">${c.codigo}</span>${c.descricao}</div>`).join('')}</div></div>`:''}
     <div class="two-col">
-      <div class="ib"><div class="l">Endereço</div><div class="v">${[d.logradouro,d.numero,d.complemento,d.bairro].filter(Boolean).join(', ')||'-'}</div></div>
-      <div class="ib"><div class="l">Cidade / UF</div><div class="v">${d.municipio||'-'} / ${d.uf||'-'}</div></div>
+      <div class="ib"><div class="l">Simples Nacional</div><div class="v">${d.opcao_pelo_simples===true?'✅ Sim':'Não'}</div></div>
+      <div class="ib"><div class="l">MEI</div><div class="v">${d.opcao_pelo_mei===true?'✅ Sim':'Não'}</div></div>
     </div>
-    <div class="two-col">
-      <div class="ib"><div class="l">Telefone</div><div class="v">${d.ddd_telefone_1||'-'}</div></div>
-      <div class="ib"><div class="l">Email</div><div class="v">${d.email||'-'}</div></div>
+    <div class="ib" style="margin-bottom:8px;">
+      <div class="l">Município / UF</div>
+      <div class="v">${d.municipio||'-'} / ${d.uf||'-'}</div>
     </div>
     <div class="act-row" style="margin-top:12px;">
       <button class="btn btn-p" onclick="abrirAnaliseIA(${JSON.stringify({razao_social:d.razao_social,cnpj:d.cnpj,cnae_cod:d.cnae_fiscal,cnae_desc:d.cnae_fiscal_descricao,porte:d.porte,municipio:d.municipio,uf:d.uf,capital:d.capital_social,natureza_juridica:d.natureza_juridica,data_abertura:d.data_inicio_atividade,simples:d.opcao_pelo_simples,mei:d.opcao_pelo_mei,cnaes_secundarios:d.cnaes_secundarios||[]}).replace(/"/g,'&quot;')})">🤖 Análise Tributária com IA</button>
