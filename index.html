@@ -869,6 +869,11 @@ async function consultarCnpjReuniao(idCard, dealId, dealNome, funil, estagio){
       municipio:d.municipio,
       uf:d.uf,
       capital:d.capital_social,
+      natureza_juridica:d.natureza_juridica,
+      data_abertura:d.data_inicio_atividade,
+      simples:d.opcao_pelo_simples,
+      mei:d.opcao_pelo_mei,
+      cnaes_secundarios:d.cnaes_secundarios||[],
       funil:funil,
       estagio:estagio,
       nome:dealNome,
@@ -1653,7 +1658,7 @@ async function buscarCNPJ(){
       <div class="ib"><div class="l">Email</div><div class="v">${d.email||'-'}</div></div>
     </div>
     <div class="act-row" style="margin-top:12px;">
-      <button class="btn btn-p" onclick="abrirAnaliseIA(${JSON.stringify({razao_social:d.razao_social,cnpj:d.cnpj,cnae_cod:d.cnae_fiscal,cnae_desc:d.cnae_fiscal_descricao,porte:d.porte,municipio:d.municipio,uf:d.uf,capital:d.capital_social}).replace(/"/g,'&quot;')})">🤖 Análise Tributária com IA</button>
+      <button class="btn btn-p" onclick="abrirAnaliseIA(${JSON.stringify({razao_social:d.razao_social,cnpj:d.cnpj,cnae_cod:d.cnae_fiscal,cnae_desc:d.cnae_fiscal_descricao,porte:d.porte,municipio:d.municipio,uf:d.uf,capital:d.capital_social,natureza_juridica:d.natureza_juridica,data_abertura:d.data_inicio_atividade,simples:d.opcao_pelo_simples,mei:d.opcao_pelo_mei,cnaes_secundarios:d.cnaes_secundarios||[]}).replace(/"/g,'&quot;')})">🤖 Análise Tributária com IA</button>
     </div>
   </div>
 </div>`;
@@ -1689,6 +1694,11 @@ DADOS DO CLIENTE:
 - Porte: ${d.porte||'-'}
 - Município/UF: ${d.municipio||'-'} / ${d.uf||'-'}
 - Capital Social: ${d.capital?'R$ '+Number(d.capital).toLocaleString('pt-BR'):'-'}
+- Natureza Jurídica: ${d.natureza_juridica||'-'}
+- Data de Abertura: ${d.data_abertura||'-'}
+- Simples Nacional: ${d.simples===true?'Sim':d.simples===false?'Não':'-'}
+- MEI: ${d.mei===true?'Sim':d.mei===false?'Não':'-'}
+- CNAEs Secundários: ${(d.cnaes_secundarios||[]).map(c=>c.codigo+' — '+c.descricao).join(' | ')||'-'}
 - Funil: ${d.funil||'-'}
 - Estágio: ${d.estagio||'-'}
 - Valor estimado: ${d.valor||'-'}
