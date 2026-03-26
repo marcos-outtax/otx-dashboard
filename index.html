@@ -856,7 +856,7 @@ async function consultarCnpjReuniao(idCard, dealId, dealNome, funil, estagio){
     const r=await fetch(`/api/cnpj?cnpj=${raw}`);
     const d=await r.json();
     if(!r.ok)throw new Error(d.erro||'Erro ao consultar CNPJ');
-    const sit=d.situacao_cadastral||'';
+    const sit=d.descricao_situacao_cadastral||d.situacao_cadastral||'';
     const sitCor=sit.toLowerCase().includes('ativa')?'#1D9E75':'#E24B4A';
 
     // Armazena dados usando idCard real (não string literal)
@@ -878,6 +878,8 @@ async function consultarCnpjReuniao(idCard, dealId, dealNome, funil, estagio){
 
     // Monta resultado sem passar dados via onclick — usa closure via window
     const cnaes=(d.cnaes_secundarios||[]).slice(0,5);
+    const simples=d.opcao_pelo_simples===true?'✅ Sim':d.opcao_pelo_simples===false?'Não':'—';
+    const mei=d.opcao_pelo_mei===true?'✅ Sim':d.opcao_pelo_mei===false?'Não':'—';
     const wrap=document.createElement('div');
     wrap.style.cssText='background:var(--branco);border:1px solid var(--border);border-radius:8px;padding:12px;margin-top:4px;';
     wrap.innerHTML=`
@@ -895,18 +897,18 @@ async function consultarCnpjReuniao(idCard, dealId, dealNome, funil, estagio){
     <div class="ib"><div class="l">Capital Social</div><div class="v">${d.capital_social?'R$ '+Number(d.capital_social).toLocaleString('pt-BR'):'-'}</div></div>
     <div class="ib"><div class="l">Abertura</div><div class="v">${d.data_inicio_atividade||'-'}</div></div>
   </div>
+  <div class="two-col">
+    <div class="ib"><div class="l">Simples Nacional</div><div class="v">${simples}</div></div>
+    <div class="ib"><div class="l">MEI</div><div class="v">${mei}</div></div>
+  </div>
   <div class="ib" style="margin-bottom:8px;">
     <div class="l">CNAE Principal</div>
     <div class="v">${d.cnae_fiscal_descricao?`<span class="cnae-code">${d.cnae_fiscal}</span>${d.cnae_fiscal_descricao}`:'-'}</div>
   </div>
   ${cnaes.length?`<div class="ib" style="margin-bottom:8px;"><div class="l">CNAEs Secundários</div><div class="v">${cnaes.map(c=>`<div class="cnae-row"><span class="cnae-code">${c.codigo}</span>${c.descricao}</div>`).join('')}</div></div>`:''}
-  <div class="two-col">
-    <div class="ib"><div class="l">Endereço</div><div class="v">${[d.logradouro,d.numero,d.complemento,d.bairro].filter(Boolean).join(', ')||'-'}</div></div>
-    <div class="ib"><div class="l">Cidade / UF</div><div class="v">${d.municipio||'-'} / ${d.uf||'-'}</div></div>
-  </div>
-  <div class="two-col">
-    <div class="ib"><div class="l">Telefone</div><div class="v">${d.ddd_telefone_1||'-'}</div></div>
-    <div class="ib"><div class="l">Email</div><div class="v">${d.email||'-'}</div></div>
+  <div class="ib" style="margin-bottom:8px;">
+    <div class="l">Município / UF</div>
+    <div class="v">${d.municipio||'-'} / ${d.uf||'-'}</div>
   </div>
   <div class="act-row" style="margin-top:8px;"></div>`;
 
@@ -1617,7 +1619,7 @@ async function buscarCNPJ(){
     const r=await fetch(`/api/cnpj?cnpj=${raw}`);
     const d=await r.json();
     if(!r.ok)throw new Error(d.erro||'Erro ao consultar CNPJ');
-    const sit=d.situacao_cadastral||'';
+    const sit=d.descricao_situacao_cadastral||d.situacao_cadastral||'';
     const sitCor=sit.toLowerCase().includes('ativa')?'#1D9E75':'#E24B4A';
     const cnaes=(d.cnaes_secundarios||[]).slice(0,5);
     document.getElementById('cnpj-result').innerHTML=`
