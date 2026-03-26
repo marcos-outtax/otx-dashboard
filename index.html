@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Outtax — Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 :root{
@@ -434,6 +435,8 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
         <button class="btn btn-p" onclick="carregarFacebook()">🔍 Buscar</button>
         <button class="btn" onclick="limparFiltrosFB()">✕ Limpar</button>
         <button class="btn" onclick="exportarPDFFacebook()">📄 PDF</button>
+        <button class="btn" onclick="exportarTXTFacebook()">📝 TXT</button>
+        <button class="btn" onclick="exportarXLSFacebook()">📊 XLS</button>
       </div>
     </div>
 
@@ -1194,7 +1197,324 @@ function cardFacebook(c){
 </div>`;
 }
 
-function exportarPDFFacebook(){if(!_fbDadosAtual){alert('Busque os dados primeiro.');return;}window.print();}
+function exportarPDFFacebook(){
+  if(!_fbDadosAtual){alert('Busque os dados primeiro.');return;}
+  const d=_fbDadosAtual;
+  const fmtBRL=v=>v!=null&&v!==''?'R$ '+Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}):'-';
+  const fmtNum=v=>v!=null?Number(v).toLocaleString('pt-BR'):'-';
+  const de=document.getElementById('fb-de')?.value||'';
+  const ate=document.getElementById('fb-ate')?.value||'';
+  const periodo=de&&ate?`${new Date(de+'T12:00:00').toLocaleDateString('pt-BR')} a ${new Date(ate+'T12:00:00').toLocaleDateString('pt-BR')}`:'—';
+  const agora=new Date().toLocaleString('pt-BR');
+  const totais=d.totais||{};
+  const conta=d.conta||{};
+  const ativas=d.ativas||[];
+  const pausadas=d.pausadas||[];
+  const pct=conta.saldoInicial>0?Math.min(Math.round((conta.investidoPeriodo/conta.saldoInicial)*100),100):0;
+
+  const css=`
+    *{margin:0;padding:0;box-sizing:border-box;}
+    body{font-family:'Segoe UI',Arial,sans-serif;font-size:12px;color:#1a1a2e;background:#fff;padding:0;}
+    .page{width:210mm;min-height:297mm;padding:16mm 18mm;background:#fff;}
+    .header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #152c6b;padding-bottom:12px;margin-bottom:20px;}
+    .logo-area h1{font-size:22px;font-weight:800;color:#152c6b;letter-spacing:.04em;line-height:1;}
+    .logo-area p{font-size:10px;color:#5a6e99;margin-top:3px;}
+    .header-right{text-align:right;font-size:10px;color:#5a6e99;}
+    .header-right strong{display:block;font-size:13px;color:#152c6b;margin-bottom:2px;}
+    .section-title{font-size:10px;font-weight:700;color:#5a6e99;text-transform:uppercase;letter-spacing:.08em;margin:18px 0 8px;padding-bottom:4px;border-bottom:1px solid #d6e0f0;}
+    .cards-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:6px;}
+    .card{background:#f0f4fb;border-radius:8px;padding:10px 12px;border-top:3px solid #285199;}
+    .card.verde{border-top-color:#1D9E75;}
+    .card.laranja{border-top-color:#FF8E2A;}
+    .card.roxo{border-top-color:#7C3AED;}
+    .card.vermelho{border-top-color:#E24B4A;}
+    .card .lbl{font-size:9px;color:#5a6e99;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;}
+    .card .val{font-size:18px;font-weight:700;color:#152c6b;}
+    .card .sub{font-size:9px;color:#5a6e99;margin-top:2px;}
+    .saldo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:6px;}
+    .saldo-card{border-radius:8px;padding:10px 12px;border-top:3px solid #285199;}
+    .saldo-card.ini{background:#e8eef8;border-top-color:#285199;}
+    .saldo-card.inv{background:#fff0e0;border-top-color:#FF8E2A;}
+    .saldo-card.fin{background:#eaf3de;border-top-color:#1D9E75;}
+    .saldo-card.fin-neg{background:#fcebeb;border-top-color:#E24B4A;}
+    .saldo-card .lbl{font-size:9px;color:#5a6e99;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;}
+    .saldo-card .val{font-size:17px;font-weight:700;color:#152c6b;}
+    .saldo-card .sub{font-size:9px;color:#5a6e99;margin-top:2px;}
+    .progress-wrap{background:#f0f4fb;border-radius:8px;padding:10px 14px;margin-bottom:16px;}
+    .progress-label{display:flex;justify-content:space-between;font-size:10px;color:#5a6e99;margin-bottom:6px;}
+    .progress-track{height:8px;background:#d6e0f0;border-radius:99px;overflow:hidden;}
+    .progress-fill{height:100%;border-radius:99px;}
+    table{width:100%;border-collapse:collapse;margin-bottom:14px;font-size:10px;}
+    thead tr{background:#152c6b;color:#fff;}
+    thead th{padding:7px 10px;text-align:left;font-weight:600;font-size:9px;text-transform:uppercase;letter-spacing:.05em;}
+    thead th:not(:first-child){text-align:right;}
+    tbody tr{border-bottom:1px solid #e8eef8;}
+    tbody tr:nth-child(even){background:#f8fafc;}
+    tbody td{padding:7px 10px;color:#152c6b;}
+    tbody td:not(:first-child){text-align:right;}
+    .badge-ativa{display:inline-block;background:#eaf3de;color:#27500A;border-radius:20px;padding:1px 7px;font-size:9px;font-weight:700;}
+    .badge-pausada{display:inline-block;background:#f0f0f0;color:#6b6b6b;border-radius:20px;padding:1px 7px;font-size:9px;font-weight:700;}
+    .footer{margin-top:24px;padding-top:10px;border-top:1px solid #d6e0f0;display:flex;justify-content:space-between;font-size:9px;color:#5a6e99;}
+    @media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}
+  `;
+
+  const ativasRows=ativas.map(c=>`
+    <tr>
+      <td><strong>${c.nome}</strong> <span class="badge-ativa">Ativa</span></td>
+      <td>${fmtBRL(c.investimento)}</td>
+      <td>${c.leads||0}</td>
+      <td>${c.cpl?fmtBRL(c.cpl):'-'}</td>
+      <td>${c.ctr?c.ctr+'%':'-'}</td>
+      <td>${c.cpc?fmtBRL(c.cpc):'-'}</td>
+      <td>${c.taxaConversao?c.taxaConversao+'%':'-'}</td>
+    </tr>`).join('');
+
+  const pausadasRows=pausadas.filter(c=>c.investimento>0).map(c=>`
+    <tr>
+      <td><strong>${c.nome}</strong> <span class="badge-pausada">Pausada</span></td>
+      <td>${fmtBRL(c.investimento)}</td>
+      <td>${c.leads||0}</td>
+      <td>${c.cpl?fmtBRL(c.cpl):'-'}</td>
+      <td>${c.ctr?c.ctr+'%':'-'}</td>
+      <td>${c.cpc?fmtBRL(c.cpc):'-'}</td>
+      <td>${c.taxaConversao?c.taxaConversao+'%':'-'}</td>
+    </tr>`).join('');
+
+  const barColor=pct>=90?'#E24B4A':pct>=70?'#FF8E2A':'#1D9E75';
+  const negSaldo=(conta.saldoFinal||0)<0;
+
+  const html=`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">
+  <title>Relatório Facebook Ads — Outtax</title><style>${css}</style></head>
+  <body><div class="page">
+    <div class="header">
+      <div class="logo-area">
+        <h1>OUTTAX</h1>
+        <p>Dashboard de Marketing</p>
+      </div>
+      <div class="header-right">
+        <strong>Relatório — Facebook Ads</strong>
+        <span>Período: ${periodo}</span><br>
+        <span>Gerado em: ${agora}</span>
+      </div>
+    </div>
+
+    <div class="section-title">Saldo da conta Facebook Ads</div>
+    <div class="saldo-grid">
+      <div class="saldo-card ini">
+        <div class="lbl">Saldo inicial do período</div>
+        <div class="val">${fmtBRL(conta.saldoInicial)}</div>
+        <div class="sub">balance + spend do período via API</div>
+      </div>
+      <div class="saldo-card inv">
+        <div class="lbl">Total investido no período</div>
+        <div class="val">${fmtBRL(conta.investidoPeriodo)}</div>
+        <div class="sub">soma de todas as campanhas</div>
+      </div>
+      <div class="saldo-card ${negSaldo?'fin-neg':'fin'}">
+        <div class="lbl">Saldo final</div>
+        <div class="val">${fmtBRL(conta.saldoFinal)}</div>
+        <div class="sub">saldo inicial − total investido</div>
+      </div>
+    </div>
+    <div class="progress-wrap">
+      <div class="progress-label"><span>Consumo do orçamento da conta</span><span style="font-weight:700;color:${barColor}">${pct}% consumido</span></div>
+      <div class="progress-track"><div class="progress-fill" style="width:${pct}%;background:${barColor}"></div></div>
+    </div>
+
+    <div class="section-title">Métricas do período</div>
+    <div class="cards-grid">
+      <div class="card"><div class="lbl">Investimento</div><div class="val">${fmtBRL(totais.investimento)}</div></div>
+      <div class="card verde"><div class="lbl">Leads gerados</div><div class="val">${fmtNum(totais.leads)}</div></div>
+      <div class="card"><div class="lbl">CPL médio</div><div class="val">${totais.cpl?fmtBRL(totais.cpl):'-'}</div></div>
+    </div>
+    <div class="cards-grid">
+      <div class="card"><div class="lbl">Alcance</div><div class="val">${fmtNum(totais.alcance)}</div></div>
+      <div class="card"><div class="lbl">Impressões</div><div class="val">${fmtNum(totais.impressoes)}</div></div>
+      <div class="card"><div class="lbl">CTR</div><div class="val">${totais.ctr?Number(totais.ctr).toFixed(2)+'%':'-'}</div></div>
+    </div>
+    <div class="cards-grid">
+      <div class="card laranja"><div class="lbl">CPC médio</div><div class="val">${totais.cliques&&totais.investimento?fmtBRL(totais.investimento/totais.cliques):'-'}</div></div>
+      <div class="card laranja"><div class="lbl">Taxa de conversão</div><div class="val">${totais.taxaConversao?totais.taxaConversao+'%':'-'}</div></div>
+      <div class="card"><div class="lbl">Média diária</div><div class="val">${totais.mediaDiaria?fmtBRL(totais.mediaDiaria)+'/dia':'-'}</div></div>
+    </div>
+
+    ${ativas.length?`
+    <div class="section-title">Campanhas ativas (${ativas.length})</div>
+    <table>
+      <thead><tr><th>Campanha</th><th>Investimento</th><th>Leads</th><th>CPL</th><th>CTR</th><th>CPC</th><th>Conv.</th></tr></thead>
+      <tbody>${ativasRows}</tbody>
+    </table>`:''}
+
+    ${pausadasRows?`
+    <div class="section-title">Campanhas pausadas com gasto no período</div>
+    <table>
+      <thead><tr><th>Campanha</th><th>Investimento</th><th>Leads</th><th>CPL</th><th>CTR</th><th>CPC</th><th>Conv.</th></tr></thead>
+      <tbody>${pausadasRows}</tbody>
+    </table>`:''}
+
+    <div class="footer">
+      <span>Outtax Dashboard — otx-dashboard.vercel.app</span>
+      <span>Fonte: API Graph do Facebook Ads v19.0</span>
+      <span>${agora}</span>
+    </div>
+  </div></body></html>`;
+
+  const win=window.open('','_blank','width=900,height=700');
+  win.document.write(html);
+  win.document.close();
+  win.focus();
+  setTimeout(()=>{win.print();},600);
+}
+
+function exportarTXTFacebook(){
+  if(!_fbDadosAtual){alert('Busque os dados primeiro.');return;}
+  const d=_fbDadosAtual;
+  const fmtBRL=v=>v!=null&&v!==''?'R$ '+Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}):'-';
+  const fmtNum=v=>v!=null?Number(v).toLocaleString('pt-BR'):'-';
+  const de=document.getElementById('fb-de')?.value||'';
+  const ate=document.getElementById('fb-ate')?.value||'';
+  const periodo=de&&ate?`${new Date(de+'T12:00:00').toLocaleDateString('pt-BR')} a ${new Date(ate+'T12:00:00').toLocaleDateString('pt-BR')}`:'—';
+  const totais=d.totais||{};const conta=d.conta||{};const ativas=d.ativas||[];const pausadas=d.pausadas||[];
+  const pct=conta.saldoInicial>0?Math.min(Math.round((conta.investidoPeriodo/conta.saldoInicial)*100),100):0;
+  const linha='='.repeat(62);const sublinha='-'.repeat(62);
+
+  let t='';
+  t+=linha+'\n';
+  t+='  OUTTAX — RELATÓRIO FACEBOOK ADS\n';
+  t+=`  Período: ${periodo}\n`;
+  t+=`  Gerado em: ${new Date().toLocaleString('pt-BR')}\n`;
+  t+=linha+'\n\n';
+
+  t+='SALDO DA CONTA FACEBOOK ADS\n'+sublinha+'\n';
+  t+=`Saldo inicial do período : ${fmtBRL(conta.saldoInicial)}\n`;
+  t+=`Total investido no período: ${fmtBRL(conta.investidoPeriodo)}\n`;
+  t+=`Saldo final               : ${fmtBRL(conta.saldoFinal)}\n`;
+  t+=`Consumo do orçamento      : ${pct}%\n\n`;
+
+  t+='MÉTRICAS DO PERÍODO\n'+sublinha+'\n';
+  t+=`Investimento total : ${fmtBRL(totais.investimento)}\n`;
+  t+=`Leads gerados      : ${fmtNum(totais.leads)}\n`;
+  t+=`CPL médio          : ${totais.cpl?fmtBRL(totais.cpl):'-'}\n`;
+  t+=`Alcance            : ${fmtNum(totais.alcance)}\n`;
+  t+=`Impressões         : ${fmtNum(totais.impressoes)}\n`;
+  t+=`CTR                : ${totais.ctr?Number(totais.ctr).toFixed(2)+'%':'-'}\n`;
+  t+=`CPC médio          : ${totais.cliques&&totais.investimento?fmtBRL(totais.investimento/totais.cliques):'-'}\n`;
+  t+=`Taxa de conversão  : ${totais.taxaConversao?totais.taxaConversao+'%':'-'}\n`;
+  t+=`Média diária       : ${totais.mediaDiaria?fmtBRL(totais.mediaDiaria)+'/dia':'-'}\n\n`;
+
+  if(ativas.length){
+    t+=`CAMPANHAS ATIVAS (${ativas.length})\n`+sublinha+'\n';
+    ativas.forEach((c,i)=>{
+      t+=`${i+1}. ${c.nome}\n`;
+      t+=`   Status      : Ativa\n`;
+      t+=`   Investimento: ${fmtBRL(c.investimento)}\n`;
+      t+=`   Leads       : ${c.leads||0}\n`;
+      t+=`   CPL         : ${c.cpl?fmtBRL(c.cpl):'-'}\n`;
+      t+=`   CTR         : ${c.ctr?c.ctr+'%':'-'}\n`;
+      t+=`   CPC         : ${c.cpc?fmtBRL(c.cpc):'-'}\n`;
+      t+=`   Conversão   : ${c.taxaConversao?c.taxaConversao+'%':'-'}\n`;
+      t+=`   Alcance     : ${fmtNum(c.alcance)}\n`;
+      t+=`   Impressões  : ${fmtNum(c.impressoes)}\n\n`;
+    });
+  }
+
+  const pausadasComGasto=pausadas.filter(c=>c.investimento>0);
+  if(pausadasComGasto.length){
+    t+=`CAMPANHAS PAUSADAS COM GASTO (${pausadasComGasto.length})\n`+sublinha+'\n';
+    pausadasComGasto.forEach((c,i)=>{
+      t+=`${i+1}. ${c.nome}\n`;
+      t+=`   Investimento: ${fmtBRL(c.investimento)}\n`;
+      t+=`   Leads       : ${c.leads||0}\n\n`;
+    });
+  }
+
+  const pausadasSemGasto=pausadas.filter(c=>!c.investimento||c.investimento===0);
+  if(pausadasSemGasto.length){
+    t+=`CAMPANHAS PAUSADAS SEM GASTO NO PERÍODO (${pausadasSemGasto.length})\n`+sublinha+'\n';
+    pausadasSemGasto.forEach((c,i)=>{t+=`${i+1}. ${c.nome}\n`;});t+='\n';
+  }
+
+  t+=linha+'\n';
+  t+=`Fonte: API Graph do Facebook Ads v19.0\n`;
+  t+=`saldo_inicial = balance (atual) + spend do período\n`;
+  t+=linha+'\n';
+
+  const blob=new Blob([t],{type:'text/plain;charset=utf-8'});
+  const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(blob),download:`outtax_facebook_ads_${de||'relatorio'}.txt`});
+  a.click();URL.revokeObjectURL(a.href);
+}
+
+function exportarXLSFacebook(){
+  if(!_fbDadosAtual){alert('Busque os dados primeiro.');return;}
+  if(typeof XLSX==='undefined'){alert('Biblioteca XLSX não carregada. Tente novamente em alguns segundos.');return;}
+  const d=_fbDadosAtual;
+  const de=document.getElementById('fb-de')?.value||'';
+  const ate=document.getElementById('fb-ate')?.value||'';
+  const totais=d.totais||{};const conta=d.conta||{};const ativas=d.ativas||[];const pausadas=d.pausadas||[];
+  const pct=conta.saldoInicial>0?Math.min(Math.round((conta.investidoPeriodo/conta.saldoInicial)*100),100):0;
+  const periodo=de&&ate?`${new Date(de+'T12:00:00').toLocaleDateString('pt-BR')} a ${new Date(ate+'T12:00:00').toLocaleDateString('pt-BR')}`:'';
+  const wb=XLSX.utils.book_new();
+
+  // Aba 1 — Resumo
+  const wsResumo=XLSX.utils.aoa_to_sheet([
+    ['OUTTAX — Relatório Facebook Ads'],
+    ['Período:', periodo],
+    ['Gerado em:', new Date().toLocaleString('pt-BR')],
+    [],
+    ['SALDO DA CONTA FACEBOOK ADS'],
+    ['Campo','Valor'],
+    ['Saldo inicial do período (R$)', conta.saldoInicial||0],
+    ['Total investido no período (R$)', conta.investidoPeriodo||0],
+    ['Saldo final (R$)', conta.saldoFinal||0],
+    ['Consumo do orçamento (%)', pct],
+    [],
+    ['MÉTRICAS DO PERÍODO'],
+    ['Campo','Valor'],
+    ['Investimento total (R$)', totais.investimento||0],
+    ['Leads gerados', totais.leads||0],
+    ['CPL médio (R$)', totais.cpl||0],
+    ['Alcance', totais.alcance||0],
+    ['Impressões', totais.impressoes||0],
+    ['CTR (%)', totais.ctr?Number(totais.ctr):0],
+    ['CPC médio (R$)', totais.cliques&&totais.investimento?(totais.investimento/totais.cliques):0],
+    ['Taxa de conversão (%)', totais.taxaConversao||0],
+    ['Média diária (R$)', totais.mediaDiaria||0],
+  ]);
+  wsResumo['!cols']=[{wch:36},{wch:22}];
+  XLSX.utils.book_append_sheet(wb,wsResumo,'Resumo');
+
+  // Aba 2 — Campanhas ativas
+  const headerCamps=['Campanha','Status','Investimento (R$)','Leads','CPL (R$)','CTR (%)','CPC (R$)','Conv. (%)','Alcance','Impressões','Média Diária (R$)'];
+  const rowsAtivas=ativas.map(c=>[
+    c.nome,'Ativa',c.investimento||0,c.leads||0,
+    c.cpl||0,c.ctr?Number(c.ctr):0,c.cpc?Number(c.cpc):0,
+    c.taxaConversao||0,c.alcance||0,c.impressoes||0,c.mediaDiaria||0
+  ]);
+  const rowsPausadas=pausadas.map(c=>[
+    c.nome,'Pausada',c.investimento||0,c.leads||0,
+    c.cpl||0,c.ctr?Number(c.ctr):0,c.cpc?Number(c.cpc):0,
+    c.taxaConversao||0,c.alcance||0,c.impressoes||0,c.mediaDiaria||0
+  ]);
+  const wsCamps=XLSX.utils.aoa_to_sheet([headerCamps,...rowsAtivas,...rowsPausadas]);
+  wsCamps['!cols']=[{wch:46},{wch:10},{wch:18},{wch:8},{wch:12},{wch:8},{wch:10},{wch:10},{wch:12},{wch:12},{wch:16}];
+  XLSX.utils.book_append_sheet(wb,wsCamps,'Campanhas');
+
+  // Aba 3 — Saldo detalhado
+  const wsSaldo=XLSX.utils.aoa_to_sheet([
+    ['SALDO DA CONTA — DETALHAMENTO'],
+    ['Período analisado', periodo],
+    [],
+    ['Campo','Valor (R$)','Descrição'],
+    ['Saldo inicial',conta.saldoInicial||0,'balance atual + spend do período'],
+    ['Spend do período',conta.investidoPeriodo||0,'total gasto no período selecionado'],
+    ['Saldo final (balance)',conta.saldoFinal||0,'saldo disponível agora na conta'],
+    ['Consumo (%)',pct,'(spend período / saldo inicial) × 100'],
+  ]);
+  wsSaldo['!cols']=[{wch:24},{wch:16},{wch:42}];
+  XLSX.utils.book_append_sheet(wb,wsSaldo,'Saldo');
+
+  XLSX.writeFile(wb,`outtax_facebook_ads_${de||'relatorio'}.xlsx`);
+}
 
 // ── ANÁLISE MARKETING ─────────────────────────────────────
 let _mkDeals=[];let _mkDrillAberto=null;
