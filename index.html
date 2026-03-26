@@ -504,6 +504,37 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
         <button class="btn" onclick="limparFiltrosMK()">✕ Limpar</button>
       </div>
     </div>
+    <!-- ── SALDO DA CONTA (mesmo bloco do Facebook Ads) ── -->
+    <div id="mk-saldo-wrap" style="display:none;">
+      <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">Saldo da conta Facebook Ads</div>
+      <div class="fb-saldo-grid">
+        <div class="fb-saldo-card inicial">
+          <div class="fb-saldo-lbl">Saldo inicial do período</div>
+          <div class="fb-saldo-val" id="mk-saldo-inicial">—</div>
+          <div class="fb-saldo-fonte">● balance + spend do período via API</div>
+        </div>
+        <div class="fb-saldo-card investido">
+          <div class="fb-saldo-lbl">Total investido no período</div>
+          <div class="fb-saldo-val" id="mk-saldo-investido">—</div>
+          <div class="fb-saldo-sub">soma de todas as campanhas</div>
+        </div>
+        <div class="fb-saldo-card" id="mk-saldo-final-card">
+          <div class="fb-saldo-lbl">Saldo final</div>
+          <div class="fb-saldo-val" id="mk-saldo-final">—</div>
+          <div class="fb-saldo-sub">saldo inicial − total investido</div>
+        </div>
+      </div>
+      <div class="fb-progress-wrap">
+        <div class="fb-progress-header">
+          <span>Consumo do orçamento da conta</span>
+          <span id="mk-saldo-pct" style="font-weight:600;color:var(--azul-escuro);">—</span>
+        </div>
+        <div class="fb-progress-track">
+          <div class="fb-progress-fill" id="mk-progress-bar" style="width:0%"></div>
+        </div>
+      </div>
+    </div>
+    <!-- ── FIM SALDO ── -->
     <div id="mk-loading" style="display:none"></div>
     <div id="mk-empty" style="display:none" class="empty">Selecione o período e clique em Analisar.</div>
     <div id="mk-stats" style="display:none;margin-bottom:16px">
@@ -1174,7 +1205,7 @@ async function carregarAnaliseMarketing(){
   const mkEmpty=document.getElementById('mk-empty');const mkLoading=document.getElementById('mk-loading');const mkDrill=document.getElementById('mk-drill');
   mkEmpty.style.display='none';mkLoading.style.display='block';mkLoading.innerHTML=load('Buscando Facebook Ads e RD CRM...');
   mkDrill.style.display='none';_mkDrillAberto=null;
-  ['mk-stats','mk-tabela','mk-pipeline-funil'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
+  ['mk-stats','mk-tabela','mk-pipeline-funil','mk-saldo-wrap'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
   try{
     const fmtBRL=v=>v!=null&&v>0?'R$ '+Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2}):'-';
     const ini=new Date(de+'T00:00:00');const fim=new Date(ate+'T23:59:59');
@@ -1212,6 +1243,24 @@ async function carregarAnaliseMarketing(){
     const valPerdido=todosDealsRDPer.filter(d=>((d.deal_stage&&d.deal_stage.name)||'').toLowerCase().includes('perdid')).reduce((s,d)=>s+Number(d.amount_montly||0),0);
     const roas=fbInvest>0&&valVendido>0?(valVendido/fbInvest):null;
     document.getElementById('mk-investimento').textContent=fmtBRL(fbInvest);document.getElementById('mk-leads-fb').textContent=fbLeads||'0';document.getElementById('mk-cpl').textContent=fmtBRL(cpl);document.getElementById('mk-cpm').textContent=cpmTotal?fmtBRL(cpmTotal):'-';document.getElementById('mk-roas').textContent=roas?roas.toFixed(2)+'x':'-';document.getElementById('mk-valor-vendido').textContent=valVendido>0?fmtBRL(valVendido):'-';document.getElementById('mk-valor-perdido').textContent=valPerdido>0?fmtBRL(valPerdido):'-';document.getElementById('mk-valor-aberto').textContent=valAberto>0?fmtBRL(valAberto):'-';
+
+    // ── Saldo da conta no bloco de Análise Marketing (usa data.conta da resposta da API) ──
+    if(fbData.conta){
+      const c=fbData.conta;
+      const neg=c.saldoFinal<0;
+      const pct=c.saldoInicial>0?Math.min(Math.round((c.investidoPeriodo/c.saldoInicial)*100),100):0;
+      const barColor=pct>=90?'#E24B4A':pct>=70?'#FF8E2A':'#1D9E75';
+      document.getElementById('mk-saldo-inicial').textContent=fmtBRL(c.saldoInicial);
+      document.getElementById('mk-saldo-investido').textContent=fmtBRL(c.investidoPeriodo);
+      document.getElementById('mk-saldo-final').textContent=fmtBRL(c.saldoFinal);
+      document.getElementById('mk-saldo-final').className='fb-saldo-val '+(neg?'vermelho':'verde');
+      document.getElementById('mk-saldo-final-card').className='fb-saldo-card '+(neg?'final-neg':'final-pos');
+      document.getElementById('mk-saldo-pct').textContent=pct+'% consumido';
+      const bar=document.getElementById('mk-progress-bar');
+      bar.style.width=pct+'%';bar.style.background=barColor;
+      document.getElementById('mk-saldo-wrap').style.display='block';
+    }
+
     document.getElementById('mk-stats').style.display='block';
     window._mkCampanhas=todasCampanhas;
     const tbodyEl=document.getElementById('mk-table-body');tbodyEl.innerHTML='';
