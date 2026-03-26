@@ -23,21 +23,15 @@ export default async function handler(req, res) {
   const diasPeriodo = Math.max(1, Math.round((new Date(until) - new Date(since)) / (864e5)) + 1);
 
   try {
-    // 0. Busca saldo da conta — balance = saldo atual, amount_spent = total gasto desde criação
-    //    API retorna os valores em centavos, por isso divide por 100
+    // 0. Busca saldo atual da conta
+    //    balance = saldo disponível agora (em centavos na API → divide por 100)
     const contaRes = await fetch(
-      `https://graph.facebook.com/v19.0/${actId}?fields=balance,amount_spent,currency&access_token=${token}`
+      `https://graph.facebook.com/v19.0/${actId}?fields=balance,currency&access_token=${token}`
     );
     const contaData = await contaRes.json();
     if (contaData.error) return res.status(400).json({ erro: contaData.error.message, codigo: contaData.error.code });
 
-    const balance     = parseFloat(contaData.balance     || 0) / 100;
-    const amountSpent = parseFloat(contaData.amount_spent || 0) / 100;
-
-    // Saldo inicial do período = saldo atual + tudo que foi gasto (reconstitui o depósito original)
-    const saldoInicial = balance + amountSpent;
-    // Saldo final = o que ainda está disponível na conta
-    const saldoFinal   = balance;
+    const balance = parseFloat(contaData.balance || 0) / 100;
 
     // 1. Busca campanhas com status
     const campsUrl = `https://graph.facebook.com/v19.0/${actId}/campaigns?fields=id,name,status,effective_status,start_time,stop_time&limit=200&access_token=${token}`;
@@ -55,7 +49,7 @@ export default async function handler(req, res) {
       };
     });
 
-    // 2. Busca insights — inclui leadgen_grouped para contar leads de formulário nativo
+    // 2. Busca insights do período
     const insightsFields = 'campaign_id,campaign_name,impressions,clicks,spend,reach,cpc,ctr,actions,action_values';
     let insightsUrl = `https://graph.facebook.com/v19.0/${actId}/insights?fields=${encodeURIComponent(insightsFields)}&time_range=${encodeURIComponent(timeRange)}&level=campaign&limit=100&access_token=${token}`;
     let todosInsights = [];
@@ -76,10 +70,7 @@ export default async function handler(req, res) {
       idsComInsights.add(c.campaign_id);
 
       const actions = c.actions || [];
-
-      // leadgen_grouped = leads de formulário nativo do Facebook
       const leadsFormulario = parseInt(actions.find(a => a.action_type === 'leadgen_grouped')?.value || '0');
-      // fallback: lead genérico se não tiver leadgen_grouped
       const leadsFallback = parseInt(actions.find(a => a.action_type === 'lead')?.value || '0');
       const totalLeads = leadsFormulario || leadsFallback;
 
@@ -146,16 +137,24 @@ export default async function handler(req, res) {
     totais.taxaConversao = totais.cliques > 0 ? parseFloat((totais.leads / totais.cliques * 100).toFixed(2)) : null;
     totais.mediaDiaria = totais.investimento > 0 ? parseFloat((totais.investimento / diasPeriodo).toFixed(2)) : null;
 
+    // 7. Cálculo correto do saldo:
+    //    spend do período = total gasto no período selecionado (soma dos insights)
+    //    saldo inicial    = balance (agora) + spend do período
+    //                       → reconstitui o que havia na conta no início do período
+    //    saldo final      = balance (o que sobrou na conta agora)
+    const spendPeriodo  = parseFloat(totais.investimento.toFixed(2));
+    const saldoInicial  = parseFloat((balance + spendPeriodo).toFixed(2));
+    const saldoFinal    = parseFloat(balance.toFixed(2));
+
     return res.status(200).json({
       ativas,
       pausadas,
       totais,
       periodo: { since, until, diasPeriodo },
-      // Saldo da conta — buscado automaticamente da API do Facebook
       conta: {
-        saldoInicial: parseFloat(saldoInicial.toFixed(2)), // balance + amount_spent
-        saldoFinal:   parseFloat(saldoFinal.toFixed(2)),   // balance atual
-        investidoPeriodo: parseFloat(totais.investimento.toFixed(2)),
+        saldoInicial,        // balance + spend período = saldo no início do período
+        saldoFinal,          // balance atual = o que sobrou
+        investidoPeriodo: spendPeriodo,
         currency: contaData.currency || 'BRL'
       }
     });
