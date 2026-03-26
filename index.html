@@ -877,20 +877,36 @@ async function consultarCnpjReuniao(idCard, dealId, dealNome, funil, estagio){
     window['_cnpjDados_'+idCard]=dadosCnpj;
 
     // Monta resultado sem passar dados via onclick — usa closure via window
+    const cnaes=(d.cnaes_secundarios||[]).slice(0,5);
     const wrap=document.createElement('div');
     wrap.style.cssText='background:var(--branco);border:1px solid var(--border);border-radius:8px;padding:12px;margin-top:4px;';
     wrap.innerHTML=`
   <div class="two-col">
     <div class="ib"><div class="l">Razão Social</div><div class="v">${d.razao_social||'-'}</div></div>
-    <div class="ib"><div class="l">Situação</div><div class="v" style="color:${sitCor};font-weight:700;">${sit||'-'}</div></div>
+    <div class="ib"><div class="l">Nome Fantasia</div><div class="v">${d.nome_fantasia||'-'}</div></div>
   </div>
-  <div class="two-col">
-    <div class="ib"><div class="l">CNAE Principal</div><div class="v">${d.cnae_fiscal_descricao?`<span class="cnae-code">${d.cnae_fiscal}</span>${d.cnae_fiscal_descricao}`:'-'}</div></div>
+  <div class="three-col">
+    <div class="ib"><div class="l">CNPJ</div><div class="v">${d.cnpj||'-'}</div></div>
+    <div class="ib"><div class="l">Situação</div><div class="v" style="color:${sitCor};font-weight:700;">${sit||'-'}</div></div>
     <div class="ib"><div class="l">Porte</div><div class="v">${d.porte||'-'}</div></div>
   </div>
-  <div class="two-col">
-    <div class="ib"><div class="l">Município/UF</div><div class="v">${d.municipio||'-'} / ${d.uf||'-'}</div></div>
+  <div class="three-col">
+    <div class="ib"><div class="l">Natureza Jurídica</div><div class="v">${d.natureza_juridica||'-'}</div></div>
     <div class="ib"><div class="l">Capital Social</div><div class="v">${d.capital_social?'R$ '+Number(d.capital_social).toLocaleString('pt-BR'):'-'}</div></div>
+    <div class="ib"><div class="l">Abertura</div><div class="v">${d.data_inicio_atividade||'-'}</div></div>
+  </div>
+  <div class="ib" style="margin-bottom:8px;">
+    <div class="l">CNAE Principal</div>
+    <div class="v">${d.cnae_fiscal_descricao?`<span class="cnae-code">${d.cnae_fiscal}</span>${d.cnae_fiscal_descricao}`:'-'}</div>
+  </div>
+  ${cnaes.length?`<div class="ib" style="margin-bottom:8px;"><div class="l">CNAEs Secundários</div><div class="v">${cnaes.map(c=>`<div class="cnae-row"><span class="cnae-code">${c.codigo}</span>${c.descricao}</div>`).join('')}</div></div>`:''}
+  <div class="two-col">
+    <div class="ib"><div class="l">Endereço</div><div class="v">${[d.logradouro,d.numero,d.complemento,d.bairro].filter(Boolean).join(', ')||'-'}</div></div>
+    <div class="ib"><div class="l">Cidade / UF</div><div class="v">${d.municipio||'-'} / ${d.uf||'-'}</div></div>
+  </div>
+  <div class="two-col">
+    <div class="ib"><div class="l">Telefone</div><div class="v">${d.ddd_telefone_1||'-'}</div></div>
+    <div class="ib"><div class="l">Email</div><div class="v">${d.email||'-'}</div></div>
   </div>
   <div class="act-row" style="margin-top:8px;"></div>`;
 
