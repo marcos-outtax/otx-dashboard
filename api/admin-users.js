@@ -1,6 +1,6 @@
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, PATCH, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Session-Token, X-Admin-Token');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
@@ -35,13 +35,26 @@ export default async function handler(req, res) {
 
   // ── GET: lista usuários ────────────────────────────────────
   if (req.method === 'GET') {
-    // Retorna sem a senha
     const lista = usuarios.map(u => ({
       usuario: u.usuario,
       nome: u.nome || u.usuario,
+      senha: u.senha,
       admin: u.admin === true
     }));
     return res.status(200).json({ usuarios: lista });
+  }
+
+  // ── PATCH: edita senha ─────────────────────────────────────
+  if (req.method === 'PATCH') {
+    const { usuario, novaSenha } = req.body || {};
+    if (!usuario || !novaSenha) return res.status(400).json({ erro: 'Usuário e nova senha obrigatórios.' });
+    const idx = usuarios.findIndex(u => u.usuario === usuario);
+    if (idx === -1) return res.status(404).json({ erro: 'Usuário não encontrado.' });
+    const novosUsuarios = [...usuarios];
+    novosUsuarios[idx] = { ...novosUsuarios[idx], senha: novaSenha.trim() };
+    const ok = await atualizarVariavel(novosUsuarios);
+    if (!ok) return res.status(500).json({ erro: 'Erro ao salvar.' });
+    return res.status(200).json({ ok: true, mensagem: 'Senha atualizada.' });
   }
 
   // ── POST: adiciona usuário ─────────────────────────────────
