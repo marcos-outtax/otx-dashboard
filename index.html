@@ -75,6 +75,11 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 .stat{background:var(--branco);border:1px solid var(--border);border-radius:12px;padding:14px 16px;border-top:3px solid var(--azul-medio)}
 .stat .num{font-size:24px;font-weight:700;margin-bottom:2px;color:var(--azul-escuro)}
 .stat .lbl{font-size:11px;color:var(--text-muted)}
+/* ── STAT CLICÁVEL ── */
+.stat-clickable{cursor:pointer;transition:all .18s;position:relative;}
+.stat-clickable:hover{transform:translateY(-2px);box-shadow:0 4px 16px rgba(21,44,107,.13);border-color:var(--azul-medio);}
+.stat-clickable::after{content:'▼';position:absolute;bottom:8px;right:10px;font-size:9px;color:var(--text-muted);opacity:.6;}
+.stat-clickable:hover::after{opacity:1;}
 .filtros{background:var(--branco);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:16px;display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap}
 .fg{display:flex;flex-direction:column;gap:4px}
 .fg label{font-size:11px;color:var(--text-muted);font-weight:500}
@@ -229,6 +234,38 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 .fb-progress-track{height:8px;background:var(--azul-pale);border-radius:99px;overflow:hidden;}
 .fb-progress-fill{height:100%;border-radius:99px;transition:width .6s ease;}
 @media(max-width:600px){.two-col,.three-col{grid-template-columns:1fr}.stats{grid-template-columns:repeat(3,1fr)}.filtros{flex-direction:column;align-items:stretch}.fa{margin-left:0}.fb-saldo-grid{grid-template-columns:1fr}}
+
+/* ── MODAL LEADS RD (Vendidos/Perdidos/Abertos) ── */
+.modal-leads-ov{display:none;position:fixed;inset:0;background:rgba(21,44,107,.55);z-index:3000;align-items:flex-start;justify-content:center;padding:32px 16px;overflow-y:auto;}
+.modal-leads-ov.open{display:flex;}
+.modal-leads-box{background:var(--branco);border-radius:16px;width:100%;max-width:680px;box-shadow:0 24px 64px rgba(21,44,107,.28);display:flex;flex-direction:column;max-height:85vh;}
+.modal-leads-header{padding:20px 24px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.modal-leads-title{font-size:15px;font-weight:700;color:var(--azul-escuro);}
+.modal-leads-subtitle{font-size:11px;color:var(--text-muted);margin-top:2px;}
+.modal-leads-close{background:none;border:none;font-size:22px;cursor:pointer;color:var(--text-muted);line-height:1;padding:0 4px;}
+.modal-leads-close:hover{color:var(--azul-escuro);}
+.modal-leads-summary{padding:12px 24px;background:var(--azul-pale);border-bottom:1px solid var(--border);display:flex;gap:16px;flex-shrink:0;flex-wrap:wrap;}
+.modal-leads-summary-item{font-size:11px;color:var(--text-muted);}
+.modal-leads-summary-item strong{color:var(--azul-escuro);font-size:13px;display:block;}
+.modal-leads-body{overflow-y:auto;padding:16px 24px;flex:1;}
+.lead-row{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--border);border-radius:10px;margin-bottom:8px;background:var(--branco);transition:all .15s;}
+.lead-row:hover{background:var(--azul-pale);border-color:var(--azul-medio);}
+.lead-row-av{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;}
+.lead-row-info{flex:1;min-width:0;}
+.lead-row-name{font-size:13px;font-weight:600;color:var(--azul-escuro);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.lead-row-meta{font-size:11px;color:var(--text-muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.lead-row-val{font-size:13px;font-weight:700;white-space:nowrap;flex-shrink:0;}
+.lead-row-actions{display:flex;gap:6px;flex-shrink:0;}
+.lead-row-btn{display:inline-flex;align-items:center;gap:4px;padding:5px 12px;font-size:11px;font-weight:600;border-radius:7px;cursor:pointer;text-decoration:none;transition:all .15s;border:1px solid var(--azul-medio);color:var(--azul-medio);background:transparent;}
+.lead-row-btn:hover{background:var(--azul-medio);color:#fff;}
+.modal-leads-empty{text-align:center;padding:40px 20px;color:var(--text-muted);font-size:13px;}
+.modal-leads-footer{padding:14px 24px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-shrink:0;background:#fafbfd;}
+.modal-leads-total{font-size:12px;color:var(--text-muted);}
+.modal-leads-total strong{color:var(--azul-escuro);}
+/* tipo badge no header do modal */
+.tipo-badge-vendido{background:#EAF3DE;color:#1D9E75;font-size:11px;padding:3px 10px;border-radius:20px;font-weight:700;}
+.tipo-badge-perdido{background:#FCEBEB;color:#E24B4A;font-size:11px;padding:3px 10px;border-radius:20px;font-weight:700;}
+.tipo-badge-aberto{background:#FFF0E0;color:#FF8E2A;font-size:11px;padding:3px 10px;border-radius:20px;font-weight:700;}
 </style>
 </head>
 <body>
@@ -440,7 +477,6 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
       </div>
     </div>
 
-    <!-- ── SALDO DA CONTA (buscado automaticamente da API) ── -->
     <div id="fb-saldo-wrap" style="display:none;">
       <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">
         Saldo da conta Facebook Ads
@@ -472,7 +508,6 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
         </div>
       </div>
     </div>
-    <!-- ── FIM SALDO ── -->
 
     <div class="stats" style="grid-template-columns:repeat(3,1fr);margin-bottom:8px">
       <div class="stat"><div class="num" id="fb-investimento">—</div><div class="lbl">Investimento</div></div>
@@ -507,7 +542,7 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
         <button class="btn" onclick="limparFiltrosMK()">✕ Limpar</button>
       </div>
     </div>
-    <!-- ── SALDO DA CONTA (mesmo bloco do Facebook Ads) ── -->
+    <!-- SALDO DA CONTA -->
     <div id="mk-saldo-wrap" style="display:none;">
       <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">Saldo da conta Facebook Ads</div>
       <div class="fb-saldo-grid">
@@ -537,7 +572,6 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
         </div>
       </div>
     </div>
-    <!-- ── FIM SALDO ── -->
     <div id="mk-loading" style="display:none"></div>
     <div id="mk-empty" style="display:none" class="empty">Selecione o período e clique em Analisar.</div>
     <div id="mk-stats" style="display:none;margin-bottom:16px">
@@ -549,9 +583,19 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
       <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;">
         <div class="stat" style="border-top-color:#7C3AED"><div class="num" id="mk-cpm" style="color:#7C3AED">—</div><div class="lbl">CPM</div></div>
         <div class="stat" style="border-top-color:#1D9E75"><div class="num" id="mk-roas" style="color:#1D9E75">—</div><div class="lbl">ROAS</div></div>
-        <div class="stat" style="border-top-color:#1D9E75"><div class="num" id="mk-valor-vendido" style="color:#1D9E75">—</div><div class="lbl">Valor Vendido RD</div></div>
-        <div class="stat" style="border-top-color:#E24B4A"><div class="num" id="mk-valor-perdido" style="color:#E24B4A">—</div><div class="lbl">Valor Perdido RD</div></div>
-        <div class="stat" style="border-top-color:var(--laranja)"><div class="num" id="mk-valor-aberto" style="color:var(--laranja)">—</div><div class="lbl">Valor em Aberto RD</div></div>
+        <!-- CARDS CLICÁVEIS -->
+        <div class="stat stat-clickable" id="card-mk-vendido" style="border-top-color:#1D9E75;cursor:pointer;" onclick="abrirModalLeads('vendido')" title="Clique para ver os leads vendidos">
+          <div class="num" id="mk-valor-vendido" style="color:#1D9E75">—</div>
+          <div class="lbl">Valor Vendido RD</div>
+        </div>
+        <div class="stat stat-clickable" id="card-mk-perdido" style="border-top-color:#E24B4A;cursor:pointer;" onclick="abrirModalLeads('perdido')" title="Clique para ver os leads perdidos">
+          <div class="num" id="mk-valor-perdido" style="color:#E24B4A">—</div>
+          <div class="lbl">Valor Perdido RD</div>
+        </div>
+        <div class="stat stat-clickable" id="card-mk-aberto" style="border-top-color:var(--laranja);cursor:pointer;" onclick="abrirModalLeads('aberto')" title="Clique para ver os leads em aberto">
+          <div class="num" id="mk-valor-aberto" style="color:var(--laranja)">—</div>
+          <div class="lbl">Valor em Aberto RD</div>
+        </div>
       </div>
     </div>
     <div id="mk-tabela" style="display:none;background:var(--branco);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:16px;">
@@ -651,6 +695,52 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
   </div>
 </div>
 
+<!-- ════════════════════════════════════════════════════════════
+     MODAL LEADS RD — Vendidos / Perdidos / Em Aberto
+     ════════════════════════════════════════════════════════════ -->
+<div class="modal-leads-ov" id="modal-leads-ov" onclick="fecharModalLeads(event)">
+  <div class="modal-leads-box" onclick="event.stopPropagation()">
+    <div class="modal-leads-header">
+      <div>
+        <div class="modal-leads-title" id="modal-leads-title">Leads</div>
+        <div class="modal-leads-subtitle" id="modal-leads-subtitle"></div>
+      </div>
+      <button class="modal-leads-close" onclick="fecharModalLeads()">✕</button>
+    </div>
+    <div class="modal-leads-summary" id="modal-leads-summary"></div>
+    <div class="modal-leads-body" id="modal-leads-body">
+      <div class="modal-leads-empty">Carregando...</div>
+    </div>
+    <div class="modal-leads-footer">
+      <span class="modal-leads-total" id="modal-leads-total"></span>
+      <button class="btn" onclick="fecharModalLeads()">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL GERENCIAR USUÁRIOS -->
+<div class="modal-ov" id="m-usuarios">
+  <div class="modal" style="max-width:520px;">
+    <h3>👥 Gerenciar Usuários</h3>
+    <p>Adicione ou remova usuários com acesso ao dashboard.</p>
+    <div id="lista-usuarios" style="margin-bottom:16px;"></div>
+    <div style="border-top:1px solid var(--border);padding-top:16px;">
+      <div style="font-size:12px;font-weight:600;color:var(--azul-escuro);margin-bottom:10px;">+ Adicionar usuário</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+        <div class="fg"><label>Usuário (login)</label><input type="text" id="nu-usuario" placeholder="ex: joao" style="padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:12px;width:100%;"></div>
+        <div class="fg"><label>Nome completo</label><input type="text" id="nu-nome" placeholder="ex: João Silva" style="padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:12px;width:100%;"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+        <div class="fg"><label>Senha</label><input type="password" id="nu-senha" placeholder="••••••••" style="padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:12px;width:100%;"></div>
+        <div class="fg"><label>Perfil</label><select id="nu-admin" style="padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:12px;width:100%;"><option value="false">Usuário comum</option><option value="true">Administrador</option></select></div>
+      </div>
+      <div id="nu-erro" style="display:none;font-size:12px;color:#791F1F;background:#FCEBEB;padding:8px 12px;border-radius:8px;margin-bottom:8px;"></div>
+      <button class="btn btn-p" style="width:100%;" onclick="adicionarUsuario()">✅ Adicionar usuário</button>
+    </div>
+    <div class="modal-ft"><button class="btn-cancel" onclick="fecharGerenciarUsuarios()">Fechar</button></div>
+  </div>
+</div>
+
 <script>
 // ── SESSÃO ───────────────────────────────────────────────
 const K='otx_cfg';
@@ -745,6 +835,7 @@ const load=msg=>`<div class="loading"><div class="dot"></div><div class="dot"></
 function fc(v){v=v.replace(/\D/g,'').slice(0,14);if(v.length<=2)return v;if(v.length<=5)return v.slice(0,2)+'.'+v.slice(2);if(v.length<=8)return v.slice(0,2)+'.'+v.slice(2,5)+'.'+v.slice(5);if(v.length<=12)return v.slice(0,2)+'.'+v.slice(2,5)+'.'+v.slice(5,8)+'/'+v.slice(8);return v.slice(0,2)+'.'+v.slice(2,5)+'.'+v.slice(5,8)+'/'+v.slice(8,12)+'-'+v.slice(12,14);}
 function toggle(h){const b=h.nextElementSibling;if(!b)return;const c=h.querySelector('.chev');const o=b.classList.contains('open');b.classList.toggle('open',!o);if(c)c.style.transform=o?'':'rotate(180deg)';}
 function dataHoje(){return new Date().toISOString().split('T')[0];}
+const fmtBRL=v=>v!=null&&v>0?'R$ '+Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2}):'-';
 
 // ── API RD CRM ────────────────────────────────────────────
 async function crmFetch(path,params={},method='GET',body=null){
@@ -1088,32 +1179,25 @@ async function carregarFacebook(){
     const ativas=data.ativas||[];const pausadas=data.pausadas||[];const totais=data.totais||{};
     _fbDadosAtual={ativas,pausadas,totais,periodo:data.periodo,conta:data.conta};
 
-    const fmtBRL=v=>v!=null&&v!==''&&v!==0?'R$ '+Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2}):v===0?'R$ 0,00':'-';
     const fmtNum=v=>v?Number(v).toLocaleString('pt-BR'):'-';
 
-    // ── Renderiza saldo da conta (buscado automaticamente da API) ──
     if(data.conta){
       const c=data.conta;
       const neg=c.saldoFinal<0;
       const pct=c.saldoInicial>0?Math.min(Math.round((c.investidoPeriodo/c.saldoInicial)*100),100):0;
       const barColor=pct>=90?'#E24B4A':pct>=70?'#FF8E2A':'#1D9E75';
-
       document.getElementById('fb-saldo-inicial').textContent=fmtBRL(c.saldoInicial);
       document.getElementById('fb-saldo-investido').textContent=fmtBRL(c.investidoPeriodo);
       document.getElementById('fb-saldo-final').textContent=fmtBRL(c.saldoFinal);
       document.getElementById('fb-saldo-final').className='fb-saldo-val '+(neg?'vermelho':'verde');
-
       const cardFinal=document.getElementById('fb-saldo-final-card');
       cardFinal.className='fb-saldo-card '+(neg?'final-neg':'final-pos');
-
       document.getElementById('fb-saldo-pct').textContent=pct+'% consumido';
       const bar=document.getElementById('fb-progress-bar');
       bar.style.width=pct+'%';bar.style.background=barColor;
-
       document.getElementById('fb-saldo-wrap').style.display='block';
     }
 
-    // ── Métricas gerais ──
     document.getElementById('fb-investimento').textContent=fmtBRL(totais.investimento);
     document.getElementById('fb-leads').textContent=fmtNum(totais.leads);
     document.getElementById('fb-cpl').textContent=totais.cpl?fmtBRL(totais.cpl):'-';
@@ -1124,7 +1208,6 @@ async function carregarFacebook(){
     document.getElementById('fb-taxa-conv').textContent=totais.taxaConversao?totais.taxaConversao+'%':'-';
     document.getElementById('fb-media-diaria').textContent=totais.mediaDiaria?fmtBRL(totais.mediaDiaria)+'/dia':'-';
 
-    // ── Cards de campanhas ──
     let html='';
     const mostrarAtivas=filtroStatus==='todas'||filtroStatus==='ativas';
     const mostrarPausadas=filtroStatus==='todas'||filtroStatus==='pausadas';
@@ -1145,7 +1228,6 @@ async function carregarFacebook(){
 }
 
 function cardFacebook(c){
-  const fmtBRL=v=>v!=null&&v!==''&&v!==0?'R$ '+Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2}):v===0?'R$ 0,00':'-';
   const fmtNum=v=>v?Number(v).toLocaleString('pt-BR'):'-';
   const isAtiva=c.status==='ACTIVE';
   const statusStyle=isAtiva?'background:#EAF3DE;color:#27500A;':'background:#f0f0f0;color:#6b6b6b;';
@@ -1200,7 +1282,6 @@ function cardFacebook(c){
 function exportarPDFFacebook(){
   if(!_fbDadosAtual){alert('Busque os dados primeiro.');return;}
   const d=_fbDadosAtual;
-  const fmtBRL=v=>v!=null&&v!==''?'R$ '+Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}):'-';
   const fmtNum=v=>v!=null?Number(v).toLocaleString('pt-BR'):'-';
   const de=document.getElementById('fb-de')?.value||'';
   const ate=document.getElementById('fb-ate')?.value||'';
@@ -1297,30 +1378,16 @@ function exportarPDFFacebook(){
         <span>Gerado em: ${agora}</span>
       </div>
     </div>
-
     <div class="section-title">Saldo da conta Facebook Ads</div>
     <div class="saldo-grid">
-      <div class="saldo-card ini">
-        <div class="lbl">Saldo inicial do período</div>
-        <div class="val">${fmtBRL(conta.saldoInicial)}</div>
-        <div class="sub">balance + spend do período via API</div>
-      </div>
-      <div class="saldo-card inv">
-        <div class="lbl">Total investido no período</div>
-        <div class="val">${fmtBRL(conta.investidoPeriodo)}</div>
-        <div class="sub">soma de todas as campanhas</div>
-      </div>
-      <div class="saldo-card ${negSaldo?'fin-neg':'fin'}">
-        <div class="lbl">Saldo final</div>
-        <div class="val">${fmtBRL(conta.saldoFinal)}</div>
-        <div class="sub">saldo inicial − total investido</div>
-      </div>
+      <div class="saldo-card ini"><div class="lbl">Saldo inicial do período</div><div class="val">${fmtBRL(conta.saldoInicial)}</div><div class="sub">balance + spend do período via API</div></div>
+      <div class="saldo-card inv"><div class="lbl">Total investido no período</div><div class="val">${fmtBRL(conta.investidoPeriodo)}</div><div class="sub">soma de todas as campanhas</div></div>
+      <div class="saldo-card ${negSaldo?'fin-neg':'fin'}"><div class="lbl">Saldo final</div><div class="val">${fmtBRL(conta.saldoFinal)}</div><div class="sub">saldo inicial − total investido</div></div>
     </div>
     <div class="progress-wrap">
       <div class="progress-label"><span>Consumo do orçamento da conta</span><span style="font-weight:700;color:${barColor}">${pct}% consumido</span></div>
       <div class="progress-track"><div class="progress-fill" style="width:${pct}%;background:${barColor}"></div></div>
     </div>
-
     <div class="section-title">Métricas do período</div>
     <div class="cards-grid">
       <div class="card"><div class="lbl">Investimento</div><div class="val">${fmtBRL(totais.investimento)}</div></div>
@@ -1337,108 +1404,33 @@ function exportarPDFFacebook(){
       <div class="card laranja"><div class="lbl">Taxa de conversão</div><div class="val">${totais.taxaConversao?totais.taxaConversao+'%':'-'}</div></div>
       <div class="card"><div class="lbl">Média diária</div><div class="val">${totais.mediaDiaria?fmtBRL(totais.mediaDiaria)+'/dia':'-'}</div></div>
     </div>
-
-    ${ativas.length?`
-    <div class="section-title">Campanhas ativas (${ativas.length})</div>
-    <table>
-      <thead><tr><th>Campanha</th><th>Investimento</th><th>Leads</th><th>CPL</th><th>CTR</th><th>CPC</th><th>Conv.</th></tr></thead>
-      <tbody>${ativasRows}</tbody>
-    </table>`:''}
-
-    ${pausadasRows?`
-    <div class="section-title">Campanhas pausadas com gasto no período</div>
-    <table>
-      <thead><tr><th>Campanha</th><th>Investimento</th><th>Leads</th><th>CPL</th><th>CTR</th><th>CPC</th><th>Conv.</th></tr></thead>
-      <tbody>${pausadasRows}</tbody>
-    </table>`:''}
-
-    <div class="footer">
-      <span>Outtax Dashboard — otx-dashboard.vercel.app</span>
-      <span>Fonte: API Graph do Facebook Ads v19.0</span>
-      <span>${agora}</span>
-    </div>
+    ${ativas.length?`<div class="section-title">Campanhas ativas (${ativas.length})</div><table><thead><tr><th>Campanha</th><th>Investimento</th><th>Leads</th><th>CPL</th><th>CTR</th><th>CPC</th><th>Conv.</th></tr></thead><tbody>${ativasRows}</tbody></table>`:''}
+    ${pausadasRows?`<div class="section-title">Campanhas pausadas com gasto no período</div><table><thead><tr><th>Campanha</th><th>Investimento</th><th>Leads</th><th>CPL</th><th>CTR</th><th>CPC</th><th>Conv.</th></tr></thead><tbody>${pausadasRows}</tbody></table>`:''}
+    <div class="footer"><span>Outtax Dashboard — otx-dashboard.vercel.app</span><span>Fonte: API Graph do Facebook Ads v19.0</span><span>${agora}</span></div>
   </div></body></html>`;
 
   const win=window.open('','_blank','width=900,height=700');
-  win.document.write(html);
-  win.document.close();
-  win.focus();
+  win.document.write(html);win.document.close();win.focus();
   setTimeout(()=>{win.print();},600);
 }
 
 function exportarTXTFacebook(){
   if(!_fbDadosAtual){alert('Busque os dados primeiro.');return;}
   const d=_fbDadosAtual;
-  const fmtBRL=v=>v!=null&&v!==''?'R$ '+Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}):'-';
   const fmtNum=v=>v!=null?Number(v).toLocaleString('pt-BR'):'-';
-  const de=document.getElementById('fb-de')?.value||'';
-  const ate=document.getElementById('fb-ate')?.value||'';
+  const de=document.getElementById('fb-de')?.value||'';const ate=document.getElementById('fb-ate')?.value||'';
   const periodo=de&&ate?`${new Date(de+'T12:00:00').toLocaleDateString('pt-BR')} a ${new Date(ate+'T12:00:00').toLocaleDateString('pt-BR')}`:'—';
   const totais=d.totais||{};const conta=d.conta||{};const ativas=d.ativas||[];const pausadas=d.pausadas||[];
   const pct=conta.saldoInicial>0?Math.min(Math.round((conta.investidoPeriodo/conta.saldoInicial)*100),100):0;
   const linha='='.repeat(62);const sublinha='-'.repeat(62);
-
   let t='';
-  t+=linha+'\n';
-  t+='  OUTTAX — RELATÓRIO FACEBOOK ADS\n';
-  t+=`  Período: ${periodo}\n`;
-  t+=`  Gerado em: ${new Date().toLocaleString('pt-BR')}\n`;
-  t+=linha+'\n\n';
-
-  t+='SALDO DA CONTA FACEBOOK ADS\n'+sublinha+'\n';
-  t+=`Saldo inicial do período : ${fmtBRL(conta.saldoInicial)}\n`;
-  t+=`Total investido no período: ${fmtBRL(conta.investidoPeriodo)}\n`;
-  t+=`Saldo final               : ${fmtBRL(conta.saldoFinal)}\n`;
-  t+=`Consumo do orçamento      : ${pct}%\n\n`;
-
-  t+='MÉTRICAS DO PERÍODO\n'+sublinha+'\n';
-  t+=`Investimento total : ${fmtBRL(totais.investimento)}\n`;
-  t+=`Leads gerados      : ${fmtNum(totais.leads)}\n`;
-  t+=`CPL médio          : ${totais.cpl?fmtBRL(totais.cpl):'-'}\n`;
-  t+=`Alcance            : ${fmtNum(totais.alcance)}\n`;
-  t+=`Impressões         : ${fmtNum(totais.impressoes)}\n`;
-  t+=`CTR                : ${totais.ctr?Number(totais.ctr).toFixed(2)+'%':'-'}\n`;
-  t+=`CPC médio          : ${totais.cliques&&totais.investimento?fmtBRL(totais.investimento/totais.cliques):'-'}\n`;
-  t+=`Taxa de conversão  : ${totais.taxaConversao?totais.taxaConversao+'%':'-'}\n`;
-  t+=`Média diária       : ${totais.mediaDiaria?fmtBRL(totais.mediaDiaria)+'/dia':'-'}\n\n`;
-
-  if(ativas.length){
-    t+=`CAMPANHAS ATIVAS (${ativas.length})\n`+sublinha+'\n';
-    ativas.forEach((c,i)=>{
-      t+=`${i+1}. ${c.nome}\n`;
-      t+=`   Status      : Ativa\n`;
-      t+=`   Investimento: ${fmtBRL(c.investimento)}\n`;
-      t+=`   Leads       : ${c.leads||0}\n`;
-      t+=`   CPL         : ${c.cpl?fmtBRL(c.cpl):'-'}\n`;
-      t+=`   CTR         : ${c.ctr?c.ctr+'%':'-'}\n`;
-      t+=`   CPC         : ${c.cpc?fmtBRL(c.cpc):'-'}\n`;
-      t+=`   Conversão   : ${c.taxaConversao?c.taxaConversao+'%':'-'}\n`;
-      t+=`   Alcance     : ${fmtNum(c.alcance)}\n`;
-      t+=`   Impressões  : ${fmtNum(c.impressoes)}\n\n`;
-    });
-  }
-
+  t+=linha+'\n';t+='  OUTTAX — RELATÓRIO FACEBOOK ADS\n';t+=`  Período: ${periodo}\n`;t+=`  Gerado em: ${new Date().toLocaleString('pt-BR')}\n`;t+=linha+'\n\n';
+  t+='SALDO DA CONTA FACEBOOK ADS\n'+sublinha+'\n';t+=`Saldo inicial do período : ${fmtBRL(conta.saldoInicial)}\n`;t+=`Total investido no período: ${fmtBRL(conta.investidoPeriodo)}\n`;t+=`Saldo final               : ${fmtBRL(conta.saldoFinal)}\n`;t+=`Consumo do orçamento      : ${pct}%\n\n`;
+  t+='MÉTRICAS DO PERÍODO\n'+sublinha+'\n';t+=`Investimento total : ${fmtBRL(totais.investimento)}\n`;t+=`Leads gerados      : ${fmtNum(totais.leads)}\n`;t+=`CPL médio          : ${totais.cpl?fmtBRL(totais.cpl):'-'}\n`;t+=`Alcance            : ${fmtNum(totais.alcance)}\n`;t+=`Impressões         : ${fmtNum(totais.impressoes)}\n`;t+=`CTR                : ${totais.ctr?Number(totais.ctr).toFixed(2)+'%':'-'}\n`;t+=`CPC médio          : ${totais.cliques&&totais.investimento?fmtBRL(totais.investimento/totais.cliques):'-'}\n`;t+=`Taxa de conversão  : ${totais.taxaConversao?totais.taxaConversao+'%':'-'}\n`;t+=`Média diária       : ${totais.mediaDiaria?fmtBRL(totais.mediaDiaria)+'/dia':'-'}\n\n`;
+  if(ativas.length){t+=`CAMPANHAS ATIVAS (${ativas.length})\n`+sublinha+'\n';ativas.forEach((c,i)=>{t+=`${i+1}. ${c.nome}\n`;t+=`   Investimento: ${fmtBRL(c.investimento)}\n`;t+=`   Leads       : ${c.leads||0}\n`;t+=`   CPL         : ${c.cpl?fmtBRL(c.cpl):'-'}\n\n`;});}
   const pausadasComGasto=pausadas.filter(c=>c.investimento>0);
-  if(pausadasComGasto.length){
-    t+=`CAMPANHAS PAUSADAS COM GASTO (${pausadasComGasto.length})\n`+sublinha+'\n';
-    pausadasComGasto.forEach((c,i)=>{
-      t+=`${i+1}. ${c.nome}\n`;
-      t+=`   Investimento: ${fmtBRL(c.investimento)}\n`;
-      t+=`   Leads       : ${c.leads||0}\n\n`;
-    });
-  }
-
-  const pausadasSemGasto=pausadas.filter(c=>!c.investimento||c.investimento===0);
-  if(pausadasSemGasto.length){
-    t+=`CAMPANHAS PAUSADAS SEM GASTO NO PERÍODO (${pausadasSemGasto.length})\n`+sublinha+'\n';
-    pausadasSemGasto.forEach((c,i)=>{t+=`${i+1}. ${c.nome}\n`;});t+='\n';
-  }
-
-  t+=linha+'\n';
-  t+=`Fonte: API Graph do Facebook Ads v19.0\n`;
-  t+=`saldo_inicial = balance (atual) + spend do período\n`;
-  t+=linha+'\n';
-
+  if(pausadasComGasto.length){t+=`CAMPANHAS PAUSADAS COM GASTO (${pausadasComGasto.length})\n`+sublinha+'\n';pausadasComGasto.forEach((c,i)=>{t+=`${i+1}. ${c.nome}\n`;t+=`   Investimento: ${fmtBRL(c.investimento)}\n`;t+=`   Leads       : ${c.leads||0}\n\n`;});}
+  t+=linha+'\n';t+=`Fonte: API Graph do Facebook Ads v19.0\n`;t+=linha+'\n';
   const blob=new Blob([t],{type:'text/plain;charset=utf-8'});
   const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(blob),download:`outtax_facebook_ads_${de||'relatorio'}.txt`});
   a.click();URL.revokeObjectURL(a.href);
@@ -1446,79 +1438,37 @@ function exportarTXTFacebook(){
 
 function exportarXLSFacebook(){
   if(!_fbDadosAtual){alert('Busque os dados primeiro.');return;}
-  if(typeof XLSX==='undefined'){alert('Biblioteca XLSX não carregada. Tente novamente em alguns segundos.');return;}
+  if(typeof XLSX==='undefined'){alert('Biblioteca XLSX não carregada.');return;}
   const d=_fbDadosAtual;
-  const de=document.getElementById('fb-de')?.value||'';
-  const ate=document.getElementById('fb-ate')?.value||'';
+  const de=document.getElementById('fb-de')?.value||'';const ate=document.getElementById('fb-ate')?.value||'';
   const totais=d.totais||{};const conta=d.conta||{};const ativas=d.ativas||[];const pausadas=d.pausadas||[];
   const pct=conta.saldoInicial>0?Math.min(Math.round((conta.investidoPeriodo/conta.saldoInicial)*100),100):0;
   const periodo=de&&ate?`${new Date(de+'T12:00:00').toLocaleDateString('pt-BR')} a ${new Date(ate+'T12:00:00').toLocaleDateString('pt-BR')}`:'';
   const wb=XLSX.utils.book_new();
-
-  // Aba 1 — Resumo
-  const wsResumo=XLSX.utils.aoa_to_sheet([
-    ['OUTTAX — Relatório Facebook Ads'],
-    ['Período:', periodo],
-    ['Gerado em:', new Date().toLocaleString('pt-BR')],
-    [],
-    ['SALDO DA CONTA FACEBOOK ADS'],
-    ['Campo','Valor'],
-    ['Saldo inicial do período (R$)', conta.saldoInicial||0],
-    ['Total investido no período (R$)', conta.investidoPeriodo||0],
-    ['Saldo final (R$)', conta.saldoFinal||0],
-    ['Consumo do orçamento (%)', pct],
-    [],
-    ['MÉTRICAS DO PERÍODO'],
-    ['Campo','Valor'],
-    ['Investimento total (R$)', totais.investimento||0],
-    ['Leads gerados', totais.leads||0],
-    ['CPL médio (R$)', totais.cpl||0],
-    ['Alcance', totais.alcance||0],
-    ['Impressões', totais.impressoes||0],
-    ['CTR (%)', totais.ctr?Number(totais.ctr):0],
-    ['CPC médio (R$)', totais.cliques&&totais.investimento?(totais.investimento/totais.cliques):0],
-    ['Taxa de conversão (%)', totais.taxaConversao||0],
-    ['Média diária (R$)', totais.mediaDiaria||0],
-  ]);
-  wsResumo['!cols']=[{wch:36},{wch:22}];
-  XLSX.utils.book_append_sheet(wb,wsResumo,'Resumo');
-
-  // Aba 2 — Campanhas ativas
-  const headerCamps=['Campanha','Status','Investimento (R$)','Leads','CPL (R$)','CTR (%)','CPC (R$)','Conv. (%)','Alcance','Impressões','Média Diária (R$)'];
-  const rowsAtivas=ativas.map(c=>[
-    c.nome,'Ativa',c.investimento||0,c.leads||0,
-    c.cpl||0,c.ctr?Number(c.ctr):0,c.cpc?Number(c.cpc):0,
-    c.taxaConversao||0,c.alcance||0,c.impressoes||0,c.mediaDiaria||0
-  ]);
-  const rowsPausadas=pausadas.map(c=>[
-    c.nome,'Pausada',c.investimento||0,c.leads||0,
-    c.cpl||0,c.ctr?Number(c.ctr):0,c.cpc?Number(c.cpc):0,
-    c.taxaConversao||0,c.alcance||0,c.impressoes||0,c.mediaDiaria||0
-  ]);
+  const wsResumo=XLSX.utils.aoa_to_sheet([['OUTTAX — Relatório Facebook Ads'],['Período:',periodo],['Gerado em:',new Date().toLocaleString('pt-BR')],[],['SALDO DA CONTA FACEBOOK ADS'],['Campo','Valor'],['Saldo inicial do período (R$)',conta.saldoInicial||0],['Total investido no período (R$)',conta.investidoPeriodo||0],['Saldo final (R$)',conta.saldoFinal||0],['Consumo do orçamento (%)',pct],[],['MÉTRICAS DO PERÍODO'],['Campo','Valor'],['Investimento total (R$)',totais.investimento||0],['Leads gerados',totais.leads||0],['CPL médio (R$)',totais.cpl||0],['Alcance',totais.alcance||0],['Impressões',totais.impressoes||0],['CTR (%)',totais.ctr?Number(totais.ctr):0],['CPC médio (R$)',totais.cliques&&totais.investimento?(totais.investimento/totais.cliques):0],['Taxa de conversão (%)',totais.taxaConversao||0],['Média diária (R$)',totais.mediaDiaria||0]]);
+  wsResumo['!cols']=[{wch:36},{wch:22}];XLSX.utils.book_append_sheet(wb,wsResumo,'Resumo');
+  const headerCamps=['Campanha','Status','Investimento (R$)','Leads','CPL (R$)','CTR (%)','CPC (R$)','Conv. (%)','Alcance','Impressões'];
+  const rowsAtivas=ativas.map(c=>[c.nome,'Ativa',c.investimento||0,c.leads||0,c.cpl||0,c.ctr?Number(c.ctr):0,c.cpc?Number(c.cpc):0,c.taxaConversao||0,c.alcance||0,c.impressoes||0]);
+  const rowsPausadas=pausadas.map(c=>[c.nome,'Pausada',c.investimento||0,c.leads||0,c.cpl||0,c.ctr?Number(c.ctr):0,c.cpc?Number(c.cpc):0,c.taxaConversao||0,c.alcance||0,c.impressoes||0]);
   const wsCamps=XLSX.utils.aoa_to_sheet([headerCamps,...rowsAtivas,...rowsPausadas]);
-  wsCamps['!cols']=[{wch:46},{wch:10},{wch:18},{wch:8},{wch:12},{wch:8},{wch:10},{wch:10},{wch:12},{wch:12},{wch:16}];
+  wsCamps['!cols']=[{wch:46},{wch:10},{wch:18},{wch:8},{wch:12},{wch:8},{wch:10},{wch:10},{wch:12},{wch:12}];
   XLSX.utils.book_append_sheet(wb,wsCamps,'Campanhas');
-
-  // Aba 3 — Saldo detalhado
-  const wsSaldo=XLSX.utils.aoa_to_sheet([
-    ['SALDO DA CONTA — DETALHAMENTO'],
-    ['Período analisado', periodo],
-    [],
-    ['Campo','Valor (R$)','Descrição'],
-    ['Saldo inicial',conta.saldoInicial||0,'balance atual + spend do período'],
-    ['Spend do período',conta.investidoPeriodo||0,'total gasto no período selecionado'],
-    ['Saldo final (balance)',conta.saldoFinal||0,'saldo disponível agora na conta'],
-    ['Consumo (%)',pct,'(spend período / saldo inicial) × 100'],
-  ]);
-  wsSaldo['!cols']=[{wch:24},{wch:16},{wch:42}];
-  XLSX.utils.book_append_sheet(wb,wsSaldo,'Saldo');
-
   XLSX.writeFile(wb,`outtax_facebook_ads_${de||'relatorio'}.xlsx`);
 }
 
-// ── ANÁLISE MARKETING ─────────────────────────────────────
-let _mkDeals=[];let _mkDrillAberto=null;
+// ══════════════════════════════════════════════════════════════
+// ANÁLISE MARKETING — inclui nova funcionalidade de drill nos cards RD
+// ══════════════════════════════════════════════════════════════
+let _mkDeals=[];
+let _mkDrillAberto=null;
+// Armazena os deals separados por tipo para o modal
+let _mkDealsVendidos=[];
+let _mkDealsPerdidos=[];
+let _mkDealsAbertos=[];
+let _mkPeriodoLabel='';
+
 function limparFiltrosMK(){document.getElementById('mk-de').value='';document.getElementById('mk-ate').value='';document.getElementById('mk-campanha').value='all';}
+
 async function carregarAnaliseMarketing(){
   const de=document.getElementById('mk-de').value;const ate=document.getElementById('mk-ate').value;
   if(!de||!ate){alert('Selecione o período.');return;}
@@ -1526,8 +1476,12 @@ async function carregarAnaliseMarketing(){
   mkEmpty.style.display='none';mkLoading.style.display='block';mkLoading.innerHTML=load('Buscando Facebook Ads e RD CRM...');
   mkDrill.style.display='none';_mkDrillAberto=null;
   ['mk-stats','mk-tabela','mk-pipeline-funil','mk-saldo-wrap'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
+
+  // Reseta os arrays de drill
+  _mkDealsVendidos=[];_mkDealsPerdidos=[];_mkDealsAbertos=[];
+  _mkPeriodoLabel=`${new Date(de+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'})} → ${new Date(ate+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'})}`;
+
   try{
-    const fmtBRL=v=>v!=null&&v>0?'R$ '+Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2}):'-';
     const ini=new Date(de+'T00:00:00');const fim=new Date(ate+'T23:59:59');
     _funisCacheados=null;
     const[funis,fbRes]=await Promise.all([carregarFunis(),fetch(`/api/meta-ads?dateStart=${de}&dateEnd=${ate}`)]);
@@ -1557,14 +1511,46 @@ async function carregarAnaliseMarketing(){
     if(campFiltro!=='all'){const cn=campFiltro.toLowerCase();const palavras=cn.replace(/\[.*?\]/g,'').trim().split(/\s+/).filter(p=>p.length>3);dealsFilt=dealsFB.filter(d=>{const camp=(d.campaign?.name||'').toLowerCase();return palavras.some(p=>camp.includes(p));});const fbC=todasCampanhas.find(c=>c.nome===campFiltro);if(fbC){fbInvest=fbC.investimento;fbLeads=fbC.leads;}}
     const cpl=fbLeads>0?fbInvest/fbLeads:null;
     const cpmTotal=fbTotais.impressoes>0?(fbTotais.investimento/fbTotais.impressoes*1000):null;
-    const todosDealsRDPer=todosDealsRaw.filter(d=>{const cr=new Date(d.created_at);return cr>=ini&&cr<=fim;});
-    const valVendido=todosDealsRDPer.filter(d=>d.win===true).reduce((s,d)=>s+Number(d.amount_montly||0),0);
-    const valAberto=todosDealsRDPer.filter(d=>!d.win&&!((d.deal_stage&&d.deal_stage.name)||'').toLowerCase().includes('perdid')).reduce((s,d)=>s+Number(d.amount_montly||0),0);
-    const valPerdido=todosDealsRDPer.filter(d=>((d.deal_stage&&d.deal_stage.name)||'').toLowerCase().includes('perdid')).reduce((s,d)=>s+Number(d.amount_montly||0),0);
-    const roas=fbInvest>0&&valVendido>0?(valVendido/fbInvest):null;
-    document.getElementById('mk-investimento').textContent=fmtBRL(fbInvest);document.getElementById('mk-leads-fb').textContent=fbLeads||'0';document.getElementById('mk-cpl').textContent=fmtBRL(cpl);document.getElementById('mk-cpm').textContent=cpmTotal?fmtBRL(cpmTotal):'-';document.getElementById('mk-roas').textContent=roas?roas.toFixed(2)+'x':'-';document.getElementById('mk-valor-vendido').textContent=valVendido>0?fmtBRL(valVendido):'-';document.getElementById('mk-valor-perdido').textContent=valPerdido>0?fmtBRL(valPerdido):'-';document.getElementById('mk-valor-aberto').textContent=valAberto>0?fmtBRL(valAberto):'-';
 
-    // ── Saldo da conta no bloco de Análise Marketing (usa data.conta da resposta da API) ──
+    // ── Calcula deals RD do período (todos os funis, não só FB) ──
+    const todosDealsRDPer=todosDealsRaw.filter(d=>{const cr=new Date(d.created_at);return cr>=ini&&cr<=fim;});
+
+    // Separa e armazena cada grupo para o modal
+    _mkDealsVendidos=todosDealsRDPer.filter(d=>d.win===true);
+    _mkDealsPerdidos=todosDealsRDPer.filter(d=>((d.deal_stage&&d.deal_stage.name)||'').toLowerCase().includes('perdid'));
+    _mkDealsAbertos=todosDealsRDPer.filter(d=>!d.win&&!((d.deal_stage&&d.deal_stage.name)||'').toLowerCase().includes('perdid'));
+
+    const valVendido=_mkDealsVendidos.reduce((s,d)=>s+Number(d.amount_montly||0),0);
+    const valAberto=_mkDealsAbertos.reduce((s,d)=>s+Number(d.amount_montly||0),0);
+    const valPerdido=_mkDealsPerdidos.reduce((s,d)=>s+Number(d.amount_montly||0),0);
+    const roas=fbInvest>0&&valVendido>0?(valVendido/fbInvest):null;
+
+    document.getElementById('mk-investimento').textContent=fmtBRL(fbInvest);
+    document.getElementById('mk-leads-fb').textContent=fbLeads||'0';
+    document.getElementById('mk-cpl').textContent=fmtBRL(cpl);
+    document.getElementById('mk-cpm').textContent=cpmTotal?fmtBRL(cpmTotal):'-';
+    document.getElementById('mk-roas').textContent=roas?roas.toFixed(2)+'x':'-';
+
+    // Valor Vendido — mostra sempre, mesmo que seja R$ 0,00
+    const elVendido=document.getElementById('mk-valor-vendido');
+    elVendido.textContent=valVendido>0?fmtBRL(valVendido):'R$ 0,00';
+
+    const elPerdido=document.getElementById('mk-valor-perdido');
+    elPerdido.textContent=valPerdido>0?fmtBRL(valPerdido):'R$ 0,00';
+
+    const elAberto=document.getElementById('mk-valor-aberto');
+    elAberto.textContent=valAberto>0?fmtBRL(valAberto):'R$ 0,00';
+
+    // Destaca os cards clicáveis quando têm dados
+    ['card-mk-vendido','card-mk-perdido','card-mk-aberto'].forEach(id=>{
+      const card=document.getElementById(id);
+      if(card){
+        card.style.opacity='1';
+        card.title='Clique para ver os leads';
+      }
+    });
+
+    // Saldo da conta
     if(fbData.conta){
       const c=fbData.conta;
       const neg=c.saldoFinal<0;
@@ -1599,7 +1585,7 @@ async function carregarAnaliseMarketing(){
     const porFunil={};
     dealsFilt.forEach(d=>{const fid=d._pipeline_id||'outros';const fnome=d._pipeline_name||d.deal_pipeline?.name||'Outros';const est=d.deal_stage?.name||'Sem estágio';if(!porFunil[fid])porFunil[fid]={nome:fnome,estagios:{}};if(!porFunil[fid].estagios[est])porFunil[fid].estagios[est]=[];porFunil[fid].estagios[est].push(d);});
     function corEstagio(e){const n=e.toLowerCase();if(n.includes('perdid'))return'#E24B4A';if(n.includes('proposta fechada'))return'#1D9E75';if(n.includes('follow')||n.includes('prov.')||n.includes('[t]')||n.includes('[c]')||n.includes('[m]'))return'#94A3B8';if(n.includes('reuni')||n.includes('enviar proposta')||n.includes('proposta enviada')||n.includes('apresentaç'))return'#EF9F27';if(n.includes('proposta'))return'#7C3AED';if(n.includes('em atend')||n.includes('interesse'))return'#92400E';if(n.includes('contato feito')||n.includes('contactad'))return'#378ADD';if(n.includes('reagend')||n.includes('tentativa'))return'#D97706';return'#9e9e9e';}
-    const periodoLabel=`${new Date(de+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})} → ${new Date(ate+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})}`;
+    const periodoLabel=_mkPeriodoLabel;
     const ordemFunis=funis.map(f=>f._id||f.id);
     const funisOrdenados=Object.keys(porFunil).sort((a,b)=>{const ia=ordemFunis.indexOf(a)===-1?99:ordemFunis.indexOf(a);const ib=ordemFunis.indexOf(b)===-1?99:ordemFunis.indexOf(b);return ia-ib;});
     let _eidx=Date.now()%100000;
@@ -1618,6 +1604,118 @@ async function carregarAnaliseMarketing(){
   }catch(e){mkLoading.style.display='none';document.getElementById('mk-empty').style.display='block';document.getElementById('mk-empty').innerHTML=`<div style="color:#791F1F;">Erro: ${e.message}</div>`;}
 }
 
+// ── MODAL LEADS RD ─────────────────────────────────────────────
+// Abre o modal listando os leads por tipo: 'vendido', 'perdido', 'aberto'
+function abrirModalLeads(tipo){
+  let deals=[];
+  let titulo='';
+  let badgeClass='';
+  let corValor='';
+
+  if(tipo==='vendido'){
+    deals=_mkDealsVendidos;
+    titulo='✅ Valor Vendido RD';
+    badgeClass='tipo-badge-vendido';
+    corValor='#1D9E75';
+  }else if(tipo==='perdido'){
+    deals=_mkDealsPerdidos;
+    titulo='❌ Valor Perdido RD';
+    badgeClass='tipo-badge-perdido';
+    corValor='#E24B4A';
+  }else{
+    deals=_mkDealsAbertos;
+    titulo='🔄 Valor em Aberto RD';
+    badgeClass='tipo-badge-aberto';
+    corValor='var(--laranja)';
+  }
+
+  if(!deals||deals.length===0){
+    // Mostra o modal mesmo vazio para feedback
+    document.getElementById('modal-leads-title').textContent=titulo;
+    document.getElementById('modal-leads-subtitle').textContent=_mkPeriodoLabel||'Período selecionado';
+    document.getElementById('modal-leads-summary').innerHTML='';
+    document.getElementById('modal-leads-body').innerHTML='<div class="modal-leads-empty">Nenhum lead encontrado para este período.</div>';
+    document.getElementById('modal-leads-total').innerHTML='<strong>0</strong> leads';
+    document.getElementById('modal-leads-ov').classList.add('open');
+    return;
+  }
+
+  // Calcula totais para o summary
+  const totalValor=deals.reduce((s,d)=>s+Number(d.amount_montly||0),0);
+  const comValor=deals.filter(d=>Number(d.amount_montly||0)>0).length;
+
+  document.getElementById('modal-leads-title').textContent=titulo;
+  document.getElementById('modal-leads-subtitle').textContent=_mkPeriodoLabel||'Período selecionado';
+
+  // Summary header
+  document.getElementById('modal-leads-summary').innerHTML=`
+    <div class="modal-leads-summary-item">
+      <strong style="color:${corValor};">${deals.length}</strong>
+      Lead${deals.length!==1?'s':''}
+    </div>
+    <div class="modal-leads-summary-item">
+      <strong style="color:${corValor};">${totalValor>0?fmtBRL(totalValor):'R$ 0,00'}</strong>
+      Valor total
+    </div>
+    <div class="modal-leads-summary-item">
+      <strong>${comValor}</strong>
+      Com valor definido
+    </div>
+    <div class="modal-leads-summary-item">
+      <strong>${deals.length-comValor}</strong>
+      Sem valor
+    </div>`;
+
+  // Renderiza lista de leads
+  const sorted=[...deals].sort((a,b)=>Number(b.amount_montly||0)-Number(a.amount_montly||0));
+
+  document.getElementById('modal-leads-body').innerHTML=sorted.map(d=>{
+    const dealId=d._id||d.id||'';
+    const nm=d.name||'Negociação';
+    const emp=(d.contacts||[])[0]?.organization_name||'';
+    const pipeline=d._pipeline_name||d.deal_pipeline?.name||'';
+    const estagio=d.deal_stage?.name||'';
+    const resp=d.user?.name||'';
+    const val=Number(d.amount_montly||0);
+    const di=diasAtras(d.updated_at||d.created_at);
+    const diStr=di===0?'Hoje':di===1?'1 dia atrás':di+' dias atrás';
+    const criado=d.created_at?new Date(d.created_at).toLocaleDateString('pt-BR'):'';
+
+    // Avatar colorido
+    let avBg,avColor;
+    if(tipo==='vendido'){avBg='#EAF3DE';avColor='#1D9E75';}
+    else if(tipo==='perdido'){avBg='#FCEBEB';avColor='#E24B4A';}
+    else{avBg='#FFF0E0';avColor='#a85000';}
+
+    return `
+<div class="lead-row">
+  <div class="lead-row-av" style="background:${avBg};color:${avColor};">${ini(nm)}</div>
+  <div class="lead-row-info">
+    <div class="lead-row-name">${nm}</div>
+    <div class="lead-row-meta">
+      ${emp?emp+' · ':''}${pipeline?'<span style="background:var(--azul-claro);color:var(--azul-escuro);font-size:10px;padding:1px 6px;border-radius:10px;font-weight:600;">'+pipeline+'</span> · ':''}${estagio||''}
+    </div>
+    <div class="lead-row-meta" style="margin-top:3px;color:#9e9e9e;font-size:10px;">
+      ${resp?resp+' · ':''}${criado?'Criado: '+criado+' · ':''}${diStr}
+    </div>
+  </div>
+  <div class="lead-row-val" style="color:${corValor};">${val>0?fmtBRL(val):'<span style="color:var(--text-muted);font-size:11px;font-weight:400;">Sem valor</span>'}</div>
+  <div class="lead-row-actions">
+    ${dealId?`<a href="https://crm.rdstation.com/app/deals/${dealId}" target="_blank" class="lead-row-btn">Abrir no RD ↗</a>`:''}
+  </div>
+</div>`;
+  }).join('');
+
+  document.getElementById('modal-leads-total').innerHTML=`<strong>${deals.length}</strong> lead${deals.length!==1?'s':''} · Total: <strong style="color:${corValor};">${totalValor>0?fmtBRL(totalValor):'R$ 0,00'}</strong>`;
+  document.getElementById('modal-leads-ov').classList.add('open');
+}
+
+function fecharModalLeads(e){
+  if(e&&e.target!==document.getElementById('modal-leads-ov'))return;
+  document.getElementById('modal-leads-ov').classList.remove('open');
+}
+
+// ── DRILL CAMPANHA ─────────────────────────────────────────
 function mkDrillCampanha(campNome){
   const drill=document.getElementById('mk-camp-drill');
   if(drill.dataset.camp===campNome&&drill.style.display!=='none'){drill.style.display='none';drill.innerHTML='';drill.dataset.camp='';return;}
@@ -1745,29 +1843,5 @@ async function inicializar(){
   if(!verificarSessao())return;inicializar();
 })();
 </script>
-
-<!-- MODAL GERENCIAR USUÁRIOS -->
-<div class="modal-ov" id="m-usuarios">
-  <div class="modal" style="max-width:520px;">
-    <h3>👥 Gerenciar Usuários</h3>
-    <p>Adicione ou remova usuários com acesso ao dashboard.</p>
-    <div id="lista-usuarios" style="margin-bottom:16px;"></div>
-    <div style="border-top:1px solid var(--border);padding-top:16px;">
-      <div style="font-size:12px;font-weight:600;color:var(--azul-escuro);margin-bottom:10px;">+ Adicionar usuário</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
-        <div class="fg"><label>Usuário (login)</label><input type="text" id="nu-usuario" placeholder="ex: joao" style="padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:12px;width:100%;"></div>
-        <div class="fg"><label>Nome completo</label><input type="text" id="nu-nome" placeholder="ex: João Silva" style="padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:12px;width:100%;"></div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
-        <div class="fg"><label>Senha</label><input type="password" id="nu-senha" placeholder="••••••••" style="padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:12px;width:100%;"></div>
-        <div class="fg"><label>Perfil</label><select id="nu-admin" style="padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:12px;width:100%;"><option value="false">Usuário comum</option><option value="true">Administrador</option></select></div>
-      </div>
-      <div id="nu-erro" style="display:none;font-size:12px;color:#791F1F;background:#FCEBEB;padding:8px 12px;border-radius:8px;margin-bottom:8px;"></div>
-      <button class="btn btn-p" style="width:100%;" onclick="adicionarUsuario()">✅ Adicionar usuário</button>
-    </div>
-    <div class="modal-ft"><button class="btn-cancel" onclick="fecharGerenciarUsuarios()">Fechar</button></div>
-  </div>
-</div>
-
 </body>
 </html>
