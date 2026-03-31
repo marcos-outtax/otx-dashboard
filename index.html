@@ -1005,8 +1005,9 @@ async function consultarCnpjReuniao(idCard,dealId,dealNome,funil,estagio){
     const r=await fetch(`/api/cnpj?cnpj=${raw}`);
     const d=await r.json();
     if(!r.ok)throw new Error(d.erro||'Erro ao consultar CNPJ');
-    // Normaliza campos — cobre BrasilAPI, ReceitaWS, CNPJ.ws e variações
-    const n=normalizarCNPJ(d);
+    // Normaliza e enriquece com BrasilAPI se endereço incompleto
+    resultEl.innerHTML=load('Enriquecendo dados de endereco...');
+    const n=await normalizarCNPJAsync(d);
     const sit=n.situacao_cadastral;
     const sitCor=sit.toLowerCase().includes('ativa')?'#1D9E75':'#E24B4A';
     const dadosCnpj={
@@ -1770,77 +1771,81 @@ function mkDrillCampanha(campNome){
 
 // ── NORMALIZA CAMPOS CNPJ ─────────────────────────────────
 // Cobre: BrasilAPI, ReceitaWS, CNPJ.ws, minha-receita e variações internas
+// ── NORMALIZA + ENRIQUECE CAMPOS CNPJ ────────────────────
+// Tenta buscar endereço completo direto da BrasilAPI se a API interna não trouxer
+async function buscarEnderecoBrasilAPI(cnpjRaw){
+  try{
+    const r=await fetch('https://brasilapi.com.br/api/cnpj/v1/'+cnpjRaw,{headers:{Accept:'application/json'}});
+    if(!r.ok)return null;
+    return await r.json();
+  }catch(e){return null;}
+}
+
 function normalizarCNPJ(d){
   if(!d)return{};
-  // Endereço — cada API usa um nome diferente
-  const logradouro=d.logradouro||d.endereco||d.street||d.tipo_logradouro&&(d.tipo_logradouro+' '+d.logradouro)||'';
+  const logradouro=d.logradouro||d.endereco||d.street||
+    (d.tipo_logradouro?(d.tipo_logradouro+' '+d.logradouro):'')||'';
   const numero=d.numero||d.number||d.num||'';
   const complemento=d.complemento||d.complement||'';
   const bairro=d.bairro||d.district||d.neighborhood||'';
   const cep=(d.cep||d.zip||d.zipcode||'').toString().replace(/\D/g,'');
   const cepFmt=cep.length===8?cep.slice(0,5)+'-'+cep.slice(5):cep;
-  const municipio=d.municipio||d.cidade||d.city||d.municipality||
-    (d.endereco_municipio)||
-    (d.municipio_nome)||'';
+  const municipio=d.municipio||d.cidade||d.city||d.municipality||d.municipio_nome||'';
   const uf=d.uf||d.estado||d.state||d.uf_municipio||'';
-  // Telefone — BrasilAPI usa ddd_telefone_1, ReceitaWS usa telefone
-  const tel1=d.ddd_telefone_1||d.telefone||d.phone||d.ddd1&&(d.ddd1+d.telefone1)||'';
+  const tel1=d.ddd_telefone_1||d.telefone||d.phone||(d.ddd1&&d.ddd1+d.telefone1)||'';
   const telefone=tel1?tel1.toString().trim():'';
-  // E-mail
   const email=d.email||d.correio_eletronico||'';
-  // Razão Social / Nome Fantasia
   const razao_social=d.razao_social||d.nome||d.company||d.name||'';
   const nome_fantasia=d.nome_fantasia||d.fantasia||d.trade_name||'';
-  // CNPJ formatado
   const cnpjRaw=(d.cnpj||d.cnpj_raiz||'').toString().replace(/\D/g,'');
   const cnpjFmt=cnpjRaw.length===14?cnpjRaw.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/,'$1.$2.$3/$4-$5'):cnpjRaw;
-  // Situação Cadastral
-  const situacao_cadastral=d.descricao_situacao_cadastral||d.situacao_cadastral||
-    d.status||d.situacao||'';
-  // CNAE Principal — BrasilAPI: cnae_fiscal / cnae_fiscal_descricao; ReceitaWS: atividade_principal[0]
+  const situacao_cadastral=d.descricao_situacao_cadastral||d.situacao_cadastral||d.status||d.situacao||'';
   let cnae_cod=d.cnae_fiscal||d.cnae||'';
   let cnae_desc=d.cnae_fiscal_descricao||d.cnae_descricao||'';
   if(!cnae_cod&&d.atividade_principal&&d.atividade_principal[0]){
     cnae_cod=d.atividade_principal[0].code||d.atividade_principal[0].codigo||'';
     cnae_desc=d.atividade_principal[0].text||d.atividade_principal[0].descricao||'';
   }
-  if(!cnae_cod&&d.cnaes_principais&&d.cnaes_principais[0]){
-    cnae_cod=d.cnaes_principais[0].codigo||'';
-    cnae_desc=d.cnaes_principais[0].descricao||'';
-  }
-  // CNAEs Secundários — BrasilAPI: cnaes_secundarios[].codigo+descricao; ReceitaWS: atividades_secundarias[].code+text
   let cnaes_secundarios=[];
   if(Array.isArray(d.cnaes_secundarios)&&d.cnaes_secundarios.length){
-    cnaes_secundarios=d.cnaes_secundarios.map(c=>({
-      codigo:c.codigo||c.code||c.cnae||'',
-      descricao:c.descricao||c.text||c.description||c.nome||''
-    })).filter(c=>c.codigo);
-  } else if(Array.isArray(d.atividades_secundarias)&&d.atividades_secundarias.length){
-    cnaes_secundarios=d.atividades_secundarias.map(c=>({
-      codigo:c.code||c.codigo||'',
-      descricao:c.text||c.descricao||''
-    })).filter(c=>c.codigo);
+    cnaes_secundarios=d.cnaes_secundarios.map(function(c){return{codigo:c.codigo||c.code||'',descricao:c.descricao||c.text||c.description||''};}).filter(function(c){return c.codigo;});
+  }else if(Array.isArray(d.atividades_secundarias)&&d.atividades_secundarias.length){
+    cnaes_secundarios=d.atividades_secundarias.map(function(c){return{codigo:c.code||c.codigo||'',descricao:c.text||c.descricao||''};}).filter(function(c){return c.codigo;});
   }
-  // Capital Social
   const capital=d.capital_social||d.capital||d.capitalSocial||0;
-  // Regime
-  const simples=d.opcao_pelo_simples!=null?d.opcao_pelo_simples:
-    d.simples!=null?d.simples:
-    d.simplesNacional!=null?d.simplesNacional:null;
-  const mei=d.opcao_pelo_mei!=null?d.opcao_pelo_mei:
-    d.mei!=null?d.mei:null;
-  // Outros campos
+  const simples=d.opcao_pelo_simples!=null?d.opcao_pelo_simples:d.simples!=null?d.simples:d.simplesNacional!=null?d.simplesNacional:null;
+  const mei=d.opcao_pelo_mei!=null?d.opcao_pelo_mei:d.mei!=null?d.mei:null;
   const porte=d.porte||d.size||'';
   const natureza_juridica=d.natureza_juridica||d.legal_nature||d.naturezaJuridica||'';
   const data_abertura=d.data_inicio_atividade||d.abertura||d.data_abertura||d.founded||'';
-
   return{
-    razao_social,nome_fantasia,cnpj:cnpjFmt,situacao_cadastral,
+    razao_social,nome_fantasia,cnpj:cnpjFmt,cnpjRaw,situacao_cadastral,
     cnae_cod:cnae_cod.toString(),cnae_desc,cnaes_secundarios,
     porte,natureza_juridica,data_abertura,capital,simples,mei,
     municipio,uf,cep:cepFmt,logradouro,numero,complemento,bairro,
     telefone,email
   };
+}
+
+// Versão async: normaliza e enriquece com BrasilAPI se endereço incompleto
+async function normalizarCNPJAsync(d){
+  const n=normalizarCNPJ(d);
+  // Se não veio logradouro/bairro/CEP, tenta BrasilAPI diretamente
+  if(!n.logradouro&&!n.bairro&&!n.cep&&n.cnpjRaw&&n.cnpjRaw.length===14){
+    const b=await buscarEnderecoBrasilAPI(n.cnpjRaw);
+    if(b){
+      if(b.logradouro)n.logradouro=b.logradouro||'';
+      if(b.numero)n.numero=b.numero||'';
+      if(b.complemento)n.complemento=b.complemento||'';
+      if(b.bairro)n.bairro=b.bairro||'';
+      if(b.cep){const c=b.cep.toString().replace(/\D/g,'');n.cep=c.length===8?c.slice(0,5)+'-'+c.slice(5):c;}
+      if(b.municipio&&!n.municipio)n.municipio=b.municipio;
+      if(b.uf&&!n.uf)n.uf=b.uf;
+      if(b.ddd_telefone_1&&!n.telefone)n.telefone=b.ddd_telefone_1.trim();
+      if(b.email&&!n.email)n.email=b.email;
+    }
+  }
+  return n;
 }
 
 
@@ -1851,7 +1856,8 @@ async function buscarCNPJ(){
   try{
     const r=await fetch(`/api/cnpj?cnpj=${raw}`);const d=await r.json();
     if(!r.ok)throw new Error(d.erro||'Erro ao consultar CNPJ');
-    const n=normalizarCNPJ(d);
+    document.getElementById('cnpj-result').innerHTML=load('Enriquecendo dados de endereco...');
+    const n=await normalizarCNPJAsync(d);
     const sit=n.situacao_cadastral;const sitCor=sit.toLowerCase().includes('ativa')?'#1D9E75':'#E24B4A';
     const cnaes=n.cnaes_secundarios.slice(0,8);
     document.getElementById('cnpj-result').innerHTML=`
