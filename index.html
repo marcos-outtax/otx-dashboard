@@ -1827,24 +1827,54 @@ function normalizarCNPJ(d){
   };
 }
 
-// Versão async: normaliza e enriquece com BrasilAPI se endereço incompleto
+// Versão async: sempre consulta BrasilAPI em paralelo para garantir endereço completo
 async function normalizarCNPJAsync(d){
   const n=normalizarCNPJ(d);
-  // Se não veio logradouro/bairro/CEP, tenta BrasilAPI diretamente
-  if(!n.logradouro&&!n.bairro&&!n.cep&&n.cnpjRaw&&n.cnpjRaw.length===14){
-    const b=await buscarEnderecoBrasilAPI(n.cnpjRaw);
-    if(b){
-      if(b.logradouro)n.logradouro=b.logradouro||'';
-      if(b.numero)n.numero=b.numero||'';
-      if(b.complemento)n.complemento=b.complemento||'';
-      if(b.bairro)n.bairro=b.bairro||'';
-      if(b.cep){const c=b.cep.toString().replace(/\D/g,'');n.cep=c.length===8?c.slice(0,5)+'-'+c.slice(5):c;}
-      if(b.municipio&&!n.municipio)n.municipio=b.municipio;
-      if(b.uf&&!n.uf)n.uf=b.uf;
-      if(b.ddd_telefone_1&&!n.telefone)n.telefone=b.ddd_telefone_1.trim();
-      if(b.email&&!n.email)n.email=b.email;
-    }
+  if(!n.cnpjRaw||n.cnpjRaw.length!==14)return n;
+
+  // Sempre busca BrasilAPI para garantir endereço — a API interna raramente retorna logradouro
+  const b=await buscarEnderecoBrasilAPI(n.cnpjRaw);
+  if(!b)return n;
+
+  // Endereço — BrasilAPI retorna tipo_logradouro + logradouro separados
+  const tipoLog=(b.descricao_tipo_de_logradouro||b.tipo_logradouro||'').trim();
+  const nomeLog=(b.logradouro||'').trim();
+  const logFull=tipoLog&&nomeLog?(tipoLog+' '+nomeLog):nomeLog||tipoLog;
+
+  if(logFull)n.logradouro=logFull;
+  if(b.numero)n.numero=(b.numero||'').toString().trim();
+  if(b.complemento)n.complemento=(b.complemento||'').trim();
+  if(b.bairro)n.bairro=(b.bairro||'').trim();
+
+  if(b.cep){
+    const c=b.cep.toString().replace(/\D/g,'');
+    n.cep=c.length===8?c.slice(0,5)+'-'+c.slice(5):c;
   }
+
+  // Município/UF — BrasilAPI é mais confiável
+  if(b.municipio)n.municipio=b.municipio;
+  if(b.uf)n.uf=b.uf;
+
+  // Telefone e email se ainda não vieram
+  if(!n.telefone&&b.ddd_telefone_1)n.telefone=(b.ddd_telefone_1||'').toString().trim();
+  if(!n.telefone&&b.ddd_telefone_2)n.telefone=(b.ddd_telefone_2||'').toString().trim();
+  if(!n.email&&b.email)n.email=b.email;
+
+  // Razão social / nome fantasia da BrasilAPI se veio vazio
+  if(!n.razao_social&&b.razao_social)n.razao_social=b.razao_social;
+  if(!n.nome_fantasia&&b.nome_fantasia)n.nome_fantasia=b.nome_fantasia;
+
+  // CNAEs da BrasilAPI se vieram vazios
+  if(!n.cnae_cod&&b.cnae_fiscal){
+    n.cnae_cod=b.cnae_fiscal.toString();
+    n.cnae_desc=b.cnae_fiscal_descricao||'';
+  }
+  if((!n.cnaes_secundarios||!n.cnaes_secundarios.length)&&Array.isArray(b.cnaes_secundarios)&&b.cnaes_secundarios.length){
+    n.cnaes_secundarios=b.cnaes_secundarios.map(function(c){
+      return{codigo:(c.codigo||c.code||'').toString(),descricao:c.descricao||c.text||''};
+    }).filter(function(c){return c.codigo;});
+  }
+
   return n;
 }
 
