@@ -1005,52 +1005,54 @@ async function consultarCnpjReuniao(idCard,dealId,dealNome,funil,estagio){
     const r=await fetch(`/api/cnpj?cnpj=${raw}`);
     const d=await r.json();
     if(!r.ok)throw new Error(d.erro||'Erro ao consultar CNPJ');
-    const sit=d.descricao_situacao_cadastral||d.situacao_cadastral||'';
+    // Normaliza campos — cobre BrasilAPI, ReceitaWS, CNPJ.ws e variações
+    const n=normalizarCNPJ(d);
+    const sit=n.situacao_cadastral;
     const sitCor=sit.toLowerCase().includes('ativa')?'#1D9E75':'#E24B4A';
     const dadosCnpj={
-      razao_social:d.razao_social,
-      nome_fantasia:d.nome_fantasia,
-      cnpj:d.cnpj,
-      situacao_cadastral:d.descricao_situacao_cadastral||d.situacao_cadastral,
-      cnae_cod:d.cnae_fiscal,
-      cnae_desc:d.cnae_fiscal_descricao,
-      porte:d.porte,
-      municipio:d.municipio,
-      uf:d.uf,
-      cep:d.cep,
-      logradouro:d.logradouro,
-      numero:d.numero,
-      complemento:d.complemento,
-      bairro:d.bairro,
-      capital:d.capital_social,
-      natureza_juridica:d.natureza_juridica,
-      data_abertura:d.data_inicio_atividade,
-      simples:d.opcao_pelo_simples,
-      mei:d.opcao_pelo_mei,
-      telefone:d.ddd_telefone_1?(d.ddd_telefone_1).trim():'',
-      email:d.email||'',
-      cnaes_secundarios:d.cnaes_secundarios||[],
+      razao_social:n.razao_social,
+      nome_fantasia:n.nome_fantasia,
+      cnpj:n.cnpj,
+      situacao_cadastral:n.situacao_cadastral,
+      cnae_cod:n.cnae_cod,
+      cnae_desc:n.cnae_desc,
+      porte:n.porte,
+      municipio:n.municipio,
+      uf:n.uf,
+      cep:n.cep,
+      logradouro:n.logradouro,
+      numero:n.numero,
+      complemento:n.complemento,
+      bairro:n.bairro,
+      capital:n.capital,
+      natureza_juridica:n.natureza_juridica,
+      data_abertura:n.data_abertura,
+      simples:n.simples,
+      mei:n.mei,
+      telefone:n.telefone,
+      email:n.email,
+      cnaes_secundarios:n.cnaes_secundarios,
       funil:funil,
       estagio:estagio,
       nome:dealNome,
       dealId:dealId
     };
     window['_cnpjDados_'+idCard]=dadosCnpj;
-    const cnaes=(d.cnaes_secundarios||[]).slice(0,5);
-    const simples=d.opcao_pelo_simples===true?'✅ Sim':d.opcao_pelo_simples===false?'Não':'—';
-    const mei=d.opcao_pelo_mei===true?'✅ Sim':d.opcao_pelo_mei===false?'Não':'—';
+    const cnaes=n.cnaes_secundarios.slice(0,8);
+    const simplesLabel=n.simples===true?'✅ Sim':n.simples===false?'Não':'—';
+    const meiLabel=n.mei===true?'✅ Sim':n.mei===false?'Não':'—';
     const wrap=document.createElement('div');
     wrap.style.cssText='background:var(--branco);border:1px solid var(--border);border-radius:8px;padding:12px;margin-top:4px;';
     wrap.innerHTML=`
-  <div class="two-col"><div class="ib"><div class="l">Razão Social</div><div class="v">${d.razao_social||'-'}</div></div><div class="ib"><div class="l">Nome Fantasia</div><div class="v">${d.nome_fantasia||'-'}</div></div></div>
-  <div class="three-col"><div class="ib"><div class="l">CNPJ</div><div class="v">${d.cnpj||'-'}</div></div><div class="ib"><div class="l">Situação</div><div class="v" style="color:${sitCor};font-weight:700;">${sit||'-'}</div></div><div class="ib"><div class="l">Porte</div><div class="v">${d.porte||'-'}</div></div></div>
-  <div class="three-col"><div class="ib"><div class="l">Natureza Jurídica</div><div class="v">${d.natureza_juridica||'-'}</div></div><div class="ib"><div class="l">Capital Social</div><div class="v">${d.capital_social?'R$ '+Number(d.capital_social).toLocaleString('pt-BR'):'-'}</div></div><div class="ib"><div class="l">Abertura</div><div class="v">${d.data_inicio_atividade||'-'}</div></div></div>
-  <div class="two-col"><div class="ib"><div class="l">Simples Nacional</div><div class="v">${simples}</div></div><div class="ib"><div class="l">MEI</div><div class="v">${mei}</div></div></div>
-  <div class="ib" style="margin-bottom:8px;"><div class="l">CNAE Principal</div><div class="v">${d.cnae_fiscal_descricao?`<span class="cnae-code">${d.cnae_fiscal}</span>${d.cnae_fiscal_descricao}`:'-'}</div></div>
-  ${cnaes.length?`<div class="ib" style="margin-bottom:8px;"><div class="l">CNAEs Secundários</div><div class="v">${cnaes.map(c=>`<div class="cnae-row"><span class="cnae-code">${c.codigo}</span>${c.descricao}</div>`).join('')}</div></div>`:''}
-  <div class="ib" style="margin-bottom:8px;"><div class="l">Município / UF</div><div class="v">${d.municipio||'-'} / ${d.uf||'-'}</div></div>
-  ${(d.logradouro||d.bairro||d.cep)?`<div class="ib" style="margin-bottom:8px;"><div class="l">Endereço completo</div><div class="v">${[d.logradouro,d.numero,d.complemento,d.bairro].filter(Boolean).join(', ')||'-'}<br><span style="font-size:10px;color:var(--text-muted);">CEP: ${d.cep||'-'} · ${d.municipio||'-'} / ${d.uf||'-'}</span></div></div>`:''}
-  ${(d.ddd_telefone_1||d.email)?`<div class="two-col" style="margin-bottom:8px;"><div class="ib"><div class="l">Telefone</div><div class="v">${d.ddd_telefone_1?d.ddd_telefone_1.trim():'-'}</div></div><div class="ib"><div class="l">E-mail</div><div class="v" style="word-break:break-all;">${d.email||'-'}</div></div></div>`:''}
+  <div class="two-col"><div class="ib"><div class="l">Razão Social</div><div class="v">${n.razao_social||'-'}</div></div><div class="ib"><div class="l">Nome Fantasia</div><div class="v">${n.nome_fantasia||'-'}</div></div></div>
+  <div class="three-col"><div class="ib"><div class="l">CNPJ</div><div class="v">${n.cnpj||'-'}</div></div><div class="ib"><div class="l">Situação</div><div class="v" style="color:${sitCor};font-weight:700;">${sit||'-'}</div></div><div class="ib"><div class="l">Porte</div><div class="v">${n.porte||'-'}</div></div></div>
+  <div class="three-col"><div class="ib"><div class="l">Natureza Jurídica</div><div class="v">${n.natureza_juridica||'-'}</div></div><div class="ib"><div class="l">Capital Social</div><div class="v">${n.capital?'R$ '+Number(n.capital).toLocaleString('pt-BR'):'-'}</div></div><div class="ib"><div class="l">Abertura</div><div class="v">${n.data_abertura||'-'}</div></div></div>
+  <div class="two-col"><div class="ib"><div class="l">Simples Nacional</div><div class="v">${simplesLabel}</div></div><div class="ib"><div class="l">MEI</div><div class="v">${meiLabel}</div></div></div>
+  <div class="ib" style="margin-bottom:8px;"><div class="l">CNAE Principal</div><div class="v">${n.cnae_cod?`<span class="cnae-code">${n.cnae_cod}</span>${n.cnae_desc||''}`:'-'}</div></div>
+  ${cnaes.length?`<div class="ib" style="margin-bottom:8px;"><div class="l">CNAEs Secundários (${n.cnaes_secundarios.length})</div><div class="v">${cnaes.map(c=>`<div class="cnae-row"><span class="cnae-code">${c.codigo}</span>${c.descricao}</div>`).join('')}${n.cnaes_secundarios.length>8?`<div style="font-size:10px;color:var(--text-muted);margin-top:3px;">+${n.cnaes_secundarios.length-8} outros</div>`:''}</div></div>`:''}
+  <div class="ib" style="margin-bottom:8px;"><div class="l">Município / UF</div><div class="v">${n.municipio||'-'} / ${n.uf||'-'}</div></div>
+  ${(n.logradouro||n.bairro||n.cep)?`<div class="ib" style="margin-bottom:8px;"><div class="l">Endereço completo</div><div class="v">${[n.logradouro,n.numero,n.complemento,n.bairro].filter(Boolean).join(', ')||'-'}<br><span style="font-size:10px;color:var(--text-muted);">CEP: ${n.cep||'-'} · ${n.municipio||'-'} / ${n.uf||'-'}</span></div></div>`:''}
+  ${(n.telefone||n.email)?`<div class="two-col" style="margin-bottom:8px;"><div class="ib"><div class="l">Telefone</div><div class="v">${n.telefone||'-'}</div></div><div class="ib"><div class="l">E-mail</div><div class="v" style="word-break:break-all;">${n.email||'-'}</div></div></div>`:''}
   <div class="act-row" style="margin-top:8px;"></div>`;
     const btn=document.createElement('button');
     btn.className='btn btn-p';btn.style.fontSize='11px';btn.textContent='🤖 Análise Tributária com IA';
@@ -1766,7 +1768,82 @@ function mkDrillCampanha(campNome){
   wrap.appendChild(body);drill.innerHTML='';drill.appendChild(wrap);drill.style.display='block';drill.scrollIntoView({behavior:'smooth',block:'start'});
 }
 
-// ── CONSULTA CNPJ ─────────────────────────────────────────
+// ── NORMALIZA CAMPOS CNPJ ─────────────────────────────────
+// Cobre: BrasilAPI, ReceitaWS, CNPJ.ws, minha-receita e variações internas
+function normalizarCNPJ(d){
+  if(!d)return{};
+  // Endereço — cada API usa um nome diferente
+  const logradouro=d.logradouro||d.endereco||d.street||d.tipo_logradouro&&(d.tipo_logradouro+' '+d.logradouro)||'';
+  const numero=d.numero||d.number||d.num||'';
+  const complemento=d.complemento||d.complement||'';
+  const bairro=d.bairro||d.district||d.neighborhood||'';
+  const cep=(d.cep||d.zip||d.zipcode||'').toString().replace(/\D/g,'');
+  const cepFmt=cep.length===8?cep.slice(0,5)+'-'+cep.slice(5):cep;
+  const municipio=d.municipio||d.cidade||d.city||d.municipality||
+    (d.endereco_municipio)||
+    (d.municipio_nome)||'';
+  const uf=d.uf||d.estado||d.state||d.uf_municipio||'';
+  // Telefone — BrasilAPI usa ddd_telefone_1, ReceitaWS usa telefone
+  const tel1=d.ddd_telefone_1||d.telefone||d.phone||d.ddd1&&(d.ddd1+d.telefone1)||'';
+  const telefone=tel1?tel1.toString().trim():'';
+  // E-mail
+  const email=d.email||d.correio_eletronico||'';
+  // Razão Social / Nome Fantasia
+  const razao_social=d.razao_social||d.nome||d.company||d.name||'';
+  const nome_fantasia=d.nome_fantasia||d.fantasia||d.trade_name||'';
+  // CNPJ formatado
+  const cnpjRaw=(d.cnpj||d.cnpj_raiz||'').toString().replace(/\D/g,'');
+  const cnpjFmt=cnpjRaw.length===14?cnpjRaw.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/,'$1.$2.$3/$4-$5'):cnpjRaw;
+  // Situação Cadastral
+  const situacao_cadastral=d.descricao_situacao_cadastral||d.situacao_cadastral||
+    d.status||d.situacao||'';
+  // CNAE Principal — BrasilAPI: cnae_fiscal / cnae_fiscal_descricao; ReceitaWS: atividade_principal[0]
+  let cnae_cod=d.cnae_fiscal||d.cnae||'';
+  let cnae_desc=d.cnae_fiscal_descricao||d.cnae_descricao||'';
+  if(!cnae_cod&&d.atividade_principal&&d.atividade_principal[0]){
+    cnae_cod=d.atividade_principal[0].code||d.atividade_principal[0].codigo||'';
+    cnae_desc=d.atividade_principal[0].text||d.atividade_principal[0].descricao||'';
+  }
+  if(!cnae_cod&&d.cnaes_principais&&d.cnaes_principais[0]){
+    cnae_cod=d.cnaes_principais[0].codigo||'';
+    cnae_desc=d.cnaes_principais[0].descricao||'';
+  }
+  // CNAEs Secundários — BrasilAPI: cnaes_secundarios[].codigo+descricao; ReceitaWS: atividades_secundarias[].code+text
+  let cnaes_secundarios=[];
+  if(Array.isArray(d.cnaes_secundarios)&&d.cnaes_secundarios.length){
+    cnaes_secundarios=d.cnaes_secundarios.map(c=>({
+      codigo:c.codigo||c.code||c.cnae||'',
+      descricao:c.descricao||c.text||c.description||c.nome||''
+    })).filter(c=>c.codigo);
+  } else if(Array.isArray(d.atividades_secundarias)&&d.atividades_secundarias.length){
+    cnaes_secundarios=d.atividades_secundarias.map(c=>({
+      codigo:c.code||c.codigo||'',
+      descricao:c.text||c.descricao||''
+    })).filter(c=>c.codigo);
+  }
+  // Capital Social
+  const capital=d.capital_social||d.capital||d.capitalSocial||0;
+  // Regime
+  const simples=d.opcao_pelo_simples!=null?d.opcao_pelo_simples:
+    d.simples!=null?d.simples:
+    d.simplesNacional!=null?d.simplesNacional:null;
+  const mei=d.opcao_pelo_mei!=null?d.opcao_pelo_mei:
+    d.mei!=null?d.mei:null;
+  // Outros campos
+  const porte=d.porte||d.size||'';
+  const natureza_juridica=d.natureza_juridica||d.legal_nature||d.naturezaJuridica||'';
+  const data_abertura=d.data_inicio_atividade||d.abertura||d.data_abertura||d.founded||'';
+
+  return{
+    razao_social,nome_fantasia,cnpj:cnpjFmt,situacao_cadastral,
+    cnae_cod:cnae_cod.toString(),cnae_desc,cnaes_secundarios,
+    porte,natureza_juridica,data_abertura,capital,simples,mei,
+    municipio,uf,cep:cepFmt,logradouro,numero,complemento,bairro,
+    telefone,email
+  };
+}
+
+
 async function buscarCNPJ(){
   const raw=document.getElementById('cnpj-input').value.replace(/\D/g,'');
   if(raw.length!==14){alert('CNPJ inválido.');return;}
@@ -1774,21 +1851,24 @@ async function buscarCNPJ(){
   try{
     const r=await fetch(`/api/cnpj?cnpj=${raw}`);const d=await r.json();
     if(!r.ok)throw new Error(d.erro||'Erro ao consultar CNPJ');
-    const sit=d.descricao_situacao_cadastral||d.situacao_cadastral||'';const sitCor=sit.toLowerCase().includes('ativa')?'#1D9E75':'#E24B4A';
-    const cnaes=(d.cnaes_secundarios||[]).slice(0,5);
+    const n=normalizarCNPJ(d);
+    const sit=n.situacao_cadastral;const sitCor=sit.toLowerCase().includes('ativa')?'#1D9E75':'#E24B4A';
+    const cnaes=n.cnaes_secundarios.slice(0,8);
     document.getElementById('cnpj-result').innerHTML=`
 <div class="card" style="margin-top:8px;"><div class="cbi">
-  <div class="two-col"><div class="ib"><div class="l">Razão Social</div><div class="v">${d.razao_social||'-'}</div></div><div class="ib"><div class="l">Nome Fantasia</div><div class="v">${d.nome_fantasia||'-'}</div></div></div>
-  <div class="three-col"><div class="ib"><div class="l">CNPJ</div><div class="v">${d.cnpj||'-'}</div></div><div class="ib"><div class="l">Situação</div><div class="v" style="color:${sitCor};font-weight:700;">${sit||'-'}</div></div><div class="ib"><div class="l">Porte</div><div class="v">${d.porte||'-'}</div></div></div>
-  <div class="three-col"><div class="ib"><div class="l">Natureza Jurídica</div><div class="v">${d.natureza_juridica||'-'}</div></div><div class="ib"><div class="l">Capital Social</div><div class="v">${d.capital_social?'R$ '+Number(d.capital_social).toLocaleString('pt-BR'):'-'}</div></div><div class="ib"><div class="l">Abertura</div><div class="v">${d.data_inicio_atividade||'-'}</div></div></div>
-  <div class="ib" style="margin-bottom:8px;"><div class="l">CNAE Principal</div><div class="v">${d.cnae_fiscal_descricao?`<span class="cnae-code">${d.cnae_fiscal}</span>${d.cnae_fiscal_descricao}`:'-'}</div></div>
-  ${cnaes.length?`<div class="ib" style="margin-bottom:8px;"><div class="l">CNAEs Secundários</div><div class="v">${cnaes.map(c=>`<div class="cnae-row"><span class="cnae-code">${c.codigo}</span>${c.descricao}</div>`).join('')}</div></div>`:''}
-  <div class="two-col"><div class="ib"><div class="l">Simples Nacional</div><div class="v">${d.opcao_pelo_simples===true?'✅ Sim':'Não'}</div></div><div class="ib"><div class="l">MEI</div><div class="v">${d.opcao_pelo_mei===true?'✅ Sim':'Não'}</div></div></div>
-  <div class="ib" style="margin-bottom:8px;"><div class="l">Município / UF</div><div class="v">${d.municipio||'-'} / ${d.uf||'-'}</div></div>
-  ${(d.logradouro||d.bairro||d.cep)?`<div class="ib" style="margin-bottom:8px;"><div class="l">Endereço completo</div><div class="v">${[d.logradouro,d.numero,d.complemento,d.bairro].filter(Boolean).join(', ')||'-'}<br><span style="font-size:10px;color:var(--text-muted);">CEP: ${d.cep||'-'} · ${d.municipio||'-'} / ${d.uf||'-'}</span></div></div>`:''}
-  ${(d.ddd_telefone_1||d.email)?`<div class="two-col" style="margin-bottom:8px;"><div class="ib"><div class="l">Telefone</div><div class="v">${d.ddd_telefone_1?d.ddd_telefone_1.trim():'-'}</div></div><div class="ib"><div class="l">E-mail</div><div class="v" style="word-break:break-all;">${d.email||'-'}</div></div></div>`:''}
-  <div class="act-row" style="margin-top:12px;"><button class="btn btn-p" onclick="abrirAnaliseIA({razao_social:${JSON.stringify(d.razao_social||'')},nome_fantasia:${JSON.stringify(d.nome_fantasia||'')},cnpj:${JSON.stringify(d.cnpj||'')},situacao_cadastral:${JSON.stringify(d.descricao_situacao_cadastral||d.situacao_cadastral||'')},cnae_cod:${JSON.stringify(d.cnae_fiscal||'')},cnae_desc:${JSON.stringify(d.cnae_fiscal_descricao||'')},porte:${JSON.stringify(d.porte||'')},municipio:${JSON.stringify(d.municipio||'')},uf:${JSON.stringify(d.uf||'')},cep:${JSON.stringify(d.cep||'')},logradouro:${JSON.stringify(d.logradouro||'')},numero:${JSON.stringify(d.numero||'')},complemento:${JSON.stringify(d.complemento||'')},bairro:${JSON.stringify(d.bairro||'')},capital:${JSON.stringify(d.capital_social||'')},natureza_juridica:${JSON.stringify(d.natureza_juridica||'')},data_abertura:${JSON.stringify(d.data_inicio_atividade||'')},simples:${d.opcao_pelo_simples},mei:${d.opcao_pelo_mei},telefone:${JSON.stringify(d.ddd_telefone_1||'')},email:${JSON.stringify(d.email||'')},cnaes_secundarios:${JSON.stringify(d.cnaes_secundarios||[])}})">🤖 Análise Tributária com IA</button></div>
+  <div class="two-col"><div class="ib"><div class="l">Razão Social</div><div class="v">${n.razao_social||'-'}</div></div><div class="ib"><div class="l">Nome Fantasia</div><div class="v">${n.nome_fantasia||'-'}</div></div></div>
+  <div class="three-col"><div class="ib"><div class="l">CNPJ</div><div class="v">${n.cnpj||'-'}</div></div><div class="ib"><div class="l">Situação</div><div class="v" style="color:${sitCor};font-weight:700;">${sit||'-'}</div></div><div class="ib"><div class="l">Porte</div><div class="v">${n.porte||'-'}</div></div></div>
+  <div class="three-col"><div class="ib"><div class="l">Natureza Jurídica</div><div class="v">${n.natureza_juridica||'-'}</div></div><div class="ib"><div class="l">Capital Social</div><div class="v">${n.capital?'R$ '+Number(n.capital).toLocaleString('pt-BR'):'-'}</div></div><div class="ib"><div class="l">Abertura</div><div class="v">${n.data_abertura||'-'}</div></div></div>
+  <div class="ib" style="margin-bottom:8px;"><div class="l">CNAE Principal</div><div class="v">${n.cnae_cod?`<span class="cnae-code">${n.cnae_cod}</span>${n.cnae_desc||''}`:'-'}</div></div>
+  ${cnaes.length?`<div class="ib" style="margin-bottom:8px;"><div class="l">CNAEs Secundários (${n.cnaes_secundarios.length})</div><div class="v">${cnaes.map(c=>`<div class="cnae-row"><span class="cnae-code">${c.codigo}</span>${c.descricao}</div>`).join('')}${n.cnaes_secundarios.length>8?`<div style="font-size:10px;color:var(--text-muted);margin-top:3px;">+${n.cnaes_secundarios.length-8} outros</div>`:''}</div></div>`:''}
+  <div class="two-col"><div class="ib"><div class="l">Simples Nacional</div><div class="v">${n.simples===true?'✅ Sim':'Não'}</div></div><div class="ib"><div class="l">MEI</div><div class="v">${n.mei===true?'✅ Sim':'Não'}</div></div></div>
+  <div class="ib" style="margin-bottom:8px;"><div class="l">Município / UF</div><div class="v">${n.municipio||'-'} / ${n.uf||'-'}</div></div>
+  ${(n.logradouro||n.bairro||n.cep)?`<div class="ib" style="margin-bottom:8px;"><div class="l">Endereço completo</div><div class="v">${[n.logradouro,n.numero,n.complemento,n.bairro].filter(Boolean).join(', ')||'-'}<br><span style="font-size:10px;color:var(--text-muted);">CEP: ${n.cep||'-'} · ${n.municipio||'-'} / ${n.uf||'-'}</span></div></div>`:''}
+  ${(n.telefone||n.email)?`<div class="two-col" style="margin-bottom:8px;"><div class="ib"><div class="l">Telefone</div><div class="v">${n.telefone||'-'}</div></div><div class="ib"><div class="l">E-mail</div><div class="v" style="word-break:break-all;">${n.email||'-'}</div></div></div>`:''}
+  <div class="act-row" style="margin-top:12px;"><button class="btn btn-p" onclick="abrirAnaliseIA(window._cnpjBuscado)">🤖 Análise Tributária com IA</button></div>
 </div></div>`;
+    // Armazena o objeto normalizado para o botão IA
+    window._cnpjBuscado=n;
   }catch(e){document.getElementById('cnpj-result').innerHTML=`<div class="empty" style="color:#791F1F;">Erro: ${e.message}</div>`;}
 }
 
@@ -1800,68 +1880,75 @@ function fecharModalAI(){document.getElementById('modal-ai').style.display='none
 function selecionarLLM(llm,el){_llmAtiva=llm;document.querySelectorAll('.llm-btn').forEach(b=>b.classList.remove('ativo'));el.classList.add('ativo');}
 function gerarPromptAI(dados){
   const d=dados||_dadosReuniaoAtual||{};
-  const nomeArquivo=`analise-${(d.razao_social||'cliente').replace(/\s+/g,'-').toLowerCase()}-${new Date().toISOString().split('T')[0]}`;
+  const nomeArquivo='analise-'+(d.razao_social||'cliente').replace(/\s+/g,'-').toLowerCase()+'-'+new Date().toISOString().split('T')[0];
   // Monta endereço completo
   const endParts=[d.logradouro,d.numero,d.complemento,d.bairro].filter(Boolean);
-  const endCompleto=endParts.length?endParts.join(', ')+' — CEP: '+(d.cep||'-')+' — '+(d.municipio||'-')+'/'+( d.uf||'-'):(d.municipio?d.municipio+'/'+(d.uf||'-'):'-');
-  // CNAEs secundários formatados
+  const endCompleto=endParts.length
+    ?(endParts.join(', ')+' - CEP: '+(d.cep||'-')+' - '+(d.municipio||'-')+'/'+(d.uf||'-'))
+    :(d.municipio?(d.municipio+'/'+(d.uf||'-')):'-');
+  // CNAEs secundários formatados (sem caracteres especiais)
   const cnaesSecStr=(d.cnaes_secundarios||[]).length
-    ?(d.cnaes_secundarios).map((c,i)=>`  ${i+1}. ${c.codigo} — ${c.descricao}`).join('\n')
-    :'Não informado';
-  const prompt=`Você é um especialista tributário brasileiro com foco em pequenas e médias empresas.
-Gere uma análise tributária completa e detalhada para o seguinte cliente:
-
-════════════════════════════════════════
-DADOS CADASTRAIS DO CLIENTE (Receita Federal)
-════════════════════════════════════════
-Razão Social    : ${d.razao_social||'-'}
-Nome Fantasia   : ${d.nome_fantasia||'-'}
-CNPJ            : ${d.cnpj||'-'}
-Situação Cadastral: ${d.situacao_cadastral||'-'}
-Porte           : ${d.porte||'-'}
-Natureza Jurídica: ${d.natureza_juridica||'-'}
-Data de Abertura: ${d.data_abertura||'-'}
-Capital Social  : ${d.capital?'R$ '+Number(d.capital).toLocaleString('pt-BR'):'-'}
-
-ENDEREÇO:
-${endCompleto}
-${d.telefone?'Telefone: '+d.telefone:''}
-${d.email?'E-mail: '+d.email:''}
-
-REGIME TRIBUTÁRIO:
-Simples Nacional: ${d.simples===true?'SIM':d.simples===false?'NÃO':'-'}
-MEI             : ${d.mei===true?'SIM':d.mei===false?'NÃO':'-'}
-
-ATIVIDADE ECONÔMICA:
-CNAE Principal  : ${d.cnae_cod||'-'} — ${d.cnae_desc||'-'}
-
-CNAEs Secundários:
-${cnaesSecStr}
-
-════════════════════════════════════════
-CONTEXTO DA NEGOCIAÇÃO (RD CRM)
-════════════════════════════════════════
-Funil           : ${d.funil||'-'}
-Estágio         : ${d.estagio||'-'}
-Valor estimado  : ${d.valor||'-'}
-
-════════════════════════════════════════
-ESTRUTURA DA ANÁLISE SOLICITADA
-════════════════════════════════════════
-## 1. IDENTIFICAÇÃO E PERFIL TRIBUTÁRIO ATUAL
-## 2. ANÁLISE DO REGIME TRIBUTÁRIO ATUAL
-## 3. SIMULAÇÃO DE REGIMES TRIBUTÁRIOS (Simples Nacional, Lucro Presumido, Lucro Real)
-## 4. ANÁLISE DE CPRB (DESONERAÇÃO DA FOLHA)
-## 5. OPORTUNIDADES DE ECONOMIA FISCAL (mínimo 5)
-## 6. BENEFÍCIOS FISCAIS APLICÁVEIS AO SETOR (CNAE ${d.cnae_cod||''})
-## 7. RISCOS FISCAIS E PONTOS DE ATENÇÃO (mínimo 4)
-## 8. PERFIL DO CLIENTE PARA A REUNIÃO
-## 9. PERGUNTAS ESTRATÉGICAS PARA A REUNIÃO (5 perguntas)
-## 10. RECOMENDAÇÕES ESTRATÉGICAS
-## 11. RESUMO EXECUTIVO
-
-Mínimo 800 palavras. Linguagem profissional e acessível.
-Salve como: ${nomeArquivo}.txt`;
+    ?(d.cnaes_secundarios).map(function(c,i){return '  '+(i+1)+'. '+(c.codigo||'')+' - '+(c.descricao||'');}).join('\n')
+    :'Nao informado';
+  // Constrói prompt com concatenação simples (sem template literal multiline com unicode)
+  const sep='='.repeat(44);
+  const linhas=[
+    'Voce e um especialista tributario brasileiro com foco em pequenas e medias empresas.',
+    'Gere uma analise tributaria completa e detalhada para o seguinte cliente:',
+    '',
+    sep,
+    'DADOS CADASTRAIS DO CLIENTE (Receita Federal)',
+    sep,
+    'Razao Social      : '+(d.razao_social||'-'),
+    'Nome Fantasia     : '+(d.nome_fantasia||'-'),
+    'CNPJ              : '+(d.cnpj||'-'),
+    'Situacao Cadastral: '+(d.situacao_cadastral||'-'),
+    'Porte             : '+(d.porte||'-'),
+    'Natureza Juridica : '+(d.natureza_juridica||'-'),
+    'Data de Abertura  : '+(d.data_abertura||'-'),
+    'Capital Social    : '+(d.capital?'R$ '+Number(d.capital).toLocaleString('pt-BR'):'-'),
+    '',
+    'ENDERECO:',
+    endCompleto,
+    (d.telefone?'Telefone: '+d.telefone:''),
+    (d.email?'E-mail: '+d.email:''),
+    '',
+    'REGIME TRIBUTARIO:',
+    'Simples Nacional  : '+(d.simples===true?'SIM':d.simples===false?'NAO':'-'),
+    'MEI               : '+(d.mei===true?'SIM':d.mei===false?'NAO':'-'),
+    '',
+    'ATIVIDADE ECONOMICA:',
+    'CNAE Principal    : '+(d.cnae_cod||'-')+' - '+(d.cnae_desc||'-'),
+    '',
+    'CNAEs Secundarios:',
+    cnaesSecStr,
+    '',
+    sep,
+    'CONTEXTO DA NEGOCIACAO (RD CRM)',
+    sep,
+    'Funil             : '+(d.funil||'-'),
+    'Estagio           : '+(d.estagio||'-'),
+    'Valor estimado    : '+(d.valor||'-'),
+    '',
+    sep,
+    'ESTRUTURA DA ANALISE SOLICITADA',
+    sep,
+    '## 1. IDENTIFICACAO E PERFIL TRIBUTARIO ATUAL',
+    '## 2. ANALISE DO REGIME TRIBUTARIO ATUAL',
+    '## 3. SIMULACAO DE REGIMES TRIBUTARIOS (Simples Nacional, Lucro Presumido, Lucro Real)',
+    '## 4. ANALISE DE CPRB (DESONERAÇÃO DA FOLHA)',
+    '## 5. OPORTUNIDADES DE ECONOMIA FISCAL (minimo 5)',
+    '## 6. BENEFICIOS FISCAIS APLICAVEIS AO SETOR (CNAE '+(d.cnae_cod||'')+')',
+    '## 7. RISCOS FISCAIS E PONTOS DE ATENCAO (minimo 4)',
+    '## 8. PERFIL DO CLIENTE PARA A REUNIAO',
+    '## 9. PERGUNTAS ESTRATEGICAS PARA A REUNIAO (5 perguntas)',
+    '## 10. RECOMENDACOES ESTRATEGICAS',
+    '## 11. RESUMO EXECUTIVO',
+    '',
+    'Minimo 800 palavras. Linguagem profissional e acessivel.',
+    'Salve como: '+nomeArquivo+'.txt'
+  ];
+  const prompt=linhas.join('\n');
   document.getElementById('prompt-preview').textContent=prompt;
 }
 function copiarPromptAI(){const prompt=document.getElementById('prompt-preview').textContent;navigator.clipboard.writeText(prompt).then(()=>{const badge=document.getElementById('badge-copiado');badge.style.opacity='1';setTimeout(()=>badge.style.opacity='0',2500);});}
