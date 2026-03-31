@@ -1917,112 +1917,112 @@ function selecionarLLM(llm,el){_llmAtiva=llm;document.querySelectorAll('.llm-btn
 function gerarPromptAI(dados){
   const d=dados||_dadosReuniaoAtual||{};
   const nomeArquivo='analise-'+(d.razao_social||'cliente').replace(/\s+/g,'-').toLowerCase()+'-'+new Date().toISOString().split('T')[0];
-  // Monta endereço completo
+
   const endParts=[d.logradouro,d.numero,d.complemento,d.bairro].filter(Boolean);
   const endCompleto=endParts.length
-    ?(endParts.join(', ')+' - CEP: '+(d.cep||'-')+' - '+(d.municipio||'-')+'/'+(d.uf||'-'))
-    :(d.municipio?(d.municipio+'/'+(d.uf||'-')):'-');
-  // CNAEs secundários
-  const cnaesSecStr=(d.cnaes_secundarios||[]).length
-    ?(d.cnaes_secundarios).map(function(c,i){return '  '+(i+1)+'. '+(c.codigo||'')+' - '+(c.descricao||'');}).join('\n')
-    :'Nao informado';
+    ?(endParts.join(', ')+(d.cep?' - CEP: '+d.cep:'')+(d.municipio?' - '+d.municipio+'/'+( d.uf||''):''))
+    :(d.municipio?d.municipio+(d.uf?'/'+d.uf:''):'-');
+
   const capitalFmt=d.capital?'R$ '+Number(d.capital).toLocaleString('pt-BR'):'-';
   const simplesStr=d.simples===true?'SIM':d.simples===false?'NAO':'-';
   const meiStr=d.mei===true?'SIM':d.mei===false?'NAO':'-';
+
+  const cnaesSecStr=(d.cnaes_secundarios||[]).length
+    ?(d.cnaes_secundarios).map(function(c,i){return '  '+(i+1)+'. '+(c.codigo||'')+' - '+(c.descricao||'');}).join('\n')
+    :'Nao informado';
+
+  const cnaesSecCods=(d.cnaes_secundarios||[]).slice(0,3).map(function(c){return c.codigo;}).join(', ');
   const sep='='.repeat(44);
+
   const linhas=[
-    'INSTRUCAO IMPORTANTE: Voce DEVE usar TODOS os dados cadastrais fornecidos abaixo em sua analise.',
-    'Cite o CNPJ, razao social, endereco completo, capital social, CNAEs e regime tributario',
-    'em cada secao relevante. NAO use dados genericos — use EXATAMENTE os dados do cliente abaixo.',
-    '',
-    'Voce e um especialista tributario brasileiro com foco em pequenas e medias empresas.',
-    'Gere uma analise tributaria completa, personalizada e detalhada para o seguinte cliente:',
+    'Voce e um especialista tributario brasileiro. Complete a analise abaixo usando APENAS',
+    'os dados reais do cliente informados. NAO invente dados. NAO use dados genericos.',
+    'Cada secao ja começa com os dados do cliente — continue a partir deles.',
     '',
     sep,
-    'DADOS CADASTRAIS DO CLIENTE (Receita Federal)',
+    'FICHA DO CLIENTE',
     sep,
-    'Razao Social      : '+(d.razao_social||'-'),
-    'Nome Fantasia     : '+(d.nome_fantasia||'-'),
-    'CNPJ              : '+(d.cnpj||'-'),
-    'Situacao Cadastral: '+(d.situacao_cadastral||'-'),
-    'Porte             : '+(d.porte||'-'),
-    'Natureza Juridica : '+(d.natureza_juridica||'-'),
-    'Data de Abertura  : '+(d.data_abertura||'-'),
-    'Capital Social    : '+capitalFmt,
-    '',
-    'ENDERECO COMPLETO:',
-    endCompleto,
-    (d.telefone?'Telefone: '+d.telefone:''),
-    (d.email?'E-mail: '+d.email:''),
-    '',
-    'REGIME TRIBUTARIO ATUAL:',
-    'Simples Nacional  : '+simplesStr,
-    'MEI               : '+meiStr,
-    '',
-    'ATIVIDADE ECONOMICA PRINCIPAL:',
-    'CNAE Principal    : '+(d.cnae_cod||'-')+' - '+(d.cnae_desc||'-'),
-    '',
-    'CNAEs Secundarios (todas as atividades autorizadas):',
+    'Razao Social   : '+(d.razao_social||'-'),
+    'Nome Fantasia  : '+(d.nome_fantasia||'-'),
+    'CNPJ           : '+(d.cnpj||'-'),
+    'Situacao       : '+(d.situacao_cadastral||'-'),
+    'Porte          : '+(d.porte||'-'),
+    'Natureza Jur.  : '+(d.natureza_juridica||'-'),
+    'Abertura       : '+(d.data_abertura||'-'),
+    'Capital Social : '+capitalFmt,
+    'Endereco       : '+endCompleto,
+    (d.telefone?'Telefone       : '+d.telefone:''),
+    (d.email?'Email          : '+d.email:''),
+    'Simples Nac.   : '+simplesStr,
+    'MEI            : '+meiStr,
+    'CNAE Principal : '+(d.cnae_cod||'-')+' - '+(d.cnae_desc||'-'),
+    'CNAEs Secund.  :',
     cnaesSecStr,
+    'Funil CRM      : '+(d.funil||'-'),
+    'Estagio CRM    : '+(d.estagio||'-'),
     '',
     sep,
-    'CONTEXTO DA NEGOCIACAO (RD CRM)',
+    'ANALISE TRIBUTARIA — COMPLETE CADA SECAO ABAIXO',
     sep,
-    'Funil de Vendas   : '+(d.funil||'-'),
-    'Estagio Atual     : '+(d.estagio||'-'),
-    'Valor estimado    : '+(d.valor||'-'),
     '',
-    sep,
-    'REGRAS OBRIGATORIAS PARA A ANALISE',
-    sep,
-    'REGRA 1: Na secao 1, cite EXPLICITAMENTE: razao social, CNPJ, endereco, data de abertura,',
-    '         capital social e porte cadastral. Comente sobre o Capital Social de '+capitalFmt,
-    '         em relacao ao porte declarado como "'+( d.porte||'-')+'".',
-    'REGRA 2: Na secao 2, analise o regime tributario ATUAL (Simples: '+simplesStr+', MEI: '+meiStr+')',
-    '         e deduza qual regime a empresa provavelmente usa (Lucro Presumido ou Real).',
-    'REGRA 3: Na secao 3, simule os 3 regimes para uma empresa do setor '+( d.cnae_desc||'construcao civil')+'.',
-    'REGRA 4: Na secao 6, cite ESPECIFICAMENTE os beneficios aplicaveis ao CNAE '+(d.cnae_cod||'')+
-    '         e tambem aos CNAEs secundarios listados acima.',
-    'REGRA 5: Na secao 8, descreva o perfil com base no Capital Social de '+capitalFmt+
-    '         e na cidade '+endCompleto+'. Relacione com o mercado local.',
-    'REGRA 6: O resumo executivo (secao 11) deve mencionar razao social, CNPJ e endereco.',
-    '',
-    sep,
-    'ESTRUTURA DA ANALISE (siga exatamente esta ordem)',
-    sep,
     '## 1. IDENTIFICACAO E PERFIL TRIBUTARIO ATUAL',
-    '   (mencione: '+( d.razao_social||'-')+', CNPJ '+( d.cnpj||'-')+', '+endCompleto+')',
+    'A empresa '+(d.razao_social||'-')+', inscrita no CNPJ '+(d.cnpj||'-')+',',
+    'com sede na '+(endCompleto||'-')+', foi constituida em '+(d.data_abertura||'-')+'.',
+    'Classificada como '+(d.porte||'-')+' com capital social de '+capitalFmt+',',
+    'apresenta o seguinte perfil tributario: [COMPLETE — analise a incoerencia entre capital social '+capitalFmt+' e o porte "'+( d.porte||'-')+'" e o impacto disso]',
     '',
     '## 2. ANALISE DO REGIME TRIBUTARIO ATUAL',
-    '   (empresa NAO e Simples, NAO e MEI — analise Lucro Presumido vs Real)',
+    'A '+(d.razao_social||'-')+' NAO e optante pelo Simples Nacional e NAO e MEI.',
+    'Portanto, opera sob regime de: [COMPLETE — deduza Lucro Presumido ou Real e justifique',
+    'considerando o CNAE '+(d.cnae_cod||'')+' e capital social de '+capitalFmt+']',
     '',
     '## 3. SIMULACAO DE REGIMES TRIBUTARIOS',
-    '   (Simples Nacional Anexo IV/V, Lucro Presumido, Lucro Real — com numeros)',
+    'Para uma empresa do setor '+(d.cnae_desc||'construcao civil')+' com o perfil da '+(d.razao_social||'-')+':',
+    '[COMPLETE — simule Simples Nacional Anexo IV, Lucro Presumido e Lucro Real com aliquotas e numeros]',
     '',
     '## 4. ANALISE DE CPRB (DESONERAÇÃO DA FOLHA)',
-    '   (CNAE '+( d.cnae_cod||'')+' esta contemplado — calcule viabilidade)',
+    'O CNAE '+(d.cnae_cod||'')+' esta contemplado pela CPRB.',
+    '[COMPLETE — calcule viabilidade da CPRB vs INSS patronal 20% para '+(d.razao_social||'-')+']',
     '',
-    '## 5. OPORTUNIDADES DE ECONOMIA FISCAL (minimo 5 oportunidades concretas)',
+    '## 5. OPORTUNIDADES DE ECONOMIA FISCAL',
+    'Para a '+(d.razao_social||'-')+', sediada em '+(d.municipio||'-')+'/'+( d.uf||'-')+', identificamos as seguintes oportunidades:',
+    '[COMPLETE — liste minimo 5 oportunidades concretas e especificas para o CNAE '+(d.cnae_cod||'')+']',
     '',
     '## 6. BENEFICIOS FISCAIS APLICAVEIS',
-    '   (para CNAE '+( d.cnae_cod||'')+' e secundarios: '+
-    (d.cnaes_secundarios||[]).slice(0,3).map(function(c){return c.codigo;}).join(', ')+')',
+    'Considerando os CNAEs '+(d.cnae_cod||'')+' e secundarios ('+cnaesSecCods+'), os beneficios fiscais aplicaveis sao:',
+    '[COMPLETE — liste beneficios especificos: RET, REIDI, SUDENE, CPRB, ISS Municipal de '+( d.municipio||'Salvador')+', etc]',
     '',
-    '## 7. RISCOS FISCAIS E PONTOS DE ATENCAO (minimo 4 riscos especificos)',
+    '## 7. RISCOS FISCAIS E PONTOS DE ATENCAO',
+    'A '+(d.razao_social||'-')+' (CNPJ '+(d.cnpj||'-')+') apresenta os seguintes riscos:',
+    '[COMPLETE — liste minimo 4 riscos especificos para o setor e perfil da empresa]',
     '',
     '## 8. PERFIL DO CLIENTE PARA A REUNIAO',
-    '   (baseado em: Capital Social '+capitalFmt+', sede em '+( d.municipio||'-')+'/'+( d.uf||'-')+')',
+    'A '+(d.razao_social||'-')+' possui capital social de '+capitalFmt+', esta sediada em',
+    endCompleto+' e atua no setor de '+(d.cnae_desc||'-')+'.',
+    '[COMPLETE — descreva perfil do tomador de decisao, necessidades provaveis e abordagem recomendada]',
     '',
-    '## 9. PERGUNTAS ESTRATEGICAS PARA A REUNIAO (exatamente 5 perguntas)',
+    '## 9. PERGUNTAS ESTRATEGICAS PARA A REUNIAO',
+    'Para a reuniao com a '+(d.razao_social||'-')+', as 5 perguntas estrategicas sao:',
+    '[COMPLETE — exatamente 5 perguntas numeradas, especificas para o perfil da empresa]',
     '',
-    '## 10. RECOMENDACOES ESTRATEGICAS (acoes praticas e priorizadas)',
+    '## 10. RECOMENDACOES ESTRATEGICAS',
+    'Para a '+(d.razao_social||'-')+', recomendamos as seguintes acoes priorizadas:',
+    '[COMPLETE — liste acoes praticas e priorizadas com base nos dados acima]',
     '',
     '## 11. RESUMO EXECUTIVO',
-    '   (cite: '+( d.razao_social||'-')+', CNPJ '+( d.cnpj||'-')+', '+( d.municipio||'-')+'/'+( d.uf||'-')+')',
+    'A empresa '+(d.razao_social||'-')+', CNPJ '+(d.cnpj||'-')+',',
+    'sediada na '+endCompleto+', apresenta o seguinte panorama tributario:',
+    '[COMPLETE — resumo executivo de no minimo 150 palavras com os principais pontos]',
     '',
-    'Minimo 1000 palavras. Linguagem profissional e objetiva.',
-    'Salve como: '+nomeArquivo+'.txt'
-  ];
+    sep,
+    'INSTRUCOES FINAIS:',
+    '- Substitua todos os [COMPLETE ...] pelo conteudo real',
+    '- Mantenha os dados ja preenchidos acima em cada secao',
+    '- Use linguagem profissional e objetiva',
+    '- Minimo total: 1000 palavras',
+    '- Salve como: '+nomeArquivo+'.txt'
+  ].filter(function(l){return l!==undefined&&l!==null;});
+
   const prompt=linhas.join('\n');
   document.getElementById('prompt-preview').textContent=prompt;
 }
