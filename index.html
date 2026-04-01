@@ -2226,34 +2226,33 @@ async function executarCriarEmpresaRD(){
   const btn=document.getElementById('modal-rd-btn-criar');
   const statusBox=document.getElementById('modal-rd-status-box');
   btn.disabled=true;
-  btn.textContent='⏳ Criando empresa...';
+  btn.textContent='⏳ Iniciando...';
   statusBox.style.display='none';
 
   const endParts=[n.logradouro,n.numero,n.complemento,n.bairro].filter(Boolean);
   const endStr=endParts.join(', ');
 
-  // ── STEP 1: Criar organização ─────────────────────────────
   function mostrarStatus(linhas,tipo){
-    // tipo: 'info' | 'ok' | 'erro' | 'parcial'
     const cores={info:{bg:'#f0f4fb',cor:'#152c6b'},ok:{bg:'#EAF3DE',cor:'#1D9E75'},erro:{bg:'#FCEBEB',cor:'#791F1F'},parcial:{bg:'#FFF0E0',cor:'#a85000'}};
     const c=cores[tipo]||cores.info;
-    statusBox.style.background=c.bg;
-    statusBox.style.color=c.cor;
-    statusBox.innerHTML=linhas.join('<br>');
+    statusBox.style.background=c.bg;statusBox.style.color=c.cor;
+    statusBox.innerHTML=linhas.filter(Boolean).join('<br>');
     statusBox.style.display='block';
   }
 
-  // Monta body da organização
-  const orgBody={
-    organization:{
-      name:n.razao_social||n.cnpj||'Empresa',
-    }
-  };
+  const log=[];
+  let orgId='';let orgUrl='';
+
+  // ── STEP 1: Criar organização ─────────────────────────────
+  const orgBody={organization:{name:n.razao_social||n.cnpj||'Empresa'}};
   if(n.nome_fantasia)orgBody.organization.nickname=n.nome_fantasia;
   if(n.cnpj)orgBody.organization.cnpj=n.cnpj.replace(/\D/g,'');
   if(n.telefone)orgBody.organization.phone=n.telefone;
   if(n.email)orgBody.organization.email=n.email;
   if(endStr)orgBody.organization.address=endStr;
+  if(n.numero)orgBody.organization.number=n.numero;
+  if(n.complemento)orgBody.organization.complement=n.complemento;
+  if(n.bairro)orgBody.organization.neighborhood=n.bairro;
   if(n.municipio)orgBody.organization.city=n.municipio;
   if(n.uf)orgBody.organization.state=n.uf;
   if(n.cep)orgBody.organization.zip_code=n.cep;
@@ -2261,9 +2260,8 @@ async function executarCriarEmpresaRD(){
   if(n.porte)orgBody.organization.employees_range=n.porte;
   if(n.capital)orgBody.organization.annual_revenue=Number(n.capital);
 
-  let orgId='';
-  let orgUrl='';
   try{
+    btn.textContent='⏳ 1/3 Criando empresa...';
     mostrarStatus(['⏳ Criando organização no RD Station...'],'info');
     const r=await fetch('/api/rdcrm',{
       method:'POST',
@@ -2271,63 +2269,129 @@ async function executarCriarEmpresaRD(){
       body:JSON.stringify({path:'organizations',...orgBody})
     });
     const data=await r.json();
-    if(!r.ok||data.erro){
-      throw new Error(data.erro||data.message||data.error||JSON.stringify(data).slice(0,120));
-    }
+    if(!r.ok||data.erro)throw new Error(data.erro||data.message||data.error||JSON.stringify(data).slice(0,120));
     orgId=data._id||data.id||data.organization?._id||data.organization?.id||'';
     orgUrl=orgId?('https://crm.rdstation.com/app/organizations/'+orgId):'';
-    mostrarStatus(['✅ Empresa criada: '+(n.razao_social||'')+(orgId?' (ID: ...'+orgId.slice(-6)+')':'')],'ok');
+    log.push('✅ Empresa criada: '+(n.razao_social||n.cnpj||'')+(orgId?' (ID: ...'+orgId.slice(-6)+')':''));
+    mostrarStatus(log,'info');
   }catch(e){
-    mostrarStatus(['❌ Erro ao criar empresa: '+e.message,'','Verifique se o CNPJ já está cadastrado no RD Station.'],'erro');
+    mostrarStatus(['❌ Erro ao criar empresa: '+e.message,'','Dica: o CNPJ pode já estar cadastrado no RD Station.'],'erro');
     btn.disabled=false;btn.textContent='🔄 Tentar novamente';
     return;
   }
 
-  // ── STEP 2: Vincular organização ao deal ──────────────────
+  // ── STEP 2: Buscar campos customizados do deal ────────────
+  // Precisamos mapear os nomes dos campos para seus _id
+  let customFields=[];
+  if(dealId){
+    try{
+      btn.textContent='⏳ 2/3 Lendo campos do deal...';
+      mostrarStatus([...log,'⏳ Lendo campos do deal...'],'info');
+      const rd=await crmFetch('deals/'+dealId,{});
+      customFields=rd.deal_custom_fields||rd.custom_fields||[];
+    }catch(e){
+      log.push('⚠️ Não foi possível ler campos do deal: '+e.message);
+    }
+  }
+
+  // ── STEP 3: Vincular organização + preencher campos ───────
   if(dealId&&orgId){
     try{
-      btn.textContent='⏳ Vinculando ao deal...';
-      const r2=await fetch('/api/rdcrm',{
+      btn.textContent='⏳ 3/3 Vinculando e preenchendo...';
+      mostrarStatus([...log,'⏳ Vinculando empresa e preenchendo campos...'],'info');
+
+      // Mapa de palavras-chave → valor a preencher
+      // Cobre os campos visíveis na imagem: CNPJ, Razão Social, Nome Fantasia,
+      // Endereço, Numero, Complemento, Bairro, Cidade, Estado, CEP, Atividade
+      const mapaValores={
+        'cnpj':n.cnpj||'',
+        'razao':n.razao_social||'',
+        'razão':n.razao_social||'',
+        'social':n.razao_social||'',
+        'fantasia':n.nome_fantasia||'',
+        'endereco':endStr||'',
+        'endereço':endStr||'',
+        'logradouro':n.logradouro||'',
+        'numero':n.numero||'',
+        'número':n.numero||'',
+        'complemento':n.complemento||'',
+        'bairro':n.bairro||'',
+        'cidade':n.municipio||'',
+        'estado':n.uf||'',
+        'cep':n.cep||'',
+        'atividade':n.cnae_desc||(n.cnae_cod?n.cnae_cod+' - '+(n.cnae_desc||''):''),
+        'cnae':n.cnae_cod?n.cnae_cod+' - '+(n.cnae_desc||''):'',
+        'segmento':n.cnae_desc||'',
+        'porte':n.porte||'',
+        'telefone':n.telefone||'',
+        'email':n.email||'',
+        'capital':n.capital?'R$ '+Number(n.capital).toLocaleString('pt-BR'):'',
+        'natureza':n.natureza_juridica||'',
+        'situacao':n.situacao_cadastral||'',
+        'situação':n.situacao_cadastral||'',
+      };
+
+      // Gera array de custom_fields para o PUT do deal
+      const camposPreenchidos=[];
+      let qtdPreenchidos=0;
+
+      customFields.forEach(function(cf){
+        const nomeCampo=((cf.custom_field&&cf.custom_field.label)||cf.label||cf.name||'').toLowerCase()
+          .normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+        const cfId=cf.custom_field?._id||cf.custom_field?.id||cf._id||cf.id||'';
+
+        if(!cfId)return;
+
+        // Tenta match por palavra-chave no nome do campo
+        let valorEncontrado='';
+        Object.keys(mapaValores).forEach(function(chave){
+          if(!valorEncontrado&&nomeCampo.includes(chave)&&mapaValores[chave]){
+            valorEncontrado=mapaValores[chave];
+          }
+        });
+
+        if(valorEncontrado){
+          camposPreenchidos.push({custom_field_id:cfId,value:valorEncontrado});
+          qtdPreenchidos++;
+        }
+      });
+
+      // Monta o body do PUT do deal
+      const dealUpdateBody={
+        path:'deals/'+dealId,
+        deal:{organization_id:orgId}
+      };
+      if(camposPreenchidos.length){
+        dealUpdateBody.deal.deal_custom_fields=camposPreenchidos;
+      }
+
+      const r3=await fetch('/api/rdcrm',{
         method:'PUT',
         headers:{'Content-Type':'application/json','X-Session-Token':getSessionToken()},
-        body:JSON.stringify({path:'deals/'+dealId,deal:{organization_id:orgId}})
+        body:JSON.stringify(dealUpdateBody)
       });
-      const data2=await r2.json();
-      if(!r2.ok||data2.erro){
-        // Empresa criada mas vínculo falhou — ainda é sucesso parcial
-        mostrarStatus([
-          '✅ Empresa criada com sucesso!',
-          '⚠️ Não foi possível vincular automaticamente ao deal: '+(data2.erro||data2.message||''),
-          'Vincule manualmente abrindo o deal no RD Station.'
-        ],'parcial');
+      const data3=await r3.json();
+
+      if(!r3.ok||data3.erro){
+        log.push('⚠️ Empresa vinculada mas campos não preenchidos: '+(data3.erro||data3.message||''));
+        mostrarStatus(log,'parcial');
       }else{
-        mostrarStatus([
-          '✅ Empresa <strong>'+(n.razao_social||n.cnpj||'')+'</strong> criada e vinculada ao deal!',
-          '✅ Campos preenchidos: Razão Social, CNPJ, Endereço, Telefone, Cidade, Estado, CEP, Segmento, Porte',
-          orgUrl?'Clique em "Ver Empresa criada" para abrir no RD Station.':''
-        ],'ok');
+        log.push('✅ Empresa vinculada ao deal com sucesso!');
+        if(qtdPreenchidos>0)log.push('✅ '+qtdPreenchidos+' campo(s) preenchido(s) automaticamente no deal');
+        else log.push('ℹ️ Nenhum campo customizado identificado — verifique os campos no RD');
+        mostrarStatus(log,'ok');
       }
     }catch(e){
-      mostrarStatus([
-        '✅ Empresa criada com sucesso!',
-        '⚠️ Erro ao vincular ao deal: '+e.message,
-        'Vincule manualmente pelo botão "Ver Empresa criada".'
-      ],'parcial');
+      log.push('⚠️ Empresa criada, erro ao vincular: '+e.message);
+      mostrarStatus(log,'parcial');
     }
-  }else if(!dealId){
-    mostrarStatus([
-      '✅ Empresa <strong>'+(n.razao_social||n.cnpj||'')+'</strong> criada no RD Station!',
-      'ℹ️ Sem deal vinculado — associe manualmente no RD.'
-    ],'ok');
   }
 
-  // Mostra botão para abrir empresa criada
+  // Botão para abrir empresa criada
   if(orgUrl){
     const linkOrg=document.getElementById('modal-rd-link-org');
-    linkOrg.href=orgUrl;
-    linkOrg.style.display='inline-flex';
+    linkOrg.href=orgUrl;linkOrg.style.display='inline-flex';
   }
-
   btn.disabled=false;
   btn.textContent='✅ Concluído';
 }
