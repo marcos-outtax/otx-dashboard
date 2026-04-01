@@ -766,36 +766,34 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
   <div class="modal-rd-box" onclick="event.stopPropagation()">
     <div class="modal-rd-header">
       <div>
-        <h3>📋 Preencher no RD Station</h3>
-        <p id="modal-rd-subtitulo">Selecione os campos para atualizar</p>
+        <h3>🏢 Criar Empresa no RD Station</h3>
+        <p id="modal-rd-subtitulo">Revise os dados e confirme</p>
       </div>
       <button class="modal-rd-close" onclick="fecharModalRD()">✕</button>
     </div>
     <div class="modal-rd-body">
-      <!-- Organização -->
+
+      <!-- Status geral -->
+      <div id="modal-rd-status-box" style="display:none;border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:12px;line-height:1.7;"></div>
+
+      <!-- Preview dos dados -->
       <div class="modal-rd-section">
-        <div class="modal-rd-section-title">
-          🏢 Organização (Empresa)
-          <span id="modal-rd-org-status" style="margin-left:auto;font-size:10px;"></span>
-        </div>
-        <div id="modal-rd-org-campos"></div>
+        <div class="modal-rd-section-title">📋 Dados que serão cadastrados</div>
+        <div id="modal-rd-dados-empresa"></div>
       </div>
-      <!-- Contato -->
-      <div class="modal-rd-section">
-        <div class="modal-rd-section-title">
-          👤 Contato (Lead)
-          <span id="modal-rd-contato-status" style="margin-left:auto;font-size:10px;"></span>
-        </div>
-        <div id="modal-rd-contato-campos"></div>
-      </div>
-      <div id="modal-rd-resultado" style="display:none;margin-top:8px;padding:10px 12px;border-radius:8px;font-size:12px;"></div>
+
     </div>
     <div class="modal-rd-footer">
-      <span class="modal-rd-status" id="modal-rd-footer-status">Selecione os campos e clique em Preencher.</span>
-      <div style="display:flex;gap:8px;">
-        <button class="btn" onclick="fecharModalRD()">Cancelar</button>
-        <button class="btn btn-p" id="modal-rd-btn-confirmar" onclick="confirmarPreenchimentoRD()">
-          ✅ Preencher no RD
+      <button class="btn" onclick="fecharModalRD()">Cancelar</button>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <a id="modal-rd-link-deal" href="#" target="_blank" class="btn" style="font-size:11px;display:none;">
+          🔗 Ver Deal ↗
+        </a>
+        <a id="modal-rd-link-org" href="#" target="_blank" class="btn btn-p" style="font-size:11px;display:none;">
+          🏢 Ver Empresa criada ↗
+        </a>
+        <button id="modal-rd-btn-criar" class="btn btn-s" style="font-size:12px;" onclick="executarCriarEmpresaRD()">
+          ✅ Criar Empresa e Vincular ao Deal
         </button>
       </div>
     </div>
@@ -2159,210 +2157,179 @@ function toggleSenha(usuario,senha){const el=document.getElementById('senha-txt-
 async function editarSenha(usuario){const novaSenha=prompt(`Nova senha para "${usuario}":`);if(!novaSenha||!novaSenha.trim())return;if(novaSenha.trim().length<4){alert('Senha muito curta.');return;}try{const r=await fetch('/api/admin-users',{method:'PATCH',headers:{'Content-Type':'application/json','X-Session-Token':getSessionToken()},body:JSON.stringify({usuario,novaSenha:novaSenha.trim()})});const d=await r.json();if(!r.ok)throw new Error(d.erro||'Erro');carregarListaUsuarios();alert('✅ Senha alterada!');}catch(e){alert('Erro: '+e.message);}}
 async function removerUsuario(usuario){if(!confirm(`Remover "${usuario}"?`))return;try{const r=await fetch('/api/admin-users',{method:'DELETE',headers:{'Content-Type':'application/json','X-Session-Token':getSessionToken()},body:JSON.stringify({usuario})});const d=await r.json();if(!r.ok)throw new Error(d.erro||'Erro');carregarListaUsuarios();alert('✅ Usuário removido!');}catch(e){alert('Erro: '+e.message);}}
 
-// ── PREENCHER RD STATION COM DADOS DO CNPJ ────────────────
+// ── CRIAR EMPRESA NO RD STATION ──────────────────────────
 let _rdFillDados=null;
 let _rdFillDealId=null;
-let _rdFillContactId=null;
-let _rdFillOrgId=null;
 
 function fecharModalRD(e){
   if(e&&e.target!==document.getElementById('modal-rd-ov'))return;
   document.getElementById('modal-rd-ov').classList.remove('open');
 }
 
-async function abrirModalPreencherRD(idCard,dealId,cnpjDados){
-  if(!cnpjDados||!dealId){alert('Dados insuficientes.');return;}
+function abrirModalPreencherRD(idCard,dealId,cnpjDados){
+  if(!cnpjDados){alert('Consulte o CNPJ primeiro.');return;}
   _rdFillDados=cnpjDados;
   _rdFillDealId=dealId;
-  _rdFillContactId=null;
-  _rdFillOrgId=null;
 
-  document.getElementById('modal-rd-subtitulo').textContent='Carregando dados do RD...';
-  document.getElementById('modal-rd-org-status').textContent='';
-  document.getElementById('modal-rd-contato-status').textContent='';
-  document.getElementById('modal-rd-resultado').style.display='none';
-  document.getElementById('modal-rd-footer-status').textContent='Carregando...';
-  document.getElementById('modal-rd-footer-status').className='modal-rd-status';
-  document.getElementById('modal-rd-ov').classList.add('open');
-
-  // Busca o deal para pegar contact e organization
-  try{
-    const dd=await crmFetch('deals/'+dealId,{});
-    const deal=dd||{};
-    const contato=(deal.contacts||[])[0]||{};
-    _rdFillContactId=contato._id||contato.id||'';
-    _rdFillOrgId=contato.organization_id||deal.organization_id||'';
-
-    const orgNome=contato.organization_name||deal.organization?.name||'';
-    document.getElementById('modal-rd-subtitulo').textContent=
-      'Deal: '+(deal.name||'-')+(orgNome?' · Org: '+orgNome:'');
-
-    // Status da organização
-    const orgStatus=document.getElementById('modal-rd-org-status');
-    if(_rdFillOrgId){
-      orgStatus.textContent='ID: '+_rdFillOrgId.slice(-6);
-      orgStatus.style.color='#1D9E75';
-    }else{
-      orgStatus.textContent='Sem organização vinculada';
-      orgStatus.style.color='#E24B4A';
-    }
-
-    // Status do contato
-    const contatoStatus=document.getElementById('modal-rd-contato-status');
-    if(_rdFillContactId){
-      contatoStatus.textContent=(contato.name||'Contato')+' · ID: '+_rdFillContactId.slice(-6);
-      contatoStatus.style.color='#1D9E75';
-    }else{
-      contatoStatus.textContent='Sem contato vinculado';
-      contatoStatus.style.color='#E24B4A';
-    }
-
-  }catch(e){
-    document.getElementById('modal-rd-subtitulo').textContent='Erro ao carregar deal: '+e.message;
-  }
-
-  // Monta campos disponíveis
   const n=cnpjDados;
   const endParts=[n.logradouro,n.numero,n.complemento,n.bairro].filter(Boolean);
-  const endStr=endParts.join(', ')+(n.cep?' - CEP: '+n.cep:'')+(n.municipio?' - '+n.municipio+'/'+( n.uf||''):'');
+  const endStr=endParts.length
+    ?(endParts.join(', ')+(n.cep?' — CEP '+n.cep:'')+(n.municipio?', '+n.municipio+(n.uf?'/'+n.uf:''):''))
+    :(n.municipio?(n.municipio+(n.uf?'/'+n.uf:'')):'');
 
-  // Campos para Organização
-  const camposOrg=[
-    {id:'org_name',label:'Razão Social',valor:n.razao_social||'',rdKey:'name'},
-    {id:'org_fantasy',label:'Nome Fantasia',valor:n.nome_fantasia||'',rdKey:'nickname'},
-    {id:'org_cnpj',label:'CNPJ',valor:n.cnpj||'',rdKey:'cnpj'},
-    {id:'org_website',label:'Telefone',valor:n.telefone||'',rdKey:'phone'},
-    {id:'org_email',label:'E-mail',valor:n.email||'',rdKey:'email'},
-    {id:'org_address',label:'Endereço',valor:endStr,rdKey:'address'},
-    {id:'org_city',label:'Cidade',valor:n.municipio||'',rdKey:'city'},
-    {id:'org_state',label:'Estado',valor:n.uf||'',rdKey:'state'},
-    {id:'org_zip',label:'CEP',valor:n.cep||'',rdKey:'zip_code'},
-    {id:'org_cnae',label:'CNAE Principal',valor:(n.cnae_cod?n.cnae_cod+' - '+(n.cnae_desc||''):''),rdKey:'segment'},
-    {id:'org_porte',label:'Porte',valor:n.porte||'',rdKey:'employees_range'},
+  // Reset estado do modal
+  const statusBox=document.getElementById('modal-rd-status-box');
+  statusBox.style.display='none';
+  document.getElementById('modal-rd-link-org').style.display='none';
+  const btnCriar=document.getElementById('modal-rd-btn-criar');
+  btnCriar.textContent='✅ Criar Empresa e Vincular ao Deal';
+  btnCriar.disabled=false;
+
+  // Subtítulo e link do deal
+  document.getElementById('modal-rd-subtitulo').textContent=(n.razao_social||'Empresa')+' — '+( n.cnpj||'');
+  const linkDeal=document.getElementById('modal-rd-link-deal');
+  if(dealId){linkDeal.href='https://crm.rdstation.com/app/deals/'+dealId;linkDeal.style.display='inline-flex';}
+  else{linkDeal.style.display='none';}
+
+  // Preview dos dados que serão enviados
+  const preview=[
+    {label:'Razão Social',valor:n.razao_social||''},
+    {label:'Nome Fantasia',valor:n.nome_fantasia||''},
+    {label:'CNPJ',valor:n.cnpj||''},
+    {label:'Telefone',valor:n.telefone||''},
+    {label:'E-mail',valor:n.email||''},
+    {label:'Endereço',valor:endStr},
+    {label:'Cidade',valor:n.municipio||''},
+    {label:'Estado',valor:n.uf||''},
+    {label:'CEP',valor:n.cep||''},
+    {label:'CNAE / Segmento',valor:n.cnae_cod?(n.cnae_cod+(n.cnae_desc?' — '+n.cnae_desc:'')):''},
+    {label:'Porte',valor:n.porte||''},
+    {label:'Capital Social',valor:n.capital?'R$ '+Number(n.capital).toLocaleString('pt-BR'):''},
   ].filter(function(c){return c.valor;});
 
-  // Campos para Contato
-  const camposContato=[
-    {id:'ct_phone',label:'Telefone',valor:n.telefone||'',rdKey:'phones'},
-    {id:'ct_email',label:'E-mail',valor:n.email||'',rdKey:'emails'},
-    {id:'ct_city',label:'Cidade',valor:n.municipio||'',rdKey:'city'},
-    {id:'ct_state',label:'Estado',valor:n.uf||'',rdKey:'state'},
-  ].filter(function(c){return c.valor;});
-
-  function renderCampos(containerId,campos){
-    const el=document.getElementById(containerId);
-    if(!campos.length){el.innerHTML='<div style="font-size:12px;color:var(--text-muted);padding:8px 0;">Nenhum dado disponível para preencher.</div>';return;}
-    el.innerHTML=campos.map(function(c){
+  document.getElementById('modal-rd-dados-empresa').innerHTML=
+    preview.map(function(c){
       return '<div class="modal-rd-row">'+
-        '<input type="checkbox" class="modal-rd-check" id="chk-'+c.id+'" checked>'+
-        '<label class="modal-rd-label" for="chk-'+c.id+'">'+c.label+'</label>'+
+        '<span class="modal-rd-label">'+c.label+'</span>'+
         '<span class="modal-rd-value">'+c.valor+'</span>'+
-        '</div>';
+      '</div>';
     }).join('');
-  }
 
-  renderCampos('modal-rd-org-campos',camposOrg);
-  renderCampos('modal-rd-contato-campos',camposContato);
-
-  // Armazena campos para uso no confirmar
-  window._rdCamposOrg=camposOrg;
-  window._rdCamposContato=camposContato;
-
-  document.getElementById('modal-rd-footer-status').textContent='Selecione os campos e clique em Preencher.';
+  document.getElementById('modal-rd-ov').classList.add('open');
 }
 
-async function confirmarPreenchimentoRD(){
-  const btn=document.getElementById('modal-rd-btn-confirmar');
-  btn.disabled=true;btn.textContent='⏳ Enviando...';
-  const statusEl=document.getElementById('modal-rd-footer-status');
-  const resultEl=document.getElementById('modal-rd-resultado');
-  resultEl.style.display='none';
+async function executarCriarEmpresaRD(){
+  const n=_rdFillDados;
+  const dealId=_rdFillDealId;
+  if(!n){alert('Dados do CNPJ não encontrados.');return;}
 
-  const erros=[];const sucessos=[];
+  const btn=document.getElementById('modal-rd-btn-criar');
+  const statusBox=document.getElementById('modal-rd-status-box');
+  btn.disabled=true;
+  btn.textContent='⏳ Criando empresa...';
+  statusBox.style.display='none';
 
-  // ── Atualiza ORGANIZAÇÃO ──────────────────────────────────
-  if(_rdFillOrgId&&window._rdCamposOrg&&window._rdCamposOrg.length){
-    const orgBody={};
-    window._rdCamposOrg.forEach(function(c){
-      const chk=document.getElementById('chk-'+c.id);
-      if(chk&&chk.checked&&c.valor){orgBody[c.rdKey]=c.valor;}
-    });
-    if(Object.keys(orgBody).length){
-      try{
-        const r=await fetch('/api/rdcrm',{
-          method:'PUT',
-          headers:{'Content-Type':'application/json','X-Session-Token':getSessionToken()},
-          body:JSON.stringify({path:'organizations/'+_rdFillOrgId,organization:orgBody})
-        });
-        const data=await r.json();
-        if(r.ok&&!data.erro){
-          sucessos.push('Organização atualizada com sucesso');
-          document.getElementById('modal-rd-org-status').textContent='✅ Atualizada!';
-          document.getElementById('modal-rd-org-status').style.color='#1D9E75';
-        }else{
-          erros.push('Organização: '+(data.erro||data.message||JSON.stringify(data).slice(0,80)));
-          document.getElementById('modal-rd-org-status').textContent='❌ Erro';
-          document.getElementById('modal-rd-org-status').style.color='#E24B4A';
-        }
-      }catch(e){erros.push('Organização: '+e.message);}
-    }else{
-      sucessos.push('Organização: nenhum campo selecionado');
-    }
-  }else if(!_rdFillOrgId){
-    erros.push('Organização: nenhuma organização vinculada ao deal');
+  const endParts=[n.logradouro,n.numero,n.complemento,n.bairro].filter(Boolean);
+  const endStr=endParts.join(', ');
+
+  // ── STEP 1: Criar organização ─────────────────────────────
+  function mostrarStatus(linhas,tipo){
+    // tipo: 'info' | 'ok' | 'erro' | 'parcial'
+    const cores={info:{bg:'#f0f4fb',cor:'#152c6b'},ok:{bg:'#EAF3DE',cor:'#1D9E75'},erro:{bg:'#FCEBEB',cor:'#791F1F'},parcial:{bg:'#FFF0E0',cor:'#a85000'}};
+    const c=cores[tipo]||cores.info;
+    statusBox.style.background=c.bg;
+    statusBox.style.color=c.cor;
+    statusBox.innerHTML=linhas.join('<br>');
+    statusBox.style.display='block';
   }
 
-  // ── Atualiza CONTATO ─────────────────────────────────────
-  if(_rdFillContactId&&window._rdCamposContato&&window._rdCamposContato.length){
-    const ctBody={};
-    window._rdCamposContato.forEach(function(c){
-      const chk=document.getElementById('chk-'+c.id);
-      if(chk&&chk.checked&&c.valor){
-        // Telefone e email no RD são arrays
-        if(c.rdKey==='phones'){ctBody.phones=[{phone:c.valor}];}
-        else if(c.rdKey==='emails'){ctBody.emails=[{email:c.valor}];}
-        else{ctBody[c.rdKey]=c.valor;}
+  // Monta body da organização
+  const orgBody={
+    organization:{
+      name:n.razao_social||n.cnpj||'Empresa',
+    }
+  };
+  if(n.nome_fantasia)orgBody.organization.nickname=n.nome_fantasia;
+  if(n.cnpj)orgBody.organization.cnpj=n.cnpj.replace(/\D/g,'');
+  if(n.telefone)orgBody.organization.phone=n.telefone;
+  if(n.email)orgBody.organization.email=n.email;
+  if(endStr)orgBody.organization.address=endStr;
+  if(n.municipio)orgBody.organization.city=n.municipio;
+  if(n.uf)orgBody.organization.state=n.uf;
+  if(n.cep)orgBody.organization.zip_code=n.cep;
+  if(n.cnae_desc)orgBody.organization.segment=n.cnae_desc.slice(0,100);
+  if(n.porte)orgBody.organization.employees_range=n.porte;
+  if(n.capital)orgBody.organization.annual_revenue=Number(n.capital);
+
+  let orgId='';
+  let orgUrl='';
+  try{
+    mostrarStatus(['⏳ Criando organização no RD Station...'],'info');
+    const r=await fetch('/api/rdcrm',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','X-Session-Token':getSessionToken()},
+      body:JSON.stringify({path:'organizations',...orgBody})
+    });
+    const data=await r.json();
+    if(!r.ok||data.erro){
+      throw new Error(data.erro||data.message||data.error||JSON.stringify(data).slice(0,120));
+    }
+    orgId=data._id||data.id||data.organization?._id||data.organization?.id||'';
+    orgUrl=orgId?('https://crm.rdstation.com/app/organizations/'+orgId):'';
+    mostrarStatus(['✅ Empresa criada: '+(n.razao_social||'')+(orgId?' (ID: ...'+orgId.slice(-6)+')':'')],'ok');
+  }catch(e){
+    mostrarStatus(['❌ Erro ao criar empresa: '+e.message,'','Verifique se o CNPJ já está cadastrado no RD Station.'],'erro');
+    btn.disabled=false;btn.textContent='🔄 Tentar novamente';
+    return;
+  }
+
+  // ── STEP 2: Vincular organização ao deal ──────────────────
+  if(dealId&&orgId){
+    try{
+      btn.textContent='⏳ Vinculando ao deal...';
+      const r2=await fetch('/api/rdcrm',{
+        method:'PUT',
+        headers:{'Content-Type':'application/json','X-Session-Token':getSessionToken()},
+        body:JSON.stringify({path:'deals/'+dealId,deal:{organization_id:orgId}})
+      });
+      const data2=await r2.json();
+      if(!r2.ok||data2.erro){
+        // Empresa criada mas vínculo falhou — ainda é sucesso parcial
+        mostrarStatus([
+          '✅ Empresa criada com sucesso!',
+          '⚠️ Não foi possível vincular automaticamente ao deal: '+(data2.erro||data2.message||''),
+          'Vincule manualmente abrindo o deal no RD Station.'
+        ],'parcial');
+      }else{
+        mostrarStatus([
+          '✅ Empresa <strong>'+(n.razao_social||n.cnpj||'')+'</strong> criada e vinculada ao deal!',
+          '✅ Campos preenchidos: Razão Social, CNPJ, Endereço, Telefone, Cidade, Estado, CEP, Segmento, Porte',
+          orgUrl?'Clique em "Ver Empresa criada" para abrir no RD Station.':''
+        ],'ok');
       }
-    });
-    if(Object.keys(ctBody).length){
-      try{
-        const r=await fetch('/api/rdcrm',{
-          method:'PUT',
-          headers:{'Content-Type':'application/json','X-Session-Token':getSessionToken()},
-          body:JSON.stringify({path:'contacts/'+_rdFillContactId,contact:ctBody})
-        });
-        const data=await r.json();
-        if(r.ok&&!data.erro){
-          sucessos.push('Contato atualizado com sucesso');
-          document.getElementById('modal-rd-contato-status').textContent='✅ Atualizado!';
-          document.getElementById('modal-rd-contato-status').style.color='#1D9E75';
-        }else{
-          erros.push('Contato: '+(data.erro||data.message||JSON.stringify(data).slice(0,80)));
-          document.getElementById('modal-rd-contato-status').textContent='❌ Erro';
-          document.getElementById('modal-rd-contato-status').style.color='#E24B4A';
-        }
-      }catch(e){erros.push('Contato: '+e.message);}
-    }else{
-      sucessos.push('Contato: nenhum campo selecionado');
+    }catch(e){
+      mostrarStatus([
+        '✅ Empresa criada com sucesso!',
+        '⚠️ Erro ao vincular ao deal: '+e.message,
+        'Vincule manualmente pelo botão "Ver Empresa criada".'
+      ],'parcial');
     }
-  }else if(!_rdFillContactId){
-    erros.push('Contato: nenhum contato vinculado ao deal');
+  }else if(!dealId){
+    mostrarStatus([
+      '✅ Empresa <strong>'+(n.razao_social||n.cnpj||'')+'</strong> criada no RD Station!',
+      'ℹ️ Sem deal vinculado — associe manualmente no RD.'
+    ],'ok');
   }
 
-  // ── Exibe resultado ──────────────────────────────────────
-  const temErro=erros.length>0;
-  resultEl.style.display='block';
-  resultEl.style.background=temErro?'#FCEBEB':'#EAF3DE';
-  resultEl.style.color=temErro?'#791F1F':'#27500A';
-  resultEl.innerHTML=(sucessos.map(function(s){return '✅ '+s;}).join('<br>')+
-    (erros.length?'<br>'+erros.map(function(e){return '❌ '+e;}).join('<br>'):''));
-
-  statusEl.textContent=temErro?'Concluído com erros.':'Preenchido com sucesso!';
-  statusEl.className='modal-rd-status '+(temErro?'erro':'ok');
+  // Mostra botão para abrir empresa criada
+  if(orgUrl){
+    const linkOrg=document.getElementById('modal-rd-link-org');
+    linkOrg.href=orgUrl;
+    linkOrg.style.display='inline-flex';
+  }
 
   btn.disabled=false;
-  btn.textContent=temErro?'🔄 Tentar novamente':'✅ Concluído';
-  if(!temErro)setTimeout(function(){fecharModalRD();},2500);
+  btn.textContent='✅ Concluído';
 }
 
 // ── INICIALIZAÇÃO ─────────────────────────────────────────
