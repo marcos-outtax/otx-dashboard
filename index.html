@@ -235,7 +235,27 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 .fb-progress-fill{height:100%;border-radius:99px;transition:width .6s ease;}
 @media(max-width:600px){.two-col,.three-col{grid-template-columns:1fr}.stats{grid-template-columns:repeat(3,1fr)}.filtros{flex-direction:column;align-items:stretch}.fa{margin-left:0}.fb-saldo-grid{grid-template-columns:1fr}}
 
-/* ── MODAL LEADS RD (Vendidos/Perdidos/Abertos) ── */
+/* ── MODAL PREENCHER RD STATION ── */
+.modal-rd-ov{display:none;position:fixed;inset:0;background:rgba(21,44,107,.55);z-index:3000;align-items:flex-start;justify-content:center;padding:24px 16px;overflow-y:auto;}
+.modal-rd-ov.open{display:flex;}
+.modal-rd-box{background:var(--branco);border-radius:16px;width:100%;max-width:560px;box-shadow:0 24px 64px rgba(21,44,107,.28);overflow:hidden;}
+.modal-rd-header{padding:18px 24px;background:linear-gradient(135deg,var(--azul-escuro),var(--azul-medio));color:#fff;display:flex;justify-content:space-between;align-items:center;}
+.modal-rd-header h3{font-size:14px;font-weight:700;margin:0;}
+.modal-rd-header p{font-size:11px;opacity:.75;margin:3px 0 0;}
+.modal-rd-close{background:none;border:none;color:#fff;font-size:20px;cursor:pointer;line-height:1;}
+.modal-rd-body{padding:20px 24px;}
+.modal-rd-section{margin-bottom:16px;}
+.modal-rd-section-title{font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px;}
+.modal-rd-row{display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--azul-pale);}
+.modal-rd-row:last-child{border-bottom:none;}
+.modal-rd-check{width:16px;height:16px;accent-color:var(--azul-medio);flex-shrink:0;cursor:pointer;}
+.modal-rd-label{font-size:11px;color:var(--text-muted);width:120px;flex-shrink:0;}
+.modal-rd-value{font-size:12px;font-weight:600;color:var(--azul-escuro);flex:1;word-break:break-all;}
+.modal-rd-footer{padding:16px 24px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;background:#fafbfd;}
+.modal-rd-status{font-size:11px;color:var(--text-muted);}
+.modal-rd-status.ok{color:#1D9E75;font-weight:600;}
+.modal-rd-status.erro{color:#E24B4A;font-weight:600;}
+
 .modal-leads-ov{display:none;position:fixed;inset:0;background:rgba(21,44,107,.55);z-index:3000;align-items:flex-start;justify-content:center;padding:32px 16px;overflow-y:auto;}
 .modal-leads-ov.open{display:flex;}
 .modal-leads-box{background:var(--branco);border-radius:16px;width:100%;max-width:680px;box-shadow:0 24px 64px rgba(21,44,107,.28);display:flex;flex-direction:column;max-height:85vh;}
@@ -741,6 +761,47 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
   </div>
 </div>
 
+<!-- MODAL PREENCHER RD STATION -->
+<div class="modal-rd-ov" id="modal-rd-ov" onclick="fecharModalRD(event)">
+  <div class="modal-rd-box" onclick="event.stopPropagation()">
+    <div class="modal-rd-header">
+      <div>
+        <h3>📋 Preencher no RD Station</h3>
+        <p id="modal-rd-subtitulo">Selecione os campos para atualizar</p>
+      </div>
+      <button class="modal-rd-close" onclick="fecharModalRD()">✕</button>
+    </div>
+    <div class="modal-rd-body">
+      <!-- Organização -->
+      <div class="modal-rd-section">
+        <div class="modal-rd-section-title">
+          🏢 Organização (Empresa)
+          <span id="modal-rd-org-status" style="margin-left:auto;font-size:10px;"></span>
+        </div>
+        <div id="modal-rd-org-campos"></div>
+      </div>
+      <!-- Contato -->
+      <div class="modal-rd-section">
+        <div class="modal-rd-section-title">
+          👤 Contato (Lead)
+          <span id="modal-rd-contato-status" style="margin-left:auto;font-size:10px;"></span>
+        </div>
+        <div id="modal-rd-contato-campos"></div>
+      </div>
+      <div id="modal-rd-resultado" style="display:none;margin-top:8px;padding:10px 12px;border-radius:8px;font-size:12px;"></div>
+    </div>
+    <div class="modal-rd-footer">
+      <span class="modal-rd-status" id="modal-rd-footer-status">Selecione os campos e clique em Preencher.</span>
+      <div style="display:flex;gap:8px;">
+        <button class="btn" onclick="fecharModalRD()">Cancelar</button>
+        <button class="btn btn-p" id="modal-rd-btn-confirmar" onclick="confirmarPreenchimentoRD()">
+          ✅ Preencher no RD
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
 // ── SESSÃO ───────────────────────────────────────────────
 const K='otx_cfg';
@@ -1059,6 +1120,12 @@ async function consultarCnpjReuniao(idCard,dealId,dealNome,funil,estagio){
     btn.className='btn btn-p';btn.style.fontSize='11px';btn.textContent='🤖 Análise Tributária com IA';
     btn.addEventListener('click',function(){abrirAnaliseIAReuniao(idCard,dealId,window['_cnpjDados_'+idCard]);});
     wrap.querySelector('.act-row').appendChild(btn);
+    // Botão Preencher no RD Station
+    const btnRD=document.createElement('button');
+    btnRD.className='btn btn-s';btnRD.style.fontSize='11px';
+    btnRD.innerHTML='📋 Preencher no RD Station';
+    btnRD.addEventListener('click',function(){abrirModalPreencherRD(idCard,dealId,window['_cnpjDados_'+idCard]);});
+    wrap.querySelector('.act-row').appendChild(btnRD);
     resultEl.innerHTML='';resultEl.appendChild(wrap);
   }catch(e){resultEl.innerHTML=`<div style="font-size:12px;color:#791F1F;background:#FCEBEB;padding:10px 12px;border-radius:8px;">Erro: ${e.message}</div>`;}
 }
@@ -2091,6 +2158,212 @@ async function adicionarUsuario(){
 function toggleSenha(usuario,senha){const el=document.getElementById('senha-txt-'+usuario);if(!el)return;el.textContent=el.textContent==='••••••••'?senha:'••••••••';}
 async function editarSenha(usuario){const novaSenha=prompt(`Nova senha para "${usuario}":`);if(!novaSenha||!novaSenha.trim())return;if(novaSenha.trim().length<4){alert('Senha muito curta.');return;}try{const r=await fetch('/api/admin-users',{method:'PATCH',headers:{'Content-Type':'application/json','X-Session-Token':getSessionToken()},body:JSON.stringify({usuario,novaSenha:novaSenha.trim()})});const d=await r.json();if(!r.ok)throw new Error(d.erro||'Erro');carregarListaUsuarios();alert('✅ Senha alterada!');}catch(e){alert('Erro: '+e.message);}}
 async function removerUsuario(usuario){if(!confirm(`Remover "${usuario}"?`))return;try{const r=await fetch('/api/admin-users',{method:'DELETE',headers:{'Content-Type':'application/json','X-Session-Token':getSessionToken()},body:JSON.stringify({usuario})});const d=await r.json();if(!r.ok)throw new Error(d.erro||'Erro');carregarListaUsuarios();alert('✅ Usuário removido!');}catch(e){alert('Erro: '+e.message);}}
+
+// ── PREENCHER RD STATION COM DADOS DO CNPJ ────────────────
+let _rdFillDados=null;
+let _rdFillDealId=null;
+let _rdFillContactId=null;
+let _rdFillOrgId=null;
+
+function fecharModalRD(e){
+  if(e&&e.target!==document.getElementById('modal-rd-ov'))return;
+  document.getElementById('modal-rd-ov').classList.remove('open');
+}
+
+async function abrirModalPreencherRD(idCard,dealId,cnpjDados){
+  if(!cnpjDados||!dealId){alert('Dados insuficientes.');return;}
+  _rdFillDados=cnpjDados;
+  _rdFillDealId=dealId;
+  _rdFillContactId=null;
+  _rdFillOrgId=null;
+
+  document.getElementById('modal-rd-subtitulo').textContent='Carregando dados do RD...';
+  document.getElementById('modal-rd-org-status').textContent='';
+  document.getElementById('modal-rd-contato-status').textContent='';
+  document.getElementById('modal-rd-resultado').style.display='none';
+  document.getElementById('modal-rd-footer-status').textContent='Carregando...';
+  document.getElementById('modal-rd-footer-status').className='modal-rd-status';
+  document.getElementById('modal-rd-ov').classList.add('open');
+
+  // Busca o deal para pegar contact e organization
+  try{
+    const dd=await crmFetch('deals/'+dealId,{});
+    const deal=dd||{};
+    const contato=(deal.contacts||[])[0]||{};
+    _rdFillContactId=contato._id||contato.id||'';
+    _rdFillOrgId=contato.organization_id||deal.organization_id||'';
+
+    const orgNome=contato.organization_name||deal.organization?.name||'';
+    document.getElementById('modal-rd-subtitulo').textContent=
+      'Deal: '+(deal.name||'-')+(orgNome?' · Org: '+orgNome:'');
+
+    // Status da organização
+    const orgStatus=document.getElementById('modal-rd-org-status');
+    if(_rdFillOrgId){
+      orgStatus.textContent='ID: '+_rdFillOrgId.slice(-6);
+      orgStatus.style.color='#1D9E75';
+    }else{
+      orgStatus.textContent='Sem organização vinculada';
+      orgStatus.style.color='#E24B4A';
+    }
+
+    // Status do contato
+    const contatoStatus=document.getElementById('modal-rd-contato-status');
+    if(_rdFillContactId){
+      contatoStatus.textContent=(contato.name||'Contato')+' · ID: '+_rdFillContactId.slice(-6);
+      contatoStatus.style.color='#1D9E75';
+    }else{
+      contatoStatus.textContent='Sem contato vinculado';
+      contatoStatus.style.color='#E24B4A';
+    }
+
+  }catch(e){
+    document.getElementById('modal-rd-subtitulo').textContent='Erro ao carregar deal: '+e.message;
+  }
+
+  // Monta campos disponíveis
+  const n=cnpjDados;
+  const endParts=[n.logradouro,n.numero,n.complemento,n.bairro].filter(Boolean);
+  const endStr=endParts.join(', ')+(n.cep?' - CEP: '+n.cep:'')+(n.municipio?' - '+n.municipio+'/'+( n.uf||''):'');
+
+  // Campos para Organização
+  const camposOrg=[
+    {id:'org_name',label:'Razão Social',valor:n.razao_social||'',rdKey:'name'},
+    {id:'org_fantasy',label:'Nome Fantasia',valor:n.nome_fantasia||'',rdKey:'nickname'},
+    {id:'org_cnpj',label:'CNPJ',valor:n.cnpj||'',rdKey:'cnpj'},
+    {id:'org_website',label:'Telefone',valor:n.telefone||'',rdKey:'phone'},
+    {id:'org_email',label:'E-mail',valor:n.email||'',rdKey:'email'},
+    {id:'org_address',label:'Endereço',valor:endStr,rdKey:'address'},
+    {id:'org_city',label:'Cidade',valor:n.municipio||'',rdKey:'city'},
+    {id:'org_state',label:'Estado',valor:n.uf||'',rdKey:'state'},
+    {id:'org_zip',label:'CEP',valor:n.cep||'',rdKey:'zip_code'},
+    {id:'org_cnae',label:'CNAE Principal',valor:(n.cnae_cod?n.cnae_cod+' - '+(n.cnae_desc||''):''),rdKey:'segment'},
+    {id:'org_porte',label:'Porte',valor:n.porte||'',rdKey:'employees_range'},
+  ].filter(function(c){return c.valor;});
+
+  // Campos para Contato
+  const camposContato=[
+    {id:'ct_phone',label:'Telefone',valor:n.telefone||'',rdKey:'phones'},
+    {id:'ct_email',label:'E-mail',valor:n.email||'',rdKey:'emails'},
+    {id:'ct_city',label:'Cidade',valor:n.municipio||'',rdKey:'city'},
+    {id:'ct_state',label:'Estado',valor:n.uf||'',rdKey:'state'},
+  ].filter(function(c){return c.valor;});
+
+  function renderCampos(containerId,campos){
+    const el=document.getElementById(containerId);
+    if(!campos.length){el.innerHTML='<div style="font-size:12px;color:var(--text-muted);padding:8px 0;">Nenhum dado disponível para preencher.</div>';return;}
+    el.innerHTML=campos.map(function(c){
+      return '<div class="modal-rd-row">'+
+        '<input type="checkbox" class="modal-rd-check" id="chk-'+c.id+'" checked>'+
+        '<label class="modal-rd-label" for="chk-'+c.id+'">'+c.label+'</label>'+
+        '<span class="modal-rd-value">'+c.valor+'</span>'+
+        '</div>';
+    }).join('');
+  }
+
+  renderCampos('modal-rd-org-campos',camposOrg);
+  renderCampos('modal-rd-contato-campos',camposContato);
+
+  // Armazena campos para uso no confirmar
+  window._rdCamposOrg=camposOrg;
+  window._rdCamposContato=camposContato;
+
+  document.getElementById('modal-rd-footer-status').textContent='Selecione os campos e clique em Preencher.';
+}
+
+async function confirmarPreenchimentoRD(){
+  const btn=document.getElementById('modal-rd-btn-confirmar');
+  btn.disabled=true;btn.textContent='⏳ Enviando...';
+  const statusEl=document.getElementById('modal-rd-footer-status');
+  const resultEl=document.getElementById('modal-rd-resultado');
+  resultEl.style.display='none';
+
+  const erros=[];const sucessos=[];
+
+  // ── Atualiza ORGANIZAÇÃO ──────────────────────────────────
+  if(_rdFillOrgId&&window._rdCamposOrg&&window._rdCamposOrg.length){
+    const orgBody={};
+    window._rdCamposOrg.forEach(function(c){
+      const chk=document.getElementById('chk-'+c.id);
+      if(chk&&chk.checked&&c.valor){orgBody[c.rdKey]=c.valor;}
+    });
+    if(Object.keys(orgBody).length){
+      try{
+        const r=await fetch('/api/rdcrm',{
+          method:'PUT',
+          headers:{'Content-Type':'application/json','X-Session-Token':getSessionToken()},
+          body:JSON.stringify({path:'organizations/'+_rdFillOrgId,organization:orgBody})
+        });
+        const data=await r.json();
+        if(r.ok&&!data.erro){
+          sucessos.push('Organização atualizada com sucesso');
+          document.getElementById('modal-rd-org-status').textContent='✅ Atualizada!';
+          document.getElementById('modal-rd-org-status').style.color='#1D9E75';
+        }else{
+          erros.push('Organização: '+(data.erro||data.message||JSON.stringify(data).slice(0,80)));
+          document.getElementById('modal-rd-org-status').textContent='❌ Erro';
+          document.getElementById('modal-rd-org-status').style.color='#E24B4A';
+        }
+      }catch(e){erros.push('Organização: '+e.message);}
+    }else{
+      sucessos.push('Organização: nenhum campo selecionado');
+    }
+  }else if(!_rdFillOrgId){
+    erros.push('Organização: nenhuma organização vinculada ao deal');
+  }
+
+  // ── Atualiza CONTATO ─────────────────────────────────────
+  if(_rdFillContactId&&window._rdCamposContato&&window._rdCamposContato.length){
+    const ctBody={};
+    window._rdCamposContato.forEach(function(c){
+      const chk=document.getElementById('chk-'+c.id);
+      if(chk&&chk.checked&&c.valor){
+        // Telefone e email no RD são arrays
+        if(c.rdKey==='phones'){ctBody.phones=[{phone:c.valor}];}
+        else if(c.rdKey==='emails'){ctBody.emails=[{email:c.valor}];}
+        else{ctBody[c.rdKey]=c.valor;}
+      }
+    });
+    if(Object.keys(ctBody).length){
+      try{
+        const r=await fetch('/api/rdcrm',{
+          method:'PUT',
+          headers:{'Content-Type':'application/json','X-Session-Token':getSessionToken()},
+          body:JSON.stringify({path:'contacts/'+_rdFillContactId,contact:ctBody})
+        });
+        const data=await r.json();
+        if(r.ok&&!data.erro){
+          sucessos.push('Contato atualizado com sucesso');
+          document.getElementById('modal-rd-contato-status').textContent='✅ Atualizado!';
+          document.getElementById('modal-rd-contato-status').style.color='#1D9E75';
+        }else{
+          erros.push('Contato: '+(data.erro||data.message||JSON.stringify(data).slice(0,80)));
+          document.getElementById('modal-rd-contato-status').textContent='❌ Erro';
+          document.getElementById('modal-rd-contato-status').style.color='#E24B4A';
+        }
+      }catch(e){erros.push('Contato: '+e.message);}
+    }else{
+      sucessos.push('Contato: nenhum campo selecionado');
+    }
+  }else if(!_rdFillContactId){
+    erros.push('Contato: nenhum contato vinculado ao deal');
+  }
+
+  // ── Exibe resultado ──────────────────────────────────────
+  const temErro=erros.length>0;
+  resultEl.style.display='block';
+  resultEl.style.background=temErro?'#FCEBEB':'#EAF3DE';
+  resultEl.style.color=temErro?'#791F1F':'#27500A';
+  resultEl.innerHTML=(sucessos.map(function(s){return '✅ '+s;}).join('<br>')+
+    (erros.length?'<br>'+erros.map(function(e){return '❌ '+e;}).join('<br>'):''));
+
+  statusEl.textContent=temErro?'Concluído com erros.':'Preenchido com sucesso!';
+  statusEl.className='modal-rd-status '+(temErro?'erro':'ok');
+
+  btn.disabled=false;
+  btn.textContent=temErro?'🔄 Tentar novamente':'✅ Concluído';
+  if(!temErro)setTimeout(function(){fecharModalRD();},2500);
+}
 
 // ── INICIALIZAÇÃO ─────────────────────────────────────────
 async function inicializar(){
