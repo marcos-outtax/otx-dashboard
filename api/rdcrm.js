@@ -1,6 +1,6 @@
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Session-Token');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
@@ -27,6 +27,54 @@ export default async function handler(req, res) {
       catch { return res.status(r.status).json({ erro: 'Resposta não JSON', detalhe: text.substring(0, 300) }); }
     } catch (e) {
       return res.status(500).json({ erro: 'Erro interno', detalhe: e.message });
+    }
+  }
+
+  // ── PUT ───────────────────────────────────────────────────
+  // Usado para atualizar organizations e contacts com dados do CNPJ
+  // Body: { path: 'organizations/ID', organization: { name: '...', ... } }
+  //    ou { path: 'contacts/ID', contact: { name: '...', ... } }
+  if (req.method === 'PUT') {
+    const body = { ...req.body } || {};
+    const finalPath = body.path;
+    if (!finalPath) return res.status(400).json({ erro: 'Campo path obrigatório no body' });
+    delete body.path;
+
+    const url = `https://crm.rdstation.com/api/v1/${finalPath}?token=${token}`;
+    try {
+      const r = await fetch(url, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      const text = await r.text();
+      try { return res.status(r.status).json(JSON.parse(text)); }
+      catch { return res.status(r.status).json({ erro: 'Resposta não JSON', detalhe: text.substring(0, 300) }); }
+    } catch (e) {
+      return res.status(500).json({ erro: 'Erro interno PUT', detalhe: e.message });
+    }
+  }
+
+  // ── PATCH ─────────────────────────────────────────────────
+  // Alternativa ao PUT para atualizações parciais
+  if (req.method === 'PATCH') {
+    const body = { ...req.body } || {};
+    const finalPath = body.path;
+    if (!finalPath) return res.status(400).json({ erro: 'Campo path obrigatório no body' });
+    delete body.path;
+
+    const url = `https://crm.rdstation.com/api/v1/${finalPath}?token=${token}`;
+    try {
+      const r = await fetch(url, {
+        method: 'PUT', // RD CRM usa PUT mesmo para atualizações parciais
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      const text = await r.text();
+      try { return res.status(r.status).json(JSON.parse(text)); }
+      catch { return res.status(r.status).json({ erro: 'Resposta não JSON', detalhe: text.substring(0, 300) }); }
+    } catch (e) {
+      return res.status(500).json({ erro: 'Erro interno PATCH', detalhe: e.message });
     }
   }
 
@@ -76,8 +124,6 @@ export default async function handler(req, res) {
 
   try {
     // ── CASO 1: deal_pipelines ─────────────────────────────
-    // Aba: Funis / Análise Marketing
-    // Comportamento: GET simples, normaliza array para objeto
     if (queryPath === 'deal_pipelines') {
       const { status, data } = await getSimples('deal_pipelines', queryParams);
       if (Array.isArray(data)) return res.status(status).json({ deal_pipelines: data });
@@ -85,48 +131,44 @@ export default async function handler(req, res) {
     }
 
     // ── CASO 2: contacts ───────────────────────────────────
-    // Aba: Reuniões (busca por email)
-    // Comportamento: GET simples
     if (queryPath === 'contacts') {
       const { status, data } = await getSimples('contacts', queryParams);
       return res.status(status).json(data);
     }
 
     // ── CASO 3: tasks ──────────────────────────────────────
-    // Aba: Tarefas (done=true ou done=false)
-    // Comportamento: GET simples
     if (queryPath === 'tasks') {
       const { status, data } = await getSimples('tasks', queryParams);
       return res.status(status).json(data);
     }
 
-    // ── CASO 4: deals com contact_id ───────────────────────
-    // Aba: Reuniões (busca deals de um contato específico)
-    // Comportamento: GET simples — não pagina, filtra por contato
+    // ── CASO 4: organizations (busca por nome ou id) ───────
+    if (queryPath === 'organizations' || queryPath.startsWith('organizations/')) {
+      const { status, data } = await getSimples(queryPath, queryParams);
+      return res.status(status).json(data);
+    }
+
+    // ── CASO 5: deals com contact_id ───────────────────────
     if (queryPath === 'deals' && queryParams.contact_id) {
       const { status, data } = await getSimples('deals', { ...queryParams, limit: '50' });
       return res.status(status).json(data);
     }
 
-    // ── CASO 5: deals com deal_pipeline_id ─────────────────
-    // Aba: Análise Marketing e Propostas (busca deals de um funil)
-    // Comportamento: paginação completa
+    // ── CASO 6: deals com deal_pipeline_id ─────────────────
     if (queryPath === 'deals' && queryParams.deal_pipeline_id) {
       const result = await getDealsComPaginacao(queryParams);
       if (result.erro) return res.status(result.status).json(result.data);
       return res.status(200).json(result.data);
     }
 
-    // ── CASO 6: deals geral ────────────────────────────────
-    // Aba: Propostas (busca geral com filtros de data/status)
-    // Comportamento: paginação completa
+    // ── CASO 7: deals geral ────────────────────────────────
     if (queryPath === 'deals') {
       const result = await getDealsComPaginacao(queryParams);
       if (result.erro) return res.status(result.status).json(result.data);
       return res.status(200).json(result.data);
     }
 
-    // ── CASO 7: qualquer outro endpoint ────────────────────
+    // ── CASO 8: qualquer outro endpoint ────────────────────
     const { status, data } = await getSimples(queryPath, queryParams);
     return res.status(status).json(data);
 
