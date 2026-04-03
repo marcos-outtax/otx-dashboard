@@ -134,13 +134,32 @@ async function salvarArquivo(token, pastaId, nomeArquivo, titulo, conteudo) {
 
 // ── Verifica sessão ──────────────────────────────────────────
 function verificarSessao(req) {
-  const token = req.headers['x-session-token'] || '';
+  const token = (req.headers['x-session-token'] || '').trim();
   if (!token) return null;
-  const usuariosRaw = process.env.PAINEL_USUARIOS || '[]';
+
+  // Carrega usuarios das variaveis de ambiente
+  let usuarios = [];
   try {
-    const usuarios = JSON.parse(usuariosRaw);
-    return usuarios.find(u => u.sessionToken === token) || null;
-  } catch { return null; }
+    const raw = (process.env.DASHBOARD_USERS || '').trim();
+    if (raw) {
+      usuarios = JSON.parse(raw);
+    } else {
+      const u = (process.env.DASHBOARD_USER     || '').trim();
+      const s = (process.env.DASHBOARD_PASSWORD || '').trim();
+      if (u && s) usuarios = [{ usuario: u, senha: s, nome: u, admin: true }];
+    }
+  } catch (_) { return null; }
+
+  // Mesmo algoritmo do auth.js:
+  // token = 'otx-' + hex(usuario+senha).substring(0,32)
+  for (const user of usuarios) {
+    const esperado = 'otx-' + Buffer.from(user.usuario + user.senha)
+      .toString('hex').substring(0, 32);
+    if (token === esperado) {
+      return { usuario: user.usuario, nome: user.nome || user.usuario, admin: user.admin === true };
+    }
+  }
+  return null;
 }
 
 // ════════════════════════════════════════════════════════════
