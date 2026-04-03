@@ -94,7 +94,7 @@ async function listarArquivos(token, pastaId, de, ate) {
     id:        f.id,
     nome:      f.name.replace('.enc', ''),
     titulo:    f.description || f.name.replace('.enc', ''),
-    data:      new Date(f.createdTime).toLocaleDateString('pt-BR'),
+    data:      new Date(f.createdTime).toLocaleString('pt-BR', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}),
     dataISO:   f.createdTime,
   }));
 }
