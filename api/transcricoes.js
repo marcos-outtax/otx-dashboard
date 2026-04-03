@@ -182,7 +182,11 @@ export default async function handler(req, res) {
     try { googleToken = await refreshAccessToken(refreshToken); }
     catch (e) { return res.status(401).json({ erro: 'Token Google expirado. Reconecte o Google.' }); }
   }
-  if (!googleToken) return res.status(401).json({ erro: 'Token Google não encontrado. Conecte o Google Agenda.' });
+  // Para GET de listagem sem google token, retorna lista vazia em vez de erro
+  if (!googleToken) {
+    if (req.method === 'GET') return res.status(200).json({ ok: true, arquivos: [], usuario: usuario.usuario });
+    return res.status(401).json({ erro: 'Token Google não encontrado. Reconecte o Google no Dashboard.' });
+  }
 
   const loginUsuario = usuario.usuario || 'usuario';
   const isAdmin      = usuario.admin === true;
@@ -206,8 +210,17 @@ export default async function handler(req, res) {
       if (!isAdmin) return res.status(403).json({ erro: 'Acesso restrito ao administrador.' });
 
       const { de, ate } = req.query;
-      const usuariosRaw = process.env.PAINEL_USUARIOS || '[]';
-      const todosUsuarios = JSON.parse(usuariosRaw).map(u => u.usuario);
+      // Carrega lista de usuarios do mesmo env que auth.js usa
+      let todosUsuarios = [];
+      try {
+        const raw = (process.env.DASHBOARD_USERS || '').trim();
+        if (raw) {
+          todosUsuarios = JSON.parse(raw).map(u => u.usuario);
+        } else {
+          const u = (process.env.DASHBOARD_USER || '').trim();
+          if (u) todosUsuarios = [u];
+        }
+      } catch (_) { todosUsuarios = []; }
 
       const pastaRaizId = await buscarOuCriarPasta(googleToken, PASTA_RAIZ);
       const resultado   = [];
