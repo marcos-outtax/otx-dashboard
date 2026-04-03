@@ -93,8 +93,9 @@ async function listarArquivos(token, pastaId, de, ate) {
   return arquivos.map(f => ({
     id:        f.id,
     nome:      f.name.replace('.enc', ''),
-    titulo:    f.description || f.name.replace('.enc', ''),
-    data:      new Date(f.createdTime).toLocaleString('pt-BR', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}),
+    titulo:    (f.description||'').split('||')[0] || f.name.replace('.enc',''),
+    dataHora:  (f.description||'').split('||')[1] || null,
+    data:      (f.description||'').split('||')[1] || new Date(f.createdTime).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}),
     dataISO:   f.createdTime,
   }));
 }
@@ -115,7 +116,7 @@ async function salvarArquivo(token, pastaId, nomeArquivo, titulo, conteudo) {
 
   const meta = {
     name:        nomeArquivo + '.enc',
-    description: titulo,
+    description: titulo + "||" + (dataHoraCliente||agora.toLocaleString("pt-BR")),
     parents:     [pastaId],
   };
 
