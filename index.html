@@ -956,6 +956,8 @@ async function carregarTranscricoes(){
       headers:{'X-Session-Token':getSessionToken(),'X-Google-Token':cfg.googleToken||'','X-Google-Refresh-Token':cfg.googleRefreshToken||''}
     });
     const data=await r.json();
+    // Salva novo token se foi renovado automaticamente
+    if(data.newAccessToken){const c=getCfg();c.googleToken=data.newAccessToken;localStorage.setItem('otx_cfg',JSON.stringify(c));}
     if(!r.ok)throw new Error(data.erro||'Erro ao buscar transcrições');
     const arquivos=data.arquivos||[];
     cards.innerHTML=arquivos.length?arquivos.map(a=>cardTranscricao(a)).join(''):'<div class="empty">Nenhuma transcrição encontrada no período.</div>';
@@ -977,6 +979,7 @@ async function carregarTranscricoesAdmin(de,ate){
       headers:{'X-Session-Token':getSessionToken(),'X-Google-Token':cfg.googleToken||'','X-Google-Refresh-Token':cfg.googleRefreshToken||''}
     });
     const data=await r.json();
+    if(data.newAccessToken){const c=getCfg();c.googleToken=data.newAccessToken;localStorage.setItem('otx_cfg',JSON.stringify(c));}
     if(!r.ok)throw new Error(data.erro||'Erro na visão admin');
     const usuarios=data.usuarios||[];
     if(!usuarios.length){adminCards.innerHTML='<div class="empty">Nenhum usuário encontrado.</div>';return;}
