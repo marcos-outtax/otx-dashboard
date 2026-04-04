@@ -111,12 +111,12 @@ async function lerArquivo(token, fileId) {
 }
 
 // ── Drive: salva arquivo criptografado ───────────────────────
-async function salvarArquivo(token, pastaId, nomeArquivo, titulo, conteudo) {
+async function salvarArquivo(token, pastaId, nomeArquivo, titulo, conteudo, dataHora) {
   const conteudoCriptografado = criptografar(conteudo);
 
   const meta = {
     name:        nomeArquivo + '.enc',
-    description: titulo + "||" + (dataHoraCliente||agora.toLocaleString("pt-BR")),
+    description: titulo + "||" + (dataHora||new Date().toLocaleString("pt-BR")),
     parents:     [pastaId],
   };
 
@@ -276,7 +276,7 @@ export default async function handler(req, res) {
         conteudo,
       ].filter(l => l !== null && l !== undefined).join('\n');
 
-      const arquivo = await salvarArquivo(googleToken, pastaUsuarioId, nomeArquivo, titulo, conteudoCompleto);
+      const arquivo = await salvarArquivo(googleToken, pastaUsuarioId, nomeArquivo, titulo, conteudoCompleto, dataHoraCliente);
       return res.status(200).json({ ok: true, arquivo, mensagem: 'Transcrição salva com sucesso!' });
     }
 
