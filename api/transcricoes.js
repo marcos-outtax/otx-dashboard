@@ -179,10 +179,26 @@ export default async function handler(req, res) {
   let googleToken   = req.headers['x-google-token']         || '';
   const refreshToken = req.headers['x-google-refresh-token'] || '';
 
-  // Renova token se necessário
+  // Renova token se vazio ou forcado
   if (!googleToken && refreshToken) {
     try { googleToken = await refreshAccessToken(refreshToken); }
     catch (e) { return res.status(401).json({ erro: 'Token Google expirado. Reconecte o Google.' }); }
+  }
+  // Funcao auxiliar para renovar e retry em caso de 401 do Drive
+  async function comRenovacao(fn) {
+    try {
+      return await fn(googleToken);
+    } catch(e) {
+      if((e.message?.includes('401')||e.message?.includes('invalid')) && refreshToken) {
+        try {
+          googleToken = await refreshAccessToken(refreshToken);
+          return await fn(googleToken);
+        } catch(e2) {
+          throw new Error('Token Google expirado. Reconecte o Google no Dashboard.');
+        }
+      }
+      throw e;
+    }
   }
   // Para GET de listagem sem google token, retorna lista vazia em vez de erro
   if (!googleToken) {
@@ -200,10 +216,10 @@ export default async function handler(req, res) {
       const { de, ate } = req.query;
 
       // Garante pasta raiz e pasta do usuário
-      const pastaRaizId    = await buscarOuCriarPasta(googleToken, PASTA_RAIZ);
-      const pastaUsuarioId = await buscarOuCriarPasta(googleToken, loginUsuario, pastaRaizId);
+      const pastaRaizId    = await comRenovacao(t=>buscarOuCriarPasta(t, PASTA_RAIZ));
+      const pastaUsuarioId = await comRenovacao(t=>buscarOuCriarPasta(t, loginUsuario, pastaRaizId));
 
-      const arquivos = await listarArquivos(googleToken, pastaUsuarioId, de, ate);
+      const arquivos = await comRenovacao(t=>listarArquivos(t, pastaUsuarioId, de, ate));
       const resp = { ok: true, arquivos, usuario: loginUsuario };
       if (googleToken !== (req.headers['x-google-token']||'')) resp.newAccessToken = googleToken;
       return res.status(200).json(resp);
@@ -255,8 +271,8 @@ export default async function handler(req, res) {
       const { titulo, conteudo, participantes, dataHoraCliente } = req.body || {};
       if (!titulo || !conteudo) return res.status(400).json({ erro: 'Título e conteúdo são obrigatórios.' });
 
-      const pastaRaizId    = await buscarOuCriarPasta(googleToken, PASTA_RAIZ);
-      const pastaUsuarioId = await buscarOuCriarPasta(googleToken, loginUsuario, pastaRaizId);
+      const pastaRaizId    = await comRenovacao(t=>buscarOuCriarPasta(t, PASTA_RAIZ));
+      const pastaUsuarioId = await comRenovacao(t=>buscarOuCriarPasta(t, loginUsuario, pastaRaizId));
 
       const agora       = new Date();
       const dataStr     = agora.toISOString().split('T')[0];
