@@ -96,6 +96,7 @@ async function listarArquivos(token, pastaId, de, ate) {
     titulo:    (f.description||'').split('||')[0] || f.name.replace('.enc',''),
     dataHora:  (f.description||'').split('||')[1] || null,
     data:      (f.description||'').split('||')[1] || new Date(f.createdTime).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}),
+    participantes: (f.description||'').split('||')[2] || '',
     dataISO:   f.createdTime,
   }));
 }
@@ -111,12 +112,12 @@ async function lerArquivo(token, fileId) {
 }
 
 // ── Drive: salva arquivo criptografado ───────────────────────
-async function salvarArquivo(token, pastaId, nomeArquivo, titulo, conteudo, dataHora) {
+async function salvarArquivo(token, pastaId, nomeArquivo, titulo, conteudo, dataHora, participantes) {
   const conteudoCriptografado = criptografar(conteudo);
 
   const meta = {
     name:        nomeArquivo + '.enc',
-    description: titulo + "||" + (dataHora||new Date().toLocaleString("pt-BR")),
+    description: titulo + "||" + (dataHora||new Date().toLocaleString("pt-BR")) + "||" + (participantes||""),
     parents:     [pastaId],
   };
 
@@ -276,7 +277,7 @@ export default async function handler(req, res) {
         conteudo,
       ].filter(l => l !== null && l !== undefined).join('\n');
 
-      const arquivo = await salvarArquivo(googleToken, pastaUsuarioId, nomeArquivo, titulo, conteudoCompleto, dataHoraCliente);
+      const arquivo = await salvarArquivo(googleToken, pastaUsuarioId, nomeArquivo, titulo, conteudoCompleto, dataHoraCliente, participantes);
       return res.status(200).json({ ok: true, arquivo, mensagem: 'Transcrição salva com sucesso!' });
     }
 
