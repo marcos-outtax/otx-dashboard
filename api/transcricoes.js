@@ -203,7 +203,9 @@ export default async function handler(req, res) {
       const pastaUsuarioId = await buscarOuCriarPasta(googleToken, loginUsuario, pastaRaizId);
 
       const arquivos = await listarArquivos(googleToken, pastaUsuarioId, de, ate);
-      return res.status(200).json({ ok: true, arquivos, usuario: loginUsuario });
+      const resp = { ok: true, arquivos, usuario: loginUsuario };
+      if (googleToken !== (req.headers['x-google-token']||'')) resp.newAccessToken = googleToken;
+      return res.status(200).json(resp);
     }
 
     // ── GET /api/transcricoes?admin=1 — visão admin ──────────
