@@ -1013,6 +1013,7 @@ function cardTranscricao(a,isAdmin=false){
       <div style="flex:1;min-width:0;">
         <div style="font-size:13px;font-weight:600;color:var(--azul-escuro);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${a.titulo||a.nome}</div>
         <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">📅 ${a.data}${isAdmin&&a.usuario?' · 👤 '+a.usuario:''}</div>
+        ${a.participantes?'<div style="font-size:11px;color:var(--text-muted);margin-top:2px;">👥 '+a.participantes+'</div>':''}
       </div>
       <div style="display:flex;gap:6px;flex-shrink:0;">
         <button class="btn" style="padding:5px 12px;font-size:11px;" onclick="verTranscricao('${a.id}','${(a.titulo||a.nome).replace(/'/g,"\\'")}','${a.data}')">👁 Ver</button>
