@@ -1258,24 +1258,67 @@ async function consultarCnpjReuniao(idCard,dealId,dealNome,funil,estagio){
   const resultEl=document.getElementById('cnpj-reuniao-result-'+idCard);
   resultEl.innerHTML=load('Consultando Receita Federal...');
   try{
-    const r=await fetch(`/api/cnpj?cnpj=${raw}`);const d=await r.json();
+    const r=await fetch(`/api/cnpj?cnpj=${raw}`);
+    const d=await r.json();
     if(!r.ok)throw new Error(d.erro||'Erro ao consultar CNPJ');
+    // Normaliza e enriquece com BrasilAPI se endereço incompleto
     resultEl.innerHTML=load('Enriquecendo dados de endereco...');
     const n=await normalizarCNPJAsync(d);
-    const sit=n.situacao_cadastral;const sitCor=sit.toLowerCase().includes('ativa')?'#1D9E75':'#E24B4A';
-    const dadosCnpj={razao_social:n.razao_social,nome_fantasia:n.nome_fantasia,cnpj:n.cnpj,situacao_cadastral:n.situacao_cadastral,cnae_cod:n.cnae_cod,cnae_desc:n.cnae_desc,porte:n.porte,municipio:n.municipio,uf:n.uf,cep:n.cep,logradouro:n.logradouro,numero:n.numero,complemento:n.complemento,bairro:n.bairro,capital:n.capital,natureza_juridica:n.natureza_juridica,data_abertura:n.data_abertura,simples:n.simples,mei:n.mei,telefone:n.telefone,email:n.email,cnaes_secundarios:n.cnaes_secundarios,funil:funil,estagio:estagio,nome:dealNome,dealId:dealId};
+    const sit=n.situacao_cadastral;
+    const sitCor=sit.toLowerCase().includes('ativa')?'#1D9E75':'#E24B4A';
+    const dadosCnpj={
+      razao_social:n.razao_social,
+      nome_fantasia:n.nome_fantasia,
+      cnpj:n.cnpj,
+      situacao_cadastral:n.situacao_cadastral,
+      cnae_cod:n.cnae_cod,
+      cnae_desc:n.cnae_desc,
+      porte:n.porte,
+      municipio:n.municipio,
+      uf:n.uf,
+      cep:n.cep,
+      logradouro:n.logradouro,
+      numero:n.numero,
+      complemento:n.complemento,
+      bairro:n.bairro,
+      capital:n.capital,
+      natureza_juridica:n.natureza_juridica,
+      data_abertura:n.data_abertura,
+      simples:n.simples,
+      mei:n.mei,
+      telefone:n.telefone,
+      email:n.email,
+      cnaes_secundarios:n.cnaes_secundarios,
+      funil:funil,
+      estagio:estagio,
+      nome:dealNome,
+      dealId:dealId
+    };
     window['_cnpjDados_'+idCard]=dadosCnpj;
     const cnaes=n.cnaes_secundarios.slice(0,8);
+    const simplesLabel=n.simples===true?'✅ Sim':n.simples===false?'Não':'—';
+    const meiLabel=n.mei===true?'✅ Sim':n.mei===false?'Não':'—';
     const wrap=document.createElement('div');
     wrap.style.cssText='background:var(--branco);border:1px solid var(--border);border-radius:8px;padding:12px;margin-top:4px;';
-    wrap.innerHTML=`<div class="two-col"><div class="ib"><div class="l">Razão Social</div><div class="v">${n.razao_social||'-'}</div></div><div class="ib"><div class="l">Nome Fantasia</div><div class="v">${n.nome_fantasia||'-'}</div></div></div>
-    <div class="three-col"><div class="ib"><div class="l">CNPJ</div><div class="v">${n.cnpj||'-'}</div></div><div class="ib"><div class="l">Situação</div><div class="v" style="color:${sitCor};font-weight:700;">${sit||'-'}</div></div><div class="ib"><div class="l">Porte</div><div class="v">${n.porte||'-'}</div></div></div>
-    ${cnaes.length?`<div class="ib" style="margin-bottom:8px;"><div class="l">CNAEs Secundários</div><div class="v">${cnaes.map(c=>`<div class="cnae-row"><span class="cnae-code">${c.codigo}</span>${c.descricao}</div>`).join('')}</div></div>`:''}
-    <div class="act-row" style="margin-top:8px;"></div>`;
-    const btn=document.createElement('button');btn.className='btn btn-p';btn.style.fontSize='11px';btn.textContent='🤖 Análise Tributária com IA';
+    wrap.innerHTML=`
+  <div class="two-col"><div class="ib"><div class="l">Razão Social</div><div class="v">${n.razao_social||'-'}</div></div><div class="ib"><div class="l">Nome Fantasia</div><div class="v">${n.nome_fantasia||'-'}</div></div></div>
+  <div class="three-col"><div class="ib"><div class="l">CNPJ</div><div class="v">${n.cnpj||'-'}</div></div><div class="ib"><div class="l">Situação</div><div class="v" style="color:${sitCor};font-weight:700;">${sit||'-'}</div></div><div class="ib"><div class="l">Porte</div><div class="v">${n.porte||'-'}</div></div></div>
+  <div class="three-col"><div class="ib"><div class="l">Natureza Jurídica</div><div class="v">${n.natureza_juridica||'-'}</div></div><div class="ib"><div class="l">Capital Social</div><div class="v">${n.capital?'R$ '+Number(n.capital).toLocaleString('pt-BR'):'-'}</div></div><div class="ib"><div class="l">Abertura</div><div class="v">${n.data_abertura||'-'}</div></div></div>
+  <div class="two-col"><div class="ib"><div class="l">Simples Nacional</div><div class="v">${simplesLabel}</div></div><div class="ib"><div class="l">MEI</div><div class="v">${meiLabel}</div></div></div>
+  <div class="ib" style="margin-bottom:8px;"><div class="l">CNAE Principal</div><div class="v">${n.cnae_cod?`<span class="cnae-code">${n.cnae_cod}</span>${n.cnae_desc||''}`:'-'}</div></div>
+  ${cnaes.length?`<div class="ib" style="margin-bottom:8px;"><div class="l">CNAEs Secundários (${n.cnaes_secundarios.length})</div><div class="v">${cnaes.map(c=>`<div class="cnae-row"><span class="cnae-code">${c.codigo}</span>${c.descricao}</div>`).join('')}${n.cnaes_secundarios.length>8?`<div style="font-size:10px;color:var(--text-muted);margin-top:3px;">+${n.cnaes_secundarios.length-8} outros</div>`:''}</div></div>`:''}
+  <div class="ib" style="margin-bottom:8px;"><div class="l">Município / UF</div><div class="v">${n.municipio||'-'} / ${n.uf||'-'}</div></div>
+  ${(n.logradouro||n.bairro||n.cep)?`<div class="ib" style="margin-bottom:8px;"><div class="l">Endereço completo</div><div class="v">${[n.logradouro,n.numero,n.complemento,n.bairro].filter(Boolean).join(', ')||'-'}<br><span style="font-size:10px;color:var(--text-muted);">CEP: ${n.cep||'-'} · ${n.municipio||'-'} / ${n.uf||'-'}</span></div></div>`:''}
+  ${(n.telefone||n.email)?`<div class="two-col" style="margin-bottom:8px;"><div class="ib"><div class="l">Telefone</div><div class="v">${n.telefone||'-'}</div></div><div class="ib"><div class="l">E-mail</div><div class="v" style="word-break:break-all;">${n.email||'-'}</div></div></div>`:''}
+  <div class="act-row" style="margin-top:8px;"></div>`;
+    const btn=document.createElement('button');
+    btn.className='btn btn-p';btn.style.fontSize='11px';btn.textContent='🤖 Análise Tributária com IA';
     btn.addEventListener('click',function(){abrirAnaliseIAReuniao(idCard,dealId,window['_cnpjDados_'+idCard]);});
     wrap.querySelector('.act-row').appendChild(btn);
-    const btnRD=document.createElement('button');btnRD.className='btn btn-s';btnRD.style.fontSize='11px';btnRD.innerHTML='📋 Preencher no RD Station';
+    // Botão Preencher no RD Station
+    const btnRD=document.createElement('button');
+    btnRD.className='btn btn-s';btnRD.style.fontSize='11px';
+    btnRD.innerHTML='📋 Preencher no RD Station';
     btnRD.addEventListener('click',function(){abrirModalPreencherRD(idCard,dealId,window['_cnpjDados_'+idCard]);});
     wrap.querySelector('.act-row').appendChild(btnRD);
     resultEl.innerHTML='';resultEl.appendChild(wrap);
@@ -1507,13 +1550,192 @@ function cardFacebook(c){
   </div></div>
 </div>`;
 }
-function exportarPDFFacebook(){if(!_fbDadosAtual){alert('Busque os dados primeiro.');return;}alert('Exportação PDF disponível em breve.');}
-function exportarTXTFacebook(){if(!_fbDadosAtual){alert('Busque os dados primeiro.');return;}const d=_fbDadosAtual;const totais=d.totais||{};const blob=new Blob([`OUTTAX — Relatório Facebook Ads\nGerado em: ${new Date().toLocaleString('pt-BR')}\n\nInvestimento: ${fmtBRL(totais.investimento)}\nLeads: ${totais.leads||0}\nCPL: ${fmtBRL(totais.cpl)}\n`],{type:'text/plain'});const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(blob),download:'facebook-ads.txt'});a.click();}
-function exportarXLSFacebook(){if(!_fbDadosAtual){alert('Busque os dados primeiro.');return;}alert('Exportação XLS disponível em breve.');}
+function exportarPDFFacebook(){
+  if(!_fbDadosAtual){alert('Busque os dados primeiro.');return;}
+  const d=_fbDadosAtual;
+  const fmtNum=v=>v!=null?Number(v).toLocaleString('pt-BR'):'-';
+  const de=document.getElementById('fb-de')?.value||'';
+  const ate=document.getElementById('fb-ate')?.value||'';
+  const periodo=de&&ate?`${new Date(de+'T12:00:00').toLocaleDateString('pt-BR')} a ${new Date(ate+'T12:00:00').toLocaleDateString('pt-BR')}`:'—';
+  const agora=new Date().toLocaleString('pt-BR');
+  const totais=d.totais||{};
+  const conta=d.conta||{};
+  const ativas=d.ativas||[];
+  const pausadas=d.pausadas||[];
+  const pct=conta.saldoInicial>0?Math.min(Math.round((conta.investidoPeriodo/conta.saldoInicial)*100),100):0;
 
-// ── ANÁLISE MARKETING ────────────────────────────────────
-let _mkDeals=[];let _mkDrillAberto=null;
-let _mkDealsVendidos=[];let _mkDealsPerdidos=[];let _mkDealsAbertos=[];let _mkPeriodoLabel='';
+  const css=`
+    *{margin:0;padding:0;box-sizing:border-box;}
+    body{font-family:'Segoe UI',Arial,sans-serif;font-size:12px;color:#1a1a2e;background:#fff;padding:0;}
+    .page{width:210mm;min-height:297mm;padding:16mm 18mm;background:#fff;}
+    .header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #152c6b;padding-bottom:12px;margin-bottom:20px;}
+    .logo-area h1{font-size:22px;font-weight:800;color:#152c6b;letter-spacing:.04em;line-height:1;}
+    .logo-area p{font-size:10px;color:#5a6e99;margin-top:3px;}
+    .header-right{text-align:right;font-size:10px;color:#5a6e99;}
+    .header-right strong{display:block;font-size:13px;color:#152c6b;margin-bottom:2px;}
+    .section-title{font-size:10px;font-weight:700;color:#5a6e99;text-transform:uppercase;letter-spacing:.08em;margin:18px 0 8px;padding-bottom:4px;border-bottom:1px solid #d6e0f0;}
+    .cards-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:6px;}
+    .card{background:#f0f4fb;border-radius:8px;padding:10px 12px;border-top:3px solid #285199;}
+    .card.verde{border-top-color:#1D9E75;}
+    .card.laranja{border-top-color:#FF8E2A;}
+    .card.roxo{border-top-color:#7C3AED;}
+    .card.vermelho{border-top-color:#E24B4A;}
+    .card .lbl{font-size:9px;color:#5a6e99;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;}
+    .card .val{font-size:18px;font-weight:700;color:#152c6b;}
+    .card .sub{font-size:9px;color:#5a6e99;margin-top:2px;}
+    .saldo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:6px;}
+    .saldo-card{border-radius:8px;padding:10px 12px;border-top:3px solid #285199;}
+    .saldo-card.ini{background:#e8eef8;border-top-color:#285199;}
+    .saldo-card.inv{background:#fff0e0;border-top-color:#FF8E2A;}
+    .saldo-card.fin{background:#eaf3de;border-top-color:#1D9E75;}
+    .saldo-card.fin-neg{background:#fcebeb;border-top-color:#E24B4A;}
+    .saldo-card .lbl{font-size:9px;color:#5a6e99;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;}
+    .saldo-card .val{font-size:17px;font-weight:700;color:#152c6b;}
+    .saldo-card .sub{font-size:9px;color:#5a6e99;margin-top:2px;}
+    .progress-wrap{background:#f0f4fb;border-radius:8px;padding:10px 14px;margin-bottom:16px;}
+    .progress-label{display:flex;justify-content:space-between;font-size:10px;color:#5a6e99;margin-bottom:6px;}
+    .progress-track{height:8px;background:#d6e0f0;border-radius:99px;overflow:hidden;}
+    .progress-fill{height:100%;border-radius:99px;}
+    table{width:100%;border-collapse:collapse;margin-bottom:14px;font-size:10px;}
+    thead tr{background:#152c6b;color:#fff;}
+    thead th{padding:7px 10px;text-align:left;font-weight:600;font-size:9px;text-transform:uppercase;letter-spacing:.05em;}
+    thead th:not(:first-child){text-align:right;}
+    tbody tr{border-bottom:1px solid #e8eef8;}
+    tbody tr:nth-child(even){background:#f8fafc;}
+    tbody td{padding:7px 10px;color:#152c6b;}
+    tbody td:not(:first-child){text-align:right;}
+    .badge-ativa{display:inline-block;background:#eaf3de;color:#27500A;border-radius:20px;padding:1px 7px;font-size:9px;font-weight:700;}
+    .badge-pausada{display:inline-block;background:#f0f0f0;color:#6b6b6b;border-radius:20px;padding:1px 7px;font-size:9px;font-weight:700;}
+    .footer{margin-top:24px;padding-top:10px;border-top:1px solid #d6e0f0;display:flex;justify-content:space-between;font-size:9px;color:#5a6e99;}
+    @media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}
+  `;
+
+  const ativasRows=ativas.map(c=>`
+    <tr>
+      <td><strong>${c.nome}</strong> <span class="badge-ativa">Ativa</span></td>
+      <td>${fmtBRL(c.investimento)}</td>
+      <td>${c.leads||0}</td>
+      <td>${c.cpl?fmtBRL(c.cpl):'-'}</td>
+      <td>${c.ctr?c.ctr+'%':'-'}</td>
+      <td>${c.cpc?fmtBRL(c.cpc):'-'}</td>
+      <td>${c.taxaConversao?c.taxaConversao+'%':'-'}</td>
+    </tr>`).join('');
+
+  const pausadasRows=pausadas.filter(c=>c.investimento>0).map(c=>`
+    <tr>
+      <td><strong>${c.nome}</strong> <span class="badge-pausada">Pausada</span></td>
+      <td>${fmtBRL(c.investimento)}</td>
+      <td>${c.leads||0}</td>
+      <td>${c.cpl?fmtBRL(c.cpl):'-'}</td>
+      <td>${c.ctr?c.ctr+'%':'-'}</td>
+      <td>${c.cpc?fmtBRL(c.cpc):'-'}</td>
+      <td>${c.taxaConversao?c.taxaConversao+'%':'-'}</td>
+    </tr>`).join('');
+
+  const barColor=pct>=90?'#E24B4A':pct>=70?'#FF8E2A':'#1D9E75';
+  const negSaldo=(conta.saldoFinal||0)<0;
+
+  const html=`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">
+  <title>Relatório Facebook Ads — Outtax</title><style>${css}</style></head>
+  <body><div class="page">
+    <div class="header">
+      <div class="logo-area">
+        <h1>OUTTAX</h1>
+        <p>Dashboard de Marketing</p>
+      </div>
+      <div class="header-right">
+        <strong>Relatório — Facebook Ads</strong>
+        <span>Período: ${periodo}</span><br>
+        <span>Gerado em: ${agora}</span>
+      </div>
+    </div>
+    <div class="section-title">Saldo da conta Facebook Ads</div>
+    <div class="saldo-grid">
+      <div class="saldo-card ini"><div class="lbl">Saldo inicial do período</div><div class="val">${fmtBRL(conta.saldoInicial)}</div><div class="sub">balance + spend do período via API</div></div>
+      <div class="saldo-card inv"><div class="lbl">Total investido no período</div><div class="val">${fmtBRL(conta.investidoPeriodo)}</div><div class="sub">soma de todas as campanhas</div></div>
+      <div class="saldo-card ${negSaldo?'fin-neg':'fin'}"><div class="lbl">Saldo final</div><div class="val">${fmtBRL(conta.saldoFinal)}</div><div class="sub">saldo inicial − total investido</div></div>
+    </div>
+    <div class="progress-wrap">
+      <div class="progress-label"><span>Consumo do orçamento da conta</span><span style="font-weight:700;color:${barColor}">${pct}% consumido</span></div>
+      <div class="progress-track"><div class="progress-fill" style="width:${pct}%;background:${barColor}"></div></div>
+    </div>
+    <div class="section-title">Métricas do período</div>
+    <div class="cards-grid">
+      <div class="card"><div class="lbl">Investimento</div><div class="val">${fmtBRL(totais.investimento)}</div></div>
+      <div class="card verde"><div class="lbl">Leads gerados</div><div class="val">${fmtNum(totais.leads)}</div></div>
+      <div class="card"><div class="lbl">CPL médio</div><div class="val">${totais.cpl?fmtBRL(totais.cpl):'-'}</div></div>
+    </div>
+    <div class="cards-grid">
+      <div class="card"><div class="lbl">Alcance</div><div class="val">${fmtNum(totais.alcance)}</div></div>
+      <div class="card"><div class="lbl">Impressões</div><div class="val">${fmtNum(totais.impressoes)}</div></div>
+      <div class="card"><div class="lbl">CTR</div><div class="val">${totais.ctr?Number(totais.ctr).toFixed(2)+'%':'-'}</div></div>
+    </div>
+    <div class="cards-grid">
+      <div class="card laranja"><div class="lbl">CPC médio</div><div class="val">${totais.cliques&&totais.investimento?fmtBRL(totais.investimento/totais.cliques):'-'}</div></div>
+      <div class="card laranja"><div class="lbl">Taxa de conversão</div><div class="val">${totais.taxaConversao?totais.taxaConversao+'%':'-'}</div></div>
+      <div class="card"><div class="lbl">Média diária</div><div class="val">${totais.mediaDiaria?fmtBRL(totais.mediaDiaria)+'/dia':'-'}</div></div>
+    </div>
+    ${ativas.length?`<div class="section-title">Campanhas ativas (${ativas.length})</div><table><thead><tr><th>Campanha</th><th>Investimento</th><th>Leads</th><th>CPL</th><th>CTR</th><th>CPC</th><th>Conv.</th></tr></thead><tbody>${ativasRows}</tbody></table>`:''}
+    ${pausadasRows?`<div class="section-title">Campanhas pausadas com gasto no período</div><table><thead><tr><th>Campanha</th><th>Investimento</th><th>Leads</th><th>CPL</th><th>CTR</th><th>CPC</th><th>Conv.</th></tr></thead><tbody>${pausadasRows}</tbody></table>`:''}
+    <div class="footer"><span>Outtax Dashboard — otx-dashboard.vercel.app</span><span>Fonte: API Graph do Facebook Ads v19.0</span><span>${agora}</span></div>
+  </div></body></html>`;
+
+  const win=window.open('','_blank','width=900,height=700');
+  win.document.write(html);win.document.close();win.focus();
+  setTimeout(()=>{win.print();},600);
+}
+function exportarTXTFacebook(){
+  if(!_fbDadosAtual){alert('Busque os dados primeiro.');return;}
+  const d=_fbDadosAtual;
+  const fmtNum=v=>v!=null?Number(v).toLocaleString('pt-BR'):'-';
+  const de=document.getElementById('fb-de')?.value||'';const ate=document.getElementById('fb-ate')?.value||'';
+  const periodo=de&&ate?`${new Date(de+'T12:00:00').toLocaleDateString('pt-BR')} a ${new Date(ate+'T12:00:00').toLocaleDateString('pt-BR')}`:'—';
+  const totais=d.totais||{};const conta=d.conta||{};const ativas=d.ativas||[];const pausadas=d.pausadas||[];
+  const pct=conta.saldoInicial>0?Math.min(Math.round((conta.investidoPeriodo/conta.saldoInicial)*100),100):0;
+  const linha='='.repeat(62);const sublinha='-'.repeat(62);
+  let t='';
+  t+=linha+'\n';t+='  OUTTAX — RELATÓRIO FACEBOOK ADS\n';t+=`  Período: ${periodo}\n`;t+=`  Gerado em: ${new Date().toLocaleString('pt-BR')}\n`;t+=linha+'\n\n';
+  t+='SALDO DA CONTA FACEBOOK ADS\n'+sublinha+'\n';t+=`Saldo inicial do período : ${fmtBRL(conta.saldoInicial)}\n`;t+=`Total investido no período: ${fmtBRL(conta.investidoPeriodo)}\n`;t+=`Saldo final               : ${fmtBRL(conta.saldoFinal)}\n`;t+=`Consumo do orçamento      : ${pct}%\n\n`;
+  t+='MÉTRICAS DO PERÍODO\n'+sublinha+'\n';t+=`Investimento total : ${fmtBRL(totais.investimento)}\n`;t+=`Leads gerados      : ${fmtNum(totais.leads)}\n`;t+=`CPL médio          : ${totais.cpl?fmtBRL(totais.cpl):'-'}\n`;t+=`Alcance            : ${fmtNum(totais.alcance)}\n`;t+=`Impressões         : ${fmtNum(totais.impressoes)}\n`;t+=`CTR                : ${totais.ctr?Number(totais.ctr).toFixed(2)+'%':'-'}\n`;t+=`CPC médio          : ${totais.cliques&&totais.investimento?fmtBRL(totais.investimento/totais.cliques):'-'}\n`;t+=`Taxa de conversão  : ${totais.taxaConversao?totais.taxaConversao+'%':'-'}\n`;t+=`Média diária       : ${totais.mediaDiaria?fmtBRL(totais.mediaDiaria)+'/dia':'-'}\n\n`;
+  if(ativas.length){t+=`CAMPANHAS ATIVAS (${ativas.length})\n`+sublinha+'\n';ativas.forEach((c,i)=>{t+=`${i+1}. ${c.nome}\n`;t+=`   Investimento: ${fmtBRL(c.investimento)}\n`;t+=`   Leads       : ${c.leads||0}\n`;t+=`   CPL         : ${c.cpl?fmtBRL(c.cpl):'-'}\n\n`;});}
+  const pausadasComGasto=pausadas.filter(c=>c.investimento>0);
+  if(pausadasComGasto.length){t+=`CAMPANHAS PAUSADAS COM GASTO (${pausadasComGasto.length})\n`+sublinha+'\n';pausadasComGasto.forEach((c,i)=>{t+=`${i+1}. ${c.nome}\n`;t+=`   Investimento: ${fmtBRL(c.investimento)}\n`;t+=`   Leads       : ${c.leads||0}\n\n`;});}
+  t+=linha+'\n';t+=`Fonte: API Graph do Facebook Ads v19.0\n`;t+=linha+'\n';
+  const blob=new Blob([t],{type:'text/plain;charset=utf-8'});
+  const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(blob),download:`outtax_facebook_ads_${de||'relatorio'}.txt`});
+  a.click();URL.revokeObjectURL(a.href);
+}
+function exportarXLSFacebook(){
+  if(!_fbDadosAtual){alert('Busque os dados primeiro.');return;}
+  if(typeof XLSX==='undefined'){alert('Biblioteca XLSX não carregada.');return;}
+  const d=_fbDadosAtual;
+  const de=document.getElementById('fb-de')?.value||'';const ate=document.getElementById('fb-ate')?.value||'';
+  const totais=d.totais||{};const conta=d.conta||{};const ativas=d.ativas||[];const pausadas=d.pausadas||[];
+  const pct=conta.saldoInicial>0?Math.min(Math.round((conta.investidoPeriodo/conta.saldoInicial)*100),100):0;
+  const periodo=de&&ate?`${new Date(de+'T12:00:00').toLocaleDateString('pt-BR')} a ${new Date(ate+'T12:00:00').toLocaleDateString('pt-BR')}`:'';
+  const wb=XLSX.utils.book_new();
+  const wsResumo=XLSX.utils.aoa_to_sheet([['OUTTAX — Relatório Facebook Ads'],['Período:',periodo],['Gerado em:',new Date().toLocaleString('pt-BR')],[],['SALDO DA CONTA FACEBOOK ADS'],['Campo','Valor'],['Saldo inicial do período (R$)',conta.saldoInicial||0],['Total investido no período (R$)',conta.investidoPeriodo||0],['Saldo final (R$)',conta.saldoFinal||0],['Consumo do orçamento (%)',pct],[],['MÉTRICAS DO PERÍODO'],['Campo','Valor'],['Investimento total (R$)',totais.investimento||0],['Leads gerados',totais.leads||0],['CPL médio (R$)',totais.cpl||0],['Alcance',totais.alcance||0],['Impressões',totais.impressoes||0],['CTR (%)',totais.ctr?Number(totais.ctr):0],['CPC médio (R$)',totais.cliques&&totais.investimento?(totais.investimento/totais.cliques):0],['Taxa de conversão (%)',totais.taxaConversao||0],['Média diária (R$)',totais.mediaDiaria||0]]);
+  wsResumo['!cols']=[{wch:36},{wch:22}];XLSX.utils.book_append_sheet(wb,wsResumo,'Resumo');
+  const headerCamps=['Campanha','Status','Investimento (R$)','Leads','CPL (R$)','CTR (%)','CPC (R$)','Conv. (%)','Alcance','Impressões'];
+  const rowsAtivas=ativas.map(c=>[c.nome,'Ativa',c.investimento||0,c.leads||0,c.cpl||0,c.ctr?Number(c.ctr):0,c.cpc?Number(c.cpc):0,c.taxaConversao||0,c.alcance||0,c.impressoes||0]);
+  const rowsPausadas=pausadas.map(c=>[c.nome,'Pausada',c.investimento||0,c.leads||0,c.cpl||0,c.ctr?Number(c.ctr):0,c.cpc?Number(c.cpc):0,c.taxaConversao||0,c.alcance||0,c.impressoes||0]);
+  const wsCamps=XLSX.utils.aoa_to_sheet([headerCamps,...rowsAtivas,...rowsPausadas]);
+  wsCamps['!cols']=[{wch:46},{wch:10},{wch:18},{wch:8},{wch:12},{wch:8},{wch:10},{wch:10},{wch:12},{wch:12}];
+  XLSX.utils.book_append_sheet(wb,wsCamps,'Campanhas');
+  XLSX.writeFile(wb,`outtax_facebook_ads_${de||'relatorio'}.xlsx`);
+}
+
+// ══════════════════════════════════════════════════════════════
+// ANÁLISE MARKETING — inclui nova funcionalidade de drill nos cards RD
+// ══════════════════════════════════════════════════════════════
+let _mkDeals=[];
+let _mkDrillAberto=null;
+// Armazena os deals separados por tipo para o modal
+let _mkDealsVendidos=[];
+let _mkDealsPerdidos=[];
+let _mkDealsAbertos=[];
+let _mkPeriodoLabel='';
+
 function limparFiltrosMK(){document.getElementById('mk-de').value='';document.getElementById('mk-ate').value='';document.getElementById('mk-campanha').value='all';}
 async function carregarAnaliseMarketing(){
   const de=document.getElementById('mk-de').value;const ate=document.getElementById('mk-ate').value;
@@ -1582,10 +1804,24 @@ async function carregarAnaliseMarketing(){
       const bar=document.getElementById('mk-progress-bar');bar.style.width=pct+'%';bar.style.background=barColor;
       document.getElementById('mk-saldo-wrap').style.display='block';
     }
+    const periodoLabel=_mkPeriodoLabel;
+    const ordemFunis=funis.map(f=>f._id||f.id);
+    const funisOrdenados=Object.keys(porFunil).sort((a,b)=>{const ia=ordemFunis.indexOf(a)===-1?99:ordemFunis.indexOf(a);const ib=ordemFunis.indexOf(b)===-1?99:ordemFunis.indexOf(b);return ia-ib;});
+    let _eidx=Date.now()%100000;
+    document.getElementById('mk-pipeline-funil-body').innerHTML=funisOrdenados.map(fid=>{
+      const funil=porFunil[fid];const total=Object.values(funil.estagios).flat().length;const fidBody='mkfb-'+(++_eidx);
+      const estagiosOrdenados=Object.keys(funil.estagios).sort((a,b)=>(a.toLowerCase().includes('perdid')?1:0)-(b.toLowerCase().includes('perdid')?1:0));
+      const estagiosHtml=estagiosOrdenados.map(est=>{
+        const leads=funil.estagios[est];const cor=corEstagio(est);const eid='mke-'+(++_eidx);
+        const cards=leads.map((d)=>{const di=diasAtras(d.updated_at||d.created_at);const urg=di>7?'urgente':di>=3?'atencao':'ok';return cardP({...d,di,urg},++_eidx);}).join('');
+        return `<div style="border:1px solid var(--border);border-radius:8px;margin-bottom:6px;overflow:hidden;"><div onclick="(function(el){var b=document.getElementById('${eid}');var op=b.style.display!=='none';b.style.display=op?'none':'block';el.querySelector('.mchv').style.transform=op?'':'rotate(180deg)'})(this)" style="display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;background:var(--branco);" onmouseover="this.style.background='var(--azul-pale)'" onmouseout="this.style.background='var(--branco)'"><div style="width:9px;height:9px;border-radius:50%;background:${cor};flex-shrink:0;"></div><span style="font-size:12px;font-weight:600;color:var(--text);flex:1;">${est}</span><span style="font-size:11px;font-weight:700;color:${cor};background:${cor}18;padding:2px 10px;border-radius:20px;">${leads.length}</span><span class="mchv" style="font-size:10px;color:var(--text-muted);transition:transform .2s;">▼</span></div><div id="${eid}" style="display:none;border-top:1px solid var(--border);padding:10px;">${cards}</div></div>`;
+      }).join('');
+      return `<div style="background:var(--branco);border:1px solid var(--border);border-radius:12px;margin-bottom:10px;overflow:hidden;"><div onclick="(function(el){var b=document.getElementById('${fidBody}');var op=b.style.display!=='none';b.style.display=op?'none':'block';el.querySelector('.mchv').style.transform=op?'':'rotate(180deg)'})(this)" style="padding:13px 16px;background:linear-gradient(135deg,var(--azul-escuro),var(--azul-medio));color:#fff;display:flex;align-items:center;justify-content:space-between;cursor:pointer;"><span style="font-size:13px;font-weight:600;">${funil.nome}</span><div style="display:flex;gap:8px;align-items:center;"><span style="font-size:11px;background:rgba(255,255,255,.2);padding:2px 10px;border-radius:20px;">${total} lead${total!==1?'s':''}</span><span style="font-size:11px;opacity:.7;">${periodoLabel}</span><span class="mchv" style="font-size:11px;opacity:.8;transition:transform .2s;">▼</span></div></div><div id="${fidBody}" style="display:none;padding:12px;">${estagiosHtml}</div></div>`;
+    }).join('');
+    document.getElementById('mk-pipeline-funil').style.display='block';
     document.getElementById('mk-stats').style.display='block';
     mkLoading.style.display='none';
     document.getElementById('mk-tabela').style.display='block';
-    document.getElementById('mk-pipeline-funil').style.display='block';
   }catch(e){mkLoading.style.display='none';document.getElementById('mk-empty').style.display='block';document.getElementById('mk-empty').innerHTML=`<div style="color:#791F1F;">Erro: ${e.message}</div>`;}
 }
 function abrirModalLeads(tipo){
@@ -1694,13 +1930,114 @@ function fecharModalAI(){document.getElementById('modal-ai').style.display='none
 function selecionarLLM(llm,el){_llmAtiva=llm;document.querySelectorAll('#modal-ai .llm-btn').forEach(b=>b.classList.remove('ativo'));el.classList.add('ativo');}
 function gerarPromptAI(dados){
   const d=dados||_dadosReuniaoAtual||{};
+  const nomeArquivo='analise-'+(d.razao_social||'cliente').replace(/\s+/g,'-').toLowerCase()+'-'+new Date().toISOString().split('T')[0];
+
   const endParts=[d.logradouro,d.numero,d.complemento,d.bairro].filter(Boolean);
-  const endCompleto=endParts.length?(endParts.join(', ')+(d.cep?' - CEP: '+d.cep:'')+(d.municipio?' - '+d.municipio+'/'+(d.uf||''):'')):(d.municipio?d.municipio+(d.uf?'/'+d.uf:''):'-');
+  const endCompleto=endParts.length
+    ?(endParts.join(', ')+(d.cep?' - CEP: '+d.cep:'')+(d.municipio?' - '+d.municipio+'/'+( d.uf||''):''))
+    :(d.municipio?d.municipio+(d.uf?'/'+d.uf:''):'-');
+
   const capitalFmt=d.capital?'R$ '+Number(d.capital).toLocaleString('pt-BR'):'-';
   const simplesStr=d.simples===true?'SIM':d.simples===false?'NAO':'-';
   const meiStr=d.mei===true?'SIM':d.mei===false?'NAO':'-';
+
+  const cnaesSecStr=(d.cnaes_secundarios||[]).length
+    ?(d.cnaes_secundarios).map(function(c,i){return '  '+(i+1)+'. '+(c.codigo||'')+' - '+(c.descricao||'');}).join('\n')
+    :'Nao informado';
+
+  const cnaesSecCods=(d.cnaes_secundarios||[]).slice(0,3).map(function(c){return c.codigo;}).join(', ');
   const sep='='.repeat(44);
-  const prompt=`Voce e um especialista tributario brasileiro.\n${sep}\nFICHA DO CLIENTE\n${sep}\nRazao Social: ${d.razao_social||'-'}\nCNPJ: ${d.cnpj||'-'}\nSituacao: ${d.situacao_cadastral||'-'}\nPorte: ${d.porte||'-'}\nSimples: ${simplesStr} | MEI: ${meiStr}\nCNAE: ${d.cnae_cod||'-'} - ${d.cnae_desc||'-'}\nEndereco: ${endCompleto}\nCapital: ${capitalFmt}\n${sep}\nGere uma analise tributaria completa para este cliente.`;
+
+  const linhas=[
+    'Voce e um especialista tributario brasileiro. Complete a analise abaixo usando APENAS',
+    'os dados reais do cliente informados. NAO invente dados. NAO use dados genericos.',
+    'Cada secao ja começa com os dados do cliente — continue a partir deles.',
+    '',
+    sep,
+    'FICHA DO CLIENTE',
+    sep,
+    'Razao Social   : '+(d.razao_social||'-'),
+    'Nome Fantasia  : '+(d.nome_fantasia||'-'),
+    'CNPJ           : '+(d.cnpj||'-'),
+    'Situacao       : '+(d.situacao_cadastral||'-'),
+    'Porte          : '+(d.porte||'-'),
+    'Natureza Jur.  : '+(d.natureza_juridica||'-'),
+    'Abertura       : '+(d.data_abertura||'-'),
+    'Capital Social : '+capitalFmt,
+    'Endereco       : '+endCompleto,
+    (d.telefone?'Telefone       : '+d.telefone:''),
+    (d.email?'Email          : '+d.email:''),
+    'Simples Nac.   : '+simplesStr,
+    'MEI            : '+meiStr,
+    'CNAE Principal : '+(d.cnae_cod||'-')+' - '+(d.cnae_desc||'-'),
+    'CNAEs Secund.  :',
+    cnaesSecStr,
+    'Funil CRM      : '+(d.funil||'-'),
+    'Estagio CRM    : '+(d.estagio||'-'),
+    '',
+    sep,
+    'ANALISE TRIBUTARIA — COMPLETE CADA SECAO ABAIXO',
+    sep,
+    '',
+    '## 1. IDENTIFICACAO E PERFIL TRIBUTARIO ATUAL',
+    'A empresa '+(d.razao_social||'-')+', inscrita no CNPJ '+(d.cnpj||'-')+',',
+    'com sede na '+(endCompleto||'-')+', foi constituida em '+(d.data_abertura||'-')+'.',
+    'Classificada como '+(d.porte||'-')+' com capital social de '+capitalFmt+',',
+    'apresenta o seguinte perfil tributario: [COMPLETE — analise a incoerencia entre capital social '+capitalFmt+' e o porte "'+( d.porte||'-')+'" e o impacto disso]',
+    '',
+    '## 2. ANALISE DO REGIME TRIBUTARIO ATUAL',
+    'A '+(d.razao_social||'-')+' NAO e optante pelo Simples Nacional e NAO e MEI.',
+    'Portanto, opera sob regime de: [COMPLETE — deduza Lucro Presumido ou Real e justifique',
+    'considerando o CNAE '+(d.cnae_cod||'')+' e capital social de '+capitalFmt+']',
+    '',
+    '## 3. SIMULACAO DE REGIMES TRIBUTARIOS',
+    'Para uma empresa do setor '+(d.cnae_desc||'construcao civil')+' com o perfil da '+(d.razao_social||'-')+':',
+    '[COMPLETE — simule Simples Nacional Anexo IV, Lucro Presumido e Lucro Real com aliquotas e numeros]',
+    '',
+    '## 4. ANALISE DE CPRB (DESONERAÇÃO DA FOLHA)',
+    'O CNAE '+(d.cnae_cod||'')+' esta contemplado pela CPRB.',
+    '[COMPLETE — calcule viabilidade da CPRB vs INSS patronal 20% para '+(d.razao_social||'-')+']',
+    '',
+    '## 5. OPORTUNIDADES DE ECONOMIA FISCAL',
+    'Para a '+(d.razao_social||'-')+', sediada em '+(d.municipio||'-')+'/'+( d.uf||'-')+', identificamos as seguintes oportunidades:',
+    '[COMPLETE — liste minimo 5 oportunidades concretas e especificas para o CNAE '+(d.cnae_cod||'')+']',
+    '',
+    '## 6. BENEFICIOS FISCAIS APLICAVEIS',
+    'Considerando os CNAEs '+(d.cnae_cod||'')+' e secundarios ('+cnaesSecCods+'), os beneficios fiscais aplicaveis sao:',
+    '[COMPLETE — liste beneficios especificos: RET, REIDI, SUDENE, CPRB, ISS Municipal de '+( d.municipio||'Salvador')+', etc]',
+    '',
+    '## 7. RISCOS FISCAIS E PONTOS DE ATENCAO',
+    'A '+(d.razao_social||'-')+' (CNPJ '+(d.cnpj||'-')+') apresenta os seguintes riscos:',
+    '[COMPLETE — liste minimo 4 riscos especificos para o setor e perfil da empresa]',
+    '',
+    '## 8. PERFIL DO CLIENTE PARA A REUNIAO',
+    'A '+(d.razao_social||'-')+' possui capital social de '+capitalFmt+', esta sediada em',
+    endCompleto+' e atua no setor de '+(d.cnae_desc||'-')+'.',
+    '[COMPLETE — descreva perfil do tomador de decisao, necessidades provaveis e abordagem recomendada]',
+    '',
+    '## 9. PERGUNTAS ESTRATEGICAS PARA A REUNIAO',
+    'Para a reuniao com a '+(d.razao_social||'-')+', as 5 perguntas estrategicas sao:',
+    '[COMPLETE — exatamente 5 perguntas numeradas, especificas para o perfil da empresa]',
+    '',
+    '## 10. RECOMENDACOES ESTRATEGICAS',
+    'Para a '+(d.razao_social||'-')+', recomendamos as seguintes acoes priorizadas:',
+    '[COMPLETE — liste acoes praticas e priorizadas com base nos dados acima]',
+    '',
+    '## 11. RESUMO EXECUTIVO',
+    'A empresa '+(d.razao_social||'-')+', CNPJ '+(d.cnpj||'-')+',',
+    'sediada na '+endCompleto+', apresenta o seguinte panorama tributario:',
+    '[COMPLETE — resumo executivo de no minimo 150 palavras com os principais pontos]',
+    '',
+    sep,
+    'INSTRUCOES FINAIS:',
+    '- Substitua todos os [COMPLETE ...] pelo conteudo real',
+    '- Mantenha os dados ja preenchidos acima em cada secao',
+    '- Use linguagem profissional e objetiva',
+    '- Minimo total: 1000 palavras',
+    '- Salve como: '+nomeArquivo+'.txt'
+  ].filter(function(l){return l!==undefined&&l!==null;});
+
+  const prompt=linhas.join('\n');
   document.getElementById('prompt-preview').textContent=prompt;
 }
 function copiarPromptAI(){const prompt=document.getElementById('prompt-preview').textContent;navigator.clipboard.writeText(prompt).then(()=>{const badge=document.getElementById('badge-copiado');badge.style.opacity='1';setTimeout(()=>badge.style.opacity='0',2500);});}
