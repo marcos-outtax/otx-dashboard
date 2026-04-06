@@ -1075,12 +1075,16 @@ function baixarTranscricao(){
 }
 
 function copiarTranscricao(){
-  if(!_trConteudoAtual)return;
+  if(!_trConteudoAtual){alert('Nenhuma transcrição carregada.');return;}
   navigator.clipboard.writeText(_trConteudoAtual).then(()=>{
-    const btn=event.target;const orig=btn.textContent;
-    btn.textContent='✓ Copiado!';btn.style.color='#1D9E75';
-    setTimeout(()=>{btn.textContent=orig;btn.style.color='';},2000);
-  }).catch(()=>alert('Erro ao copiar'));
+    const btn=document.querySelector('#m-ver-tr .btn[onclick="copiarTranscricao()"]');
+    if(btn){const orig=btn.textContent;btn.textContent='✓ Copiado!';btn.style.color='#1D9E75';setTimeout(()=>{btn.textContent=orig;btn.style.color='';},2000);}
+  }).catch(e=>{
+    // Fallback para navegadores sem clipboard API
+    const ta=document.createElement('textarea');ta.value=_trConteudoAtual;
+    document.body.appendChild(ta);ta.select();document.execCommand('copy');
+    document.body.removeChild(ta);alert('Texto copiado!');
+  });
 }
 
 function abrirResumoIATranscricao(){
