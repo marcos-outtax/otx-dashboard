@@ -1083,9 +1083,6 @@ function copiarTranscricao(){
   }).catch(()=>alert('Erro ao copiar'));
 }
 
-let _trLLMAtiva='chatgpt';
-const _trLLMUrls={chatgpt:'https://chat.openai.com/',gemini:'https://gemini.google.com/',claude:'https://claude.ai/'};
-
 function abrirResumoIATranscricao(){
   const painel=document.getElementById('ver-tr-llm');
   if(painel.style.display==='none'){painel.style.display='block';}
