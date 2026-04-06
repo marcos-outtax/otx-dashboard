@@ -697,9 +697,28 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
       <span style="margin-left:6px;">Carregando...</span>
     </div>
     <div id="ver-tr-conteudo" style="background:var(--azul-pale);border-radius:8px;padding:14px;font-size:12px;line-height:1.8;white-space:pre-wrap;font-family:monospace;max-height:500px;overflow-y:auto;"></div>
-    <div class="modal-ft" style="margin-top:14px;">
+    <div class="modal-ft" style="margin-top:14px;flex-wrap:wrap;gap:8px;">
       <button class="btn-cancel" onclick="fecharModalVerTR()">Fechar</button>
+      <button class="btn" onclick="copiarTranscricao()" style="font-size:12px;">📋 Copiar</button>
       <button class="btn btn-p" onclick="baixarTranscricao()">⬇️ Baixar .txt</button>
+      <button class="btn btn-p" onclick="abrirResumoIATranscricao()" style="background:var(--azul-medio);">🤖 Resumo com IA</button>
+    </div>
+    <div id="ver-tr-llm" style="display:none;border-top:1px solid var(--border);margin-top:14px;padding-top:14px;">
+      <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;">Escolha a IA para gerar o resumo executivo:</div>
+      <div class="llm-grid">
+        <div class="llm-btn ativo" id="tr-llm-chatgpt" onclick="selecionarLLMTR('chatgpt',this)"><div style="font-size:20px;margin-bottom:4px;">🤖</div>ChatGPT</div>
+        <div class="llm-btn" id="tr-llm-gemini" onclick="selecionarLLMTR('gemini',this)"><div style="font-size:20px;margin-bottom:4px;">✨</div>Gemini</div>
+        <div class="llm-btn" id="tr-llm-claude" onclick="selecionarLLMTR('claude',this)"><div style="font-size:20px;margin-bottom:4px;">🧠</div>Claude</div>
+      </div>
+      <div style="background:var(--azul-pale);border-radius:8px;padding:12px;font-size:11px;color:var(--text-muted);margin-top:10px;line-height:1.6;">
+        <strong style="color:var(--azul-escuro);">Como usar:</strong><br>
+        1. Clique em <strong>📋 Copiar</strong> para copiar a transcrição<br>
+        2. Clique em <strong>🚀 Abrir IA</strong> para abrir a IA escolhida<br>
+        3. Cole o texto e peça o resumo executivo
+      </div>
+      <div style="display:flex;gap:8px;margin-top:12px;">
+        <button class="btn btn-p" onclick="copiarEAbrirIATR()" style="flex:1;">📋 Copiar + 🚀 Abrir IA</button>
+      </div>
     </div>
   </div>
 </div>
@@ -1053,6 +1072,40 @@ function baixarTranscricao(){
   const blob=new Blob([_trConteudoAtual],{type:'text/plain;charset=utf-8'});
   const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(blob),download:(_trTituloAtual||'transcricao').replace(/[^a-z0-9]/gi,'-').toLowerCase()+'.txt'});
   a.click();URL.revokeObjectURL(a.href);
+}
+
+function copiarTranscricao(){
+  if(!_trConteudoAtual)return;
+  navigator.clipboard.writeText(_trConteudoAtual).then(()=>{
+    const btn=event.target;const orig=btn.textContent;
+    btn.textContent='✓ Copiado!';btn.style.color='#1D9E75';
+    setTimeout(()=>{btn.textContent=orig;btn.style.color='';},2000);
+  }).catch(()=>alert('Erro ao copiar'));
+}
+
+let _trLLMAtiva='chatgpt';
+const _trLLMUrls={chatgpt:'https://chat.openai.com/',gemini:'https://gemini.google.com/',claude:'https://claude.ai/'};
+
+function abrirResumoIATranscricao(){
+  const painel=document.getElementById('ver-tr-llm');
+  if(painel.style.display==='none'){painel.style.display='block';}
+  else{painel.style.display='none';}
+}
+
+function selecionarLLMTR(llm,el){
+  _trLLMAtiva=llm;
+  document.querySelectorAll('#ver-tr-llm .llm-btn').forEach(b=>b.classList.remove('ativo'));
+  el.classList.add('ativo');
+}
+
+function copiarEAbrirIATR(){
+  if(!_trConteudoAtual){alert('Nenhuma transcrição carregada.');return;}
+  const prompt='Gere um resumo executivo detalhado da seguinte transcrição de reunião:\n\n'+_trConteudoAtual;
+  navigator.clipboard.writeText(prompt).then(()=>{
+    window.open(_trLLMUrls[_trLLMAtiva]||'https://chat.openai.com/','_blank');
+  }).catch(()=>{
+    window.open(_trLLMUrls[_trLLMAtiva]||'https://chat.openai.com/','_blank');
+  });
 }
 
 async function excluirTranscricao(fileId,btn){
