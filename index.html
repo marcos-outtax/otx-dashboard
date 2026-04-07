@@ -565,22 +565,10 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
         <div class="stat stat-clickable" id="card-mk-aberto" style="border-top-color:var(--laranja);cursor:pointer;" onclick="abrirModalLeads('aberto')"><div class="num" id="mk-valor-aberto" style="color:var(--laranja)">—</div><div class="lbl">Valor em Aberto RD</div></div>
       </div>
     </div>
-    <div id="mk-tabela" style="display:none;background:var(--branco);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:16px;">
-      <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;padding:10px 14px;background:var(--azul-pale);border-bottom:1px solid var(--border);">
-        <span style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;">Campanha</span>
-        <span style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;text-align:right;">Investimento</span>
-        <span style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;text-align:right;">Leads FB</span>
-        <span style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;text-align:right;">CPL</span>
-        <span style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;text-align:right;">CPM</span>
-      </div>
+    <div id="mk-tabela" style="display:none;margin-bottom:16px;">
+      <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;">Campanhas × Pipeline</div>
       <div id="mk-table-body"></div>
     </div>
-    <div id="mk-camp-drill" style="display:none;background:var(--branco);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:16px;"></div>
-    <div id="mk-pipeline-funil" style="display:none;">
-      <div style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px;">Pipeline por Funil</div>
-      <div id="mk-pipeline-funil-body"></div>
-    </div>
-    <div id="mk-drill" style="display:none;background:var(--branco);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-top:16px;"></div>
   </div>
 
   <!-- CONSULTA CNPJ -->
@@ -1783,7 +1771,6 @@ function exportarXLSFacebook(){
 // ANÁLISE MARKETING — inclui nova funcionalidade de drill nos cards RD
 // ══════════════════════════════════════════════════════════════
 let _mkDeals=[];
-let _mkDrillAberto=null;
 // Armazena os deals separados por tipo para o modal
 let _mkDealsVendidos=[];
 let _mkDealsPerdidos=[];
@@ -1794,10 +1781,9 @@ function limparFiltrosMK(){document.getElementById('mk-de').value='';document.ge
 async function carregarAnaliseMarketing(){
   const de=document.getElementById('mk-de').value;const ate=document.getElementById('mk-ate').value;
   if(!de||!ate){alert('Selecione o período.');return;}
-  const mkEmpty=document.getElementById('mk-empty');const mkLoading=document.getElementById('mk-loading');const mkDrill=document.getElementById('mk-drill');
+  const mkEmpty=document.getElementById('mk-empty');const mkLoading=document.getElementById('mk-loading');
   mkEmpty.style.display='none';mkLoading.style.display='block';mkLoading.innerHTML=load('Buscando Facebook Ads e RD CRM...');
-  mkDrill.style.display='none';_mkDrillAberto=null;
-  ['mk-stats','mk-tabela','mk-pipeline-funil','mk-saldo-wrap'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
+  ['mk-stats','mk-tabela','mk-saldo-wrap'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
   _mkDealsVendidos=[];_mkDealsPerdidos=[];_mkDealsAbertos=[];
   _mkPeriodoLabel=`${new Date(de+'T12:00:00').toLocaleDateString('pt-BR')} → ${new Date(ate+'T12:00:00').toLocaleDateString('pt-BR')}`;
   try{
@@ -1861,48 +1847,79 @@ async function carregarAnaliseMarketing(){
     document.getElementById('mk-stats').style.display='block';
     mkLoading.style.display='none';
     document.getElementById('mk-tabela').style.display='block';
-    // ── POPULAR TABELA DE CAMPANHAS INDIVIDUAIS ──
+    // ── FUNÇÕES AUXILIARES ──
+    function corEstagio(e){const n=e.toLowerCase();if(n.includes('perdid'))return'#E24B4A';if(n.includes('proposta fechada'))return'#1D9E75';if(n.includes('follow')||n.includes('prov.')||n.includes('[t]')||n.includes('[c]')||n.includes('[m]'))return'#94A3B8';if(n.includes('reuni')||n.includes('enviar proposta')||n.includes('proposta enviada')||n.includes('apresentaç'))return'#EF9F27';if(n.includes('proposta'))return'#7C3AED';if(n.includes('em atend')||n.includes('interesse'))return'#92400E';if(n.includes('contato feito')||n.includes('contactad'))return'#378ADD';if(n.includes('reagend')||n.includes('tentativa'))return'#D97706';return'#9e9e9e';}
+    function matchDealCampanha(d,campNome){const campDeal=(d.campaign?.name||'').toLowerCase().trim();if(!campDeal||campDeal==='sem campanha')return false;const palavras=campNome.toLowerCase().replace(/\[.*?\]/g,'').trim().split(/\s+/).filter(p=>p.length>3);return palavras.some(p=>campDeal.includes(p));}
+    const periodoLabel=_mkPeriodoLabel;
+    const ordemFunis=funis.map(f=>f._id||f.id);
+    let _eidx=Date.now()%100000;
+    // ── GERAR CARDS DE CAMPANHA COM LEADS DENTRO ──
+    const tbBody=document.getElementById('mk-table-body');
     const campFiltroVal=document.getElementById('mk-campanha').value;
     let campanhasParaTabela=todasCampanhas;
     if(campFiltroVal!=='all'){campanhasParaTabela=todasCampanhas.filter(c=>c.nome===campFiltroVal);}
-    const tbBody=document.getElementById('mk-table-body');
     if(campanhasParaTabela.length>0){
       tbBody.innerHTML=campanhasParaTabela.map(c=>{
         const cpmC=c.impressoes>0?(c.investimento/c.impressoes*1000):null;
-        return '<div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;padding:10px 14px;border-bottom:1px solid var(--border);align-items:center;">'
-          +'<div style="display:flex;align-items:center;gap:8px;">'
-          +'<span style="width:8px;height:8px;border-radius:50%;background:'+(c.status==='ACTIVE'?'#1D9E75':'#9e9e9e')+';flex-shrink:0;"></span>'
-          +'<div>'
-          +'<div style="font-size:12px;font-weight:600;color:var(--azul-escuro);">'+c.nome+'</div>'
-          +'<div style="font-size:10px;color:var(--text-muted);margin-top:1px;">'+(c.status==='ACTIVE'?'Ativa':'Pausada')+(c.inicio?' \u00b7 '+c.inicio:'')+'</div>'
+        const campId='mkcamp-'+(++_eidx);
+        // Filtra deals que pertencem a esta campanha
+        const dealsDaCampanha=dealsFB.filter(d=>matchDealCampanha(d,c.nome));
+        const totalLeadsRD=dealsDaCampanha.length;
+        // Agrupa por funil > estágio
+        const porFunilCamp={};
+        dealsDaCampanha.forEach(d=>{const fid=d._pipeline_id||'outros';const fnome=d._pipeline_name||d.deal_pipeline?.name||'Outros';const est=d.deal_stage?.name||'Sem est\u00e1gio';if(!porFunilCamp[fid])porFunilCamp[fid]={nome:fnome,estagios:{}};if(!porFunilCamp[fid].estagios[est])porFunilCamp[fid].estagios[est]=[];porFunilCamp[fid].estagios[est].push(d);});
+        const funisOrdenados=Object.keys(porFunilCamp).sort((a,b)=>{const ia=ordemFunis.indexOf(a)===-1?99:ordemFunis.indexOf(a);const ib=ordemFunis.indexOf(b)===-1?99:ordemFunis.indexOf(b);return ia-ib;});
+        // Monta HTML dos funis/estágios dentro da campanha
+        let pipelineHtml='';
+        if(funisOrdenados.length>0){
+          pipelineHtml=funisOrdenados.map(fid=>{
+            const funil=porFunilCamp[fid];const totalF=Object.values(funil.estagios).flat().length;const fidBody='mkfb-'+(++_eidx);
+            const estagiosOrdenados=Object.keys(funil.estagios).sort((a,b)=>(a.toLowerCase().includes('perdid')?1:0)-(b.toLowerCase().includes('perdid')?1:0));
+            const estagiosHtml=estagiosOrdenados.map(est=>{
+              const leads=funil.estagios[est];const cor=corEstagio(est);const eid='mke-'+(++_eidx);
+              const cards=leads.map(d=>{const di=diasAtras(d.updated_at||d.created_at);const urg=di>7?'urgente':di>=3?'atencao':'ok';return cardP({...d,di,urg},++_eidx);}).join('');
+              return '<div style="border:1px solid var(--border);border-radius:8px;margin-bottom:6px;overflow:hidden;">'
+                +'<div onclick="(function(el){var b=document.getElementById(\''+eid+'\');var op=b.style.display!==\'none\';b.style.display=op?\'none\':\'block\';el.querySelector(\'.mchv\').style.transform=op?\'\':\'rotate(180deg)\'})(this)" style="display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;background:var(--branco);" onmouseover="this.style.background=\'var(--azul-pale)\'" onmouseout="this.style.background=\'var(--branco)\'">'
+                +'<div style="width:9px;height:9px;border-radius:50%;background:'+cor+';flex-shrink:0;"></div>'
+                +'<span style="font-size:12px;font-weight:600;color:var(--text);flex:1;">'+est+'</span>'
+                +'<span style="font-size:11px;font-weight:700;color:'+cor+';background:'+cor+'18;padding:2px 10px;border-radius:20px;">'+leads.length+'</span>'
+                +'<span class="mchv" style="font-size:10px;color:var(--text-muted);transition:transform .2s;">\u25bc</span>'
+                +'</div><div id="'+eid+'" style="display:none;border-top:1px solid var(--border);padding:10px;">'+cards+'</div></div>';
+            }).join('');
+            return '<div style="margin-bottom:8px;">'
+              +'<div onclick="(function(el){var b=document.getElementById(\''+fidBody+'\');var op=b.style.display!==\'none\';b.style.display=op?\'none\':\'block\';el.querySelector(\'.mchv\').style.transform=op?\'\':\'rotate(180deg)\'})(this)" style="padding:10px 14px;background:var(--azul-claro);border-radius:8px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;">'
+              +'<span style="font-size:12px;font-weight:600;color:var(--azul-escuro);">'+funil.nome+'</span>'
+              +'<div style="display:flex;gap:8px;align-items:center;">'
+              +'<span style="font-size:11px;font-weight:600;color:var(--azul-medio);background:var(--branco);padding:2px 10px;border-radius:20px;">'+totalF+' lead'+(totalF!==1?'s':'')+'</span>'
+              +'<span style="font-size:10px;color:var(--text-muted);">'+periodoLabel+'</span>'
+              +'<span class="mchv" style="font-size:10px;color:var(--text-muted);transition:transform .2s;">\u25bc</span>'
+              +'</div></div>'
+              +'<div id="'+fidBody+'" style="display:none;padding:10px;">'+estagiosHtml+'</div></div>';
+          }).join('');
+        } else {
+          pipelineHtml='<div style="padding:12px;text-align:center;font-size:12px;color:var(--text-muted);">Nenhum lead encontrado no RD para esta campanha.</div>';
+        }
+        return '<div style="background:var(--branco);border:1px solid var(--border);border-radius:12px;margin-bottom:10px;overflow:hidden;">'
+          +'<div onclick="(function(el){var b=document.getElementById(\''+campId+'\');var op=b.style.display!==\'none\';b.style.display=op?\'none\':\'block\';el.querySelector(\'.mchv\').style.transform=op?\'\':\'rotate(180deg)\'})(this)" style="display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer;transition:background .15s;" onmouseover="this.style.background=\'var(--azul-pale)\'" onmouseout="this.style.background=\'var(--branco)\'">'
+          +'<span style="width:10px;height:10px;border-radius:50%;background:'+(c.status==='ACTIVE'?'#1D9E75':'#9e9e9e')+';flex-shrink:0;"></span>'
+          +'<div style="flex:1;min-width:0;">'
+          +'<div style="font-size:13px;font-weight:600;color:var(--azul-escuro);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+c.nome+'</div>'
+          +'<div style="font-size:10px;color:var(--text-muted);margin-top:2px;">'+(c.status==='ACTIVE'?'Ativa':'Pausada')+(c.inicio?' \u00b7 '+c.inicio:'')+'</div>'
+          +'</div>'
+          +'<div style="display:flex;gap:12px;align-items:center;flex-shrink:0;">'
+          +'<div style="text-align:right;"><div style="font-size:13px;font-weight:700;color:var(--azul-escuro);">'+fmtBRL(c.investimento)+'</div><div style="font-size:9px;color:var(--text-muted);">investido</div></div>'
+          +'<div style="text-align:right;"><div style="font-size:13px;font-weight:700;color:'+(c.leads>0?'#1D9E75':'var(--text-muted)')+';">'+(c.leads||0)+'</div><div style="font-size:9px;color:var(--text-muted);">leads FB</div></div>'
+          +'<div style="text-align:right;"><div style="font-size:13px;font-weight:700;color:var(--azul-escuro);">'+(c.cpl?fmtBRL(c.cpl):'-')+'</div><div style="font-size:9px;color:var(--text-muted);">CPL</div></div>'
+          +'<div style="text-align:right;"><div style="font-size:13px;font-weight:700;color:#7C3AED;">'+(cpmC?fmtBRL(cpmC):'-')+'</div><div style="font-size:9px;color:var(--text-muted);">CPM</div></div>'
+          +(totalLeadsRD>0?'<span style="font-size:10px;font-weight:700;color:var(--azul-medio);background:var(--azul-claro);padding:3px 10px;border-radius:20px;">'+totalLeadsRD+' no RD</span>':'')
+          +'<span class="mchv" style="font-size:10px;color:var(--text-muted);transition:transform .2s;">\u25bc</span>'
           +'</div></div>'
-          +'<div style="text-align:right;font-size:12px;font-weight:600;color:var(--azul-escuro);">'+fmtBRL(c.investimento)+'</div>'
-          +'<div style="text-align:right;font-size:12px;font-weight:600;color:'+(c.leads>0?'#1D9E75':'var(--text-muted)')+';">'+(c.leads||0)+'</div>'
-          +'<div style="text-align:right;font-size:12px;font-weight:600;color:var(--azul-escuro);">'+(c.cpl?fmtBRL(c.cpl):'-')+'</div>'
-          +'<div style="text-align:right;font-size:12px;font-weight:600;color:#7C3AED;">'+(cpmC?fmtBRL(cpmC):'-')+'</div>'
+          +'<div id="'+campId+'" style="display:none;border-top:1px solid var(--border);padding:14px;">'+pipelineHtml+'</div>'
           +'</div>';
       }).join('');
     } else {
       tbBody.innerHTML='<div style="padding:16px;text-align:center;font-size:12px;color:var(--text-muted);">Nenhuma campanha com investimento no per\u00edodo.</div>';
     }
-    const porFunil={};
-    dealsFilt.forEach(d=>{const fid=d._pipeline_id||'outros';const fnome=d._pipeline_name||d.deal_pipeline?.name||'Outros';const est=d.deal_stage?.name||'Sem estágio';if(!porFunil[fid])porFunil[fid]={nome:fnome,estagios:{}};if(!porFunil[fid].estagios[est])porFunil[fid].estagios[est]=[];porFunil[fid].estagios[est].push(d);});
-    function corEstagio(e){const n=e.toLowerCase();if(n.includes('perdid'))return'#E24B4A';if(n.includes('proposta fechada'))return'#1D9E75';if(n.includes('follow')||n.includes('prov.')||n.includes('[t]')||n.includes('[c]')||n.includes('[m]'))return'#94A3B8';if(n.includes('reuni')||n.includes('enviar proposta')||n.includes('proposta enviada')||n.includes('apresentaç'))return'#EF9F27';if(n.includes('proposta'))return'#7C3AED';if(n.includes('em atend')||n.includes('interesse'))return'#92400E';if(n.includes('contato feito')||n.includes('contactad'))return'#378ADD';if(n.includes('reagend')||n.includes('tentativa'))return'#D97706';return'#9e9e9e';}
-    const periodoLabel=_mkPeriodoLabel;
-    const ordemFunis=funis.map(f=>f._id||f.id);
-    const funisOrdenados=Object.keys(porFunil).sort((a,b)=>{const ia=ordemFunis.indexOf(a)===-1?99:ordemFunis.indexOf(a);const ib=ordemFunis.indexOf(b)===-1?99:ordemFunis.indexOf(b);return ia-ib;});
-    let _eidx=Date.now()%100000;
-    document.getElementById('mk-pipeline-funil-body').innerHTML=funisOrdenados.map(fid=>{
-      const funil=porFunil[fid];const total=Object.values(funil.estagios).flat().length;const fidBody='mkfb-'+(++_eidx);
-      const estagiosOrdenados=Object.keys(funil.estagios).sort((a,b)=>(a.toLowerCase().includes('perdid')?1:0)-(b.toLowerCase().includes('perdid')?1:0));
-      const estagiosHtml=estagiosOrdenados.map(est=>{
-        const leads=funil.estagios[est];const cor=corEstagio(est);const eid='mke-'+(++_eidx);
-        const cards=leads.map((d)=>{const di=diasAtras(d.updated_at||d.created_at);const urg=di>7?'urgente':di>=3?'atencao':'ok';return cardP({...d,di,urg},++_eidx);}).join('');
-        return `<div style="border:1px solid var(--border);border-radius:8px;margin-bottom:6px;overflow:hidden;"><div onclick="(function(el){var b=document.getElementById('${eid}');var op=b.style.display!=='none';b.style.display=op?'none':'block';el.querySelector('.mchv').style.transform=op?'':'rotate(180deg)'})(this)" style="display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;background:var(--branco);" onmouseover="this.style.background='var(--azul-pale)'" onmouseout="this.style.background='var(--branco)'"><div style="width:9px;height:9px;border-radius:50%;background:${cor};flex-shrink:0;"></div><span style="font-size:12px;font-weight:600;color:var(--text);flex:1;">${est}</span><span style="font-size:11px;font-weight:700;color:${cor};background:${cor}18;padding:2px 10px;border-radius:20px;">${leads.length}</span><span class="mchv" style="font-size:10px;color:var(--text-muted);transition:transform .2s;">▼</span></div><div id="${eid}" style="display:none;border-top:1px solid var(--border);padding:10px;">${cards}</div></div>`;
-      }).join('');
-      return `<div style="background:var(--branco);border:1px solid var(--border);border-radius:12px;margin-bottom:10px;overflow:hidden;"><div onclick="(function(el){var b=document.getElementById('${fidBody}');var op=b.style.display!=='none';b.style.display=op?'none':'block';el.querySelector('.mchv').style.transform=op?'':'rotate(180deg)'})(this)" style="padding:13px 16px;background:linear-gradient(135deg,var(--azul-escuro),var(--azul-medio));color:#fff;display:flex;align-items:center;justify-content:space-between;cursor:pointer;"><span style="font-size:13px;font-weight:600;">${funil.nome}</span><div style="display:flex;gap:8px;align-items:center;"><span style="font-size:11px;background:rgba(255,255,255,.2);padding:2px 10px;border-radius:20px;">${total} lead${total!==1?'s':''}</span><span style="font-size:11px;opacity:.7;">${periodoLabel}</span><span class="mchv" style="font-size:11px;opacity:.8;transition:transform .2s;">▼</span></div></div><div id="${fidBody}" style="display:none;padding:12px;">${estagiosHtml}</div></div>`;
-    }).join('');
-    document.getElementById('mk-pipeline-funil').style.display='block';
   }catch(e){mkLoading.style.display='none';document.getElementById('mk-empty').style.display='block';document.getElementById('mk-empty').innerHTML=`<div style="color:#791F1F;">Erro: ${e.message}</div>`;}
 }
 function abrirModalLeads(tipo){
