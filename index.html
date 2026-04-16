@@ -1240,7 +1240,7 @@ async function carregarReunioes(){
     const timeMin=new Date(de+'T00:00:00').toISOString();
     const timeMax=new Date(ate+'T23:59:59').toISOString();
     const r=await fetch(`/api/google-calendar?timeMin=${encodeURIComponent(timeMin)}&timeMax=${encodeURIComponent(timeMax)}`,{
-      headers:{'X-Google-Token':cfg.googleToken,'X-Google-Refresh-Token':cfg.googleRefreshToken||''}
+      headers:{'X-Session-Token':getSessionToken(),'X-Google-Token':cfg.googleToken,'X-Google-Refresh-Token':cfg.googleRefreshToken||''}
     });
     const data=await r.json();
     if(!r.ok)throw new Error(data.erro||'Erro ao buscar agenda');
@@ -1342,7 +1342,7 @@ async function consultarCnpjReuniao(idCard,dealId,dealNome,funil,estagio){
   const resultEl=document.getElementById('cnpj-reuniao-result-'+idCard);
   resultEl.innerHTML=load('Consultando Receita Federal...');
   try{
-    const r=await fetch(`/api/cnpj?cnpj=${raw}`);
+    const r=await fetch(`/api/cnpj?cnpj=${raw}`,{headers:{'X-Session-Token':getSessionToken()}});
     const d=await r.json();
     if(!r.ok)throw new Error(d.erro||'Erro ao consultar CNPJ');
     // Normaliza e enriquece com BrasilAPI se endereço incompleto
@@ -1545,7 +1545,7 @@ async function carregarFacebook(){
   document.getElementById('cards-fb').innerHTML=load('Buscando campanhas do Facebook Ads...');
   ['fb-investimento','fb-leads','fb-cpl','fb-alcance','fb-impressoes','fb-ctr','fb-cpc','fb-taxa-conv','fb-media-diaria'].forEach(id=>{document.getElementById(id).textContent='...';});
   try{
-    const r=await fetch(`/api/meta-ads?dateStart=${de}&dateEnd=${ate}`);
+    const r=await fetch(`/api/meta-ads?dateStart=${de}&dateEnd=${ate}`,{headers:{'X-Session-Token':getSessionToken()}});
     const data=await r.json();
     if(!r.ok)throw new Error(data.erro||'Erro ao buscar Facebook Ads');
     const ativas=data.ativas||[];const pausadas=data.pausadas||[];const totais=data.totais||{};
@@ -1833,7 +1833,7 @@ async function carregarAnaliseMarketing(){
   try{
     const ini2=new Date(de+'T00:00:00');const fim=new Date(ate+'T23:59:59');
     _funisCacheados=null;
-    const[funis,fbRes]=await Promise.all([carregarFunis(),fetch(`/api/meta-ads?dateStart=${de}&dateEnd=${ate}`)]);
+    const[funis,fbRes]=await Promise.all([carregarFunis(),fetch(`/api/meta-ads?dateStart=${de}&dateEnd=${ate}`,{headers:{'X-Session-Token':getSessionToken()}})]);
     if(!funis||funis.length===0){mkLoading.style.display='none';mkEmpty.style.display='block';mkEmpty.innerHTML='<div style="color:#E24B4A;background:#FCEBEB;padding:12px;border-radius:8px;">Não foi possível carregar os funis do RD CRM.</div>';return;}
     const fbData=await fbRes.json();if(!fbRes.ok)throw new Error(fbData.erro||'Erro no Facebook Ads');
     const todasCampanhas=[...(fbData.ativas||[]),...(fbData.pausadas||[])].filter(c=>c.investimento>0);
@@ -2018,7 +2018,7 @@ async function buscarCNPJ(){
   if(raw.length!==14){alert('CNPJ inválido.');return;}
   document.getElementById('cnpj-result').innerHTML=load('Consultando Receita Federal...');
   try{
-    const r=await fetch(`/api/cnpj?cnpj=${raw}`);const d=await r.json();
+    const r=await fetch(`/api/cnpj?cnpj=${raw}`,{headers:{'X-Session-Token':getSessionToken()}});const d=await r.json();
     if(!r.ok)throw new Error(d.erro||'Erro ao consultar CNPJ');
     document.getElementById('cnpj-result').innerHTML=load('Enriquecendo dados de endereco...');
     const n=await normalizarCNPJAsync(d);
