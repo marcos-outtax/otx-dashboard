@@ -2012,7 +2012,7 @@ function normalizarCNPJ(d){
   // Heurística: ME/EPP com capital > 500k inteiro provavelmente está em centavos
   // Empresas normais raramente têm capital social > 10M em centavos sem casa decimal
   if(capital>=10000&&Number.isInteger(capital)){
-    const porteLow=(porte||'').toLowerCase();
+    const porteLow=(d.porte||d.size||'').toLowerCase();
     const isMePeq=porteLow.includes('micro')||porteLow.includes('pequen')||porteLow.includes('me')||porteLow.includes('epp');
     if(isMePeq&&capital>=500000){capital=capital/100;}
     else if(!isMePeq&&capital>=100000000){capital=capital/100;}
