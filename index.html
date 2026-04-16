@@ -2008,9 +2008,15 @@ function normalizarCNPJ(d){
   } else {
     capital=Number(capitalRaw)||0;
   }
-  // Se o valor for suspeito de estar em centavos (muito alto para porte ME/EPP), dividir por 100
-  // Critério: se capital > 10.000.000 e não tem fração decimal, provavelmente veio em centavos
-  if(capital>=100000000&&Number.isInteger(capital)){capital=capital/100;}
+  // Se o valor for suspeito de estar em centavos, dividir por 100
+  // Heurística: ME/EPP com capital > 500k inteiro provavelmente está em centavos
+  // Empresas normais raramente têm capital social > 10M em centavos sem casa decimal
+  if(capital>=10000&&Number.isInteger(capital)){
+    const porteLow=(porte||'').toLowerCase();
+    const isMePeq=porteLow.includes('micro')||porteLow.includes('pequen')||porteLow.includes('me')||porteLow.includes('epp');
+    if(isMePeq&&capital>=500000){capital=capital/100;}
+    else if(!isMePeq&&capital>=100000000){capital=capital/100;}
+  }
   const simples=d.opcao_pelo_simples!=null?d.opcao_pelo_simples:d.simples!=null?d.simples:null;
   const mei=d.opcao_pelo_mei!=null?d.opcao_pelo_mei:d.mei!=null?d.mei:null;
   const porte=d.porte||d.size||'';
@@ -2034,11 +2040,29 @@ async function normalizarCNPJAsync(d){
   if(b.municipio)n.municipio=b.municipio;if(b.uf)n.uf=b.uf;
   if(!n.telefone&&b.ddd_telefone_1)n.telefone=(b.ddd_telefone_1||'').toString().trim();
   if(!n.email&&b.email)n.email=b.email;
-  // BrasilAPI costuma retornar capital_social como número em reais — confiável
+  // BrasilAPI retorna capital_social — MAS frequentemente em centavos (ex: 7500000 = R$ 75.000,00)
+  // Heurística: se o valor da BrasilAPI é ~100x maior que o valor original, está em centavos
   if(b.capital_social!=null){
     let capB=b.capital_social;
     if(typeof capB==='string'){capB=parseFloat(capB.replace(/[R$\s]/g,'').replace(/\./g,'').replace(',','.'))||0;}else{capB=Number(capB)||0;}
-    if(capB>0)n.capital=capB;
+    if(capB>0){
+      // Se não tem casa decimal e o valor parece estar em centavos (> 100k e inteiro), divide por 100
+      if(capB>=10000&&Number.isInteger(capB)){
+        // Compara com o valor já normalizado: se BrasilAPI é ~100x maior, é centavos
+        if(n.capital>0&&capB>n.capital*50){
+          capB=capB/100;
+        }
+        // Se não temos valor anterior pra comparar, usa heurística do porte
+        else if(n.capital===0){
+          const porteLow=(n.porte||'').toLowerCase();
+          // ME/EPP com capital > 5 milhões é suspeito de estar em centavos
+          if((porteLow.includes('micro')||porteLow.includes('pequen')||porteLow.includes('me')||porteLow.includes('epp'))&&capB>=500000){
+            capB=capB/100;
+          }
+        }
+      }
+      n.capital=capB;
+    }
   }
   // Porte da BrasilAPI é mais descritivo
   if(b.porte&&b.porte.descricao)n.porte=b.porte.descricao;
