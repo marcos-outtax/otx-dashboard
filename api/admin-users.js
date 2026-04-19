@@ -1,9 +1,8 @@
 // ============================================================
 // api/admin-users.js — Gerenciamento de usuários (somente admin)
-// FASE 2: Não retorna mais senhas no GET (segurança crítica)
-//         A UI usa "Redefinir senha" em vez de "Ver senha"
+// FASE 3: Hash de senhas + CSRF em operações de escrita
 // ============================================================
-import { aplicarCORS, exigirAdmin, carregarUsuarios } from './_lib/auth.js';
+import { aplicarCORS, exigirAdmin, carregarUsuarios, exigirCSRF, hashSenha, gerarSalt } from './_lib/auth.js';
 
 export default async function handler(req, res) {
   aplicarCORS(req, res, 'GET, POST, DELETE, PATCH, OPTIONS');
@@ -20,12 +19,16 @@ export default async function handler(req, res) {
       usuario: u.usuario,
       nome: u.nome || u.usuario,
       admin: u.admin === true,
-      // ⚠️ FASE 2: senha NÃO é mais retornada
+      // Indica se já migrou para hash (informativo para o admin)
+      hashAtivo: !!(u.hash && u.salt),
     }));
     return res.status(200).json({ usuarios: lista });
   }
 
-  // ── PATCH: redefine senha ──────────────────────────────────
+  // ── Operações de escrita exigem CSRF ───────────────────────
+  if (!exigirCSRF(req, res)) return;
+
+  // ── PATCH: redefine senha (agora com hash) ─────────────────
   if (req.method === 'PATCH') {
     const { usuario, novaSenha } = req.body || {};
     if (typeof usuario !== 'string' || typeof novaSenha !== 'string') {
@@ -38,14 +41,27 @@ export default async function handler(req, res) {
 
     const idx = usuarios.findIndex(u => u.usuario === usuario.trim());
     if (idx === -1) return res.status(404).json({ erro: 'Usuário não encontrado.' });
+
+    // FASE 3: Salva com hash em vez de texto puro
+    const salt = gerarSalt();
+    const hash = hashSenha(novaSenha.trim(), salt);
+
     const novosUsuarios = [...usuarios];
-    novosUsuarios[idx] = { ...novosUsuarios[idx], senha: novaSenha.trim() };
+    novosUsuarios[idx] = {
+      ...novosUsuarios[idx],
+      hash,
+      salt,
+      senha: undefined, // Remove senha texto puro se existia
+    };
+    // Limpa a chave "senha" do objeto
+    delete novosUsuarios[idx].senha;
+
     const ok = await atualizarVariavel(novosUsuarios);
     if (!ok) return res.status(500).json({ erro: 'Erro ao salvar.' });
-    return res.status(200).json({ ok: true, mensagem: 'Senha atualizada.' });
+    return res.status(200).json({ ok: true, mensagem: 'Senha atualizada com hash seguro.' });
   }
 
-  // ── POST: adiciona usuário ─────────────────────────────────
+  // ── POST: adiciona usuário (com hash) ──────────────────────
   if (req.method === 'POST') {
     const { usuario, senha, nome, admin } = req.body || {};
     if (typeof usuario !== 'string' || typeof senha !== 'string') {
@@ -61,16 +77,21 @@ export default async function handler(req, res) {
       return res.status(400).json({ erro: 'Usuário já existe.' });
     }
 
+    // FASE 3: Senha com hash
+    const salt = gerarSalt();
+    const hash = hashSenha(senha.trim(), salt);
+
     const novosUsuarios = [...usuarios, {
       usuario: usuario.trim(),
-      senha: senha.trim(),
+      hash,
+      salt,
       nome: typeof nome === 'string' && nome.trim() ? nome.trim() : usuario.trim(),
       admin: admin === true,
     }];
 
     const ok = await atualizarVariavel(novosUsuarios);
     if (!ok) return res.status(500).json({ erro: 'Erro ao salvar. Verifique VERCEL_TOKEN e VERCEL_PROJECT_ID.' });
-    return res.status(200).json({ ok: true, mensagem: 'Usuário adicionado.' });
+    return res.status(200).json({ ok: true, mensagem: 'Usuário adicionado com senha segura.' });
   }
 
   // ── DELETE: remove usuário ─────────────────────────────────
