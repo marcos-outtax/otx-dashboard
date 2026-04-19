@@ -1,12 +1,10 @@
 // ============================================================
 // api/auth.js — Login do dashboard
-// FASE 1: Validação de tipo + CORS restrito + helper compartilhado
-// FASE 2: Rate-limit (5 tentativas / 15 min por IP) — bloqueia brute-force
+// FASE 3: Tokens aleatórios com expiração + CSRF token
 // ============================================================
-import { aplicarCORS, gerarSessionToken, carregarUsuarios } from './_lib/auth.js';
+import { aplicarCORS, autenticarUsuario, gerarSessionToken, gerarCSRFToken } from './_lib/auth.js';
 import { checarRateLimit, resetRateLimit, getClientIP } from './_lib/ratelimit.js';
 
-// Configuração do rate-limit
 const MAX_TENTATIVAS = 5;
 const JANELA_SEGUNDOS = 900; // 15 minutos
 
@@ -31,7 +29,6 @@ export default async function handler(req, res) {
 
   const usuarioLimpo = usuario.trim();
   const senhaLimpa = senha.trim();
-
   if (!usuarioLimpo || !senhaLimpa) {
     return res.status(400).json({ erro: 'Usuário e senha obrigatórios.' });
   }
@@ -50,22 +47,11 @@ export default async function handler(req, res) {
     });
   }
 
-  // ── CARREGA USUÁRIOS ───────────────────────────────────────
-  const usuarios = carregarUsuarios();
-  if (!usuarios.length) {
-    return res.status(500).json({ erro: 'Nenhum usuário configurado.' });
-  }
-
   // ── VALIDA CREDENCIAIS ─────────────────────────────────────
-  let userEncontrado = null;
-  for (const u of usuarios) {
-    if (typeof u.usuario !== 'string' || typeof u.senha !== 'string') continue;
-    if (u.usuario.trim() === usuarioLimpo && u.senha.trim() === senhaLimpa) {
-      userEncontrado = u;
-    }
-  }
+  const userEncontrado = autenticarUsuario(usuarioLimpo, senhaLimpa);
 
   if (!userEncontrado) {
+    // Delay aleatório anti-timing
     await new Promise(r => setTimeout(r, 50 + Math.random() * 100));
     return res.status(401).json({
       erro: 'Usuário ou senha incorretos.',
@@ -73,14 +59,17 @@ export default async function handler(req, res) {
     });
   }
 
-  // ── LOGIN OK: reseta o contador para esse IP ───────────────
+  // ── LOGIN OK ───────────────────────────────────────────────
   await resetRateLimit(chaveRL);
 
-  const sessionToken = gerarSessionToken(userEncontrado.usuario, userEncontrado.senha);
+  // FASE 3: Token aleatório com expiração (12h)
+  const sessionToken = gerarSessionToken(userEncontrado.usuario);
+  const csrfToken = gerarCSRFToken(sessionToken);
 
   return res.status(200).json({
     ok: true,
     sessionToken,
+    csrfToken,
     nome: userEncontrado.nome || userEncontrado.usuario,
     admin: userEncontrado.admin === true,
   });
