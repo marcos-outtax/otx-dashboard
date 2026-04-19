@@ -312,6 +312,9 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 <div class="sidebar" id="sidebar">
   <div class="sidebar-logo"><img src="/logo-outtax.png" alt="Outtax"></div>
   <div class="sidebar-date" id="td"></div>
+  <div id="sidebar-user" style="padding:6px 16px 10px;font-size:11px;color:rgba(255,255,255,.85);text-align:center;border-bottom:1px solid rgba(255,255,255,.08);display:none;">
+    <span style="background:rgba(255,255,255,.12);padding:4px 12px;border-radius:20px;font-weight:500;">👤 <span id="sidebar-user-nome"></span></span>
+  </div>
   <nav class="sidebar-nav">
     <div class="nav-item active" id="nav-reunioes" onclick="showPage('reunioes',this)">
       <span class="nav-icon">📅</span><span class="nav-label">Reuniões</span>
@@ -333,6 +336,9 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
     </div>
     <div class="nav-item" id="nav-transcricoes" onclick="showPage('transcricoes',this)">
       <span class="nav-icon">🎙️</span><span class="nav-label">Transcrições</span>
+    </div>
+    <div class="nav-item" id="nav-plugin" onclick="showPage('plugin',this)">
+      <span class="nav-icon">🧩</span><span class="nav-label">Plugin Reuniões</span>
     </div>
   </nav>
   <div class="sidebar-footer">
@@ -613,6 +619,96 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
         👥 Visão Administrador — Todas as Transcrições
       </div>
       <div id="cards-tr-admin"><div class="empty">Clique em Buscar para carregar.</div></div>
+    </div>
+  </div>
+
+  <!-- PÁGINA: Plugin Reuniões -->
+  <div class="page" id="page-plugin">
+    <div style="margin-bottom:20px;">
+      <div style="font-size:18px;font-weight:700;color:var(--azul-escuro);">🧩 Plugin de Captura de Reuniões</div>
+      <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">Instale a extensão para capturar reuniões automaticamente no Google Meet</div>
+    </div>
+
+    <!-- Download -->
+    <div style="background:var(--branco);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:16px;text-align:center;">
+      <div style="font-size:48px;margin-bottom:12px;">📦</div>
+      <div style="font-size:15px;font-weight:700;color:var(--azul-escuro);margin-bottom:4px;">Outtax Plugin Chrome</div>
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:16px;">Versão atual — extensão para Google Meet</div>
+      <a href="https://raw.githubusercontent.com/marcos-outtax/otx-dashboard/main/plugin/outtax-plugin.zip" download="outtax-plugin.zip"
+         style="display:inline-flex;align-items:center;gap:8px;background:var(--azul-escuro);color:#fff;padding:12px 28px;border-radius:8px;font-size:13px;font-weight:600;text-decoration:none;cursor:pointer;transition:background .2s;"
+         onmouseover="this.style.background='var(--azul-medio)'" onmouseout="this.style.background='var(--azul-escuro)'">
+        ⬇️ Baixar Plugin (.zip)
+      </a>
+      <div style="font-size:11px;color:var(--text-muted);margin-top:10px;">Após baixar, siga as instruções abaixo para instalar</div>
+    </div>
+
+    <!-- Passo a passo -->
+    <div style="background:var(--branco);border:1px solid var(--border);border-radius:12px;padding:20px;">
+      <div style="font-size:14px;font-weight:700;color:var(--azul-escuro);margin-bottom:16px;">📋 Passo a passo de instalação</div>
+
+      <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--border);">
+        <div style="min-width:32px;height:32px;border-radius:50%;background:var(--azul-escuro);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;">1</div>
+        <div>
+          <div style="font-size:13px;font-weight:600;color:var(--azul-escuro);">Baixar e descompactar</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">Clique no botão acima para baixar o arquivo <strong>.zip</strong>. Crie uma pasta no seu computador chamada <strong>Outtax Plugin Chrome</strong> e extraia o conteúdo do .zip dentro dela.</div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--border);">
+        <div style="min-width:32px;height:32px;border-radius:50%;background:var(--azul-escuro);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;">2</div>
+        <div>
+          <div style="font-size:13px;font-weight:600;color:var(--azul-escuro);">Abrir extensões do Chrome</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">No Chrome, clique nos <strong>três pontinhos</strong> (⋮) → <strong>Extensões</strong> → <strong>Gerenciar extensões</strong>. Ou digite direto na barra de endereço: <code style="background:var(--azul-pale);padding:2px 6px;border-radius:4px;font-size:11px;">chrome://extensions</code></div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--border);">
+        <div style="min-width:32px;height:32px;border-radius:50%;background:var(--azul-escuro);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;">3</div>
+        <div>
+          <div style="font-size:13px;font-weight:600;color:var(--azul-escuro);">Ativar Modo Desenvolvedor</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">No canto <strong>superior direito</strong> da tela de extensões, ative o botão <strong>Modo do desenvolvedor</strong>.</div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--border);">
+        <div style="min-width:32px;height:32px;border-radius:50%;background:var(--azul-escuro);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;">4</div>
+        <div>
+          <div style="font-size:13px;font-weight:600;color:var(--azul-escuro);">Instalar o plugin</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">Clique em <strong>Carregar sem compactação</strong> e selecione a pasta <strong>Outtax Plugin Chrome</strong> que você criou no passo 1.</div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--border);">
+        <div style="min-width:32px;height:32px;border-radius:50%;background:var(--azul-escuro);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;">5</div>
+        <div>
+          <div style="font-size:13px;font-weight:600;color:var(--azul-escuro);">Fixar a extensão</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">Clique no ícone de <strong>extensões</strong> (🧩) na barra do Chrome e clique no <strong>alfinete</strong> ao lado do plugin da Outtax para deixá-lo visível.</div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--border);">
+        <div style="min-width:32px;height:32px;border-radius:50%;background:var(--azul-escuro);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;">6</div>
+        <div>
+          <div style="font-size:13px;font-weight:600;color:var(--azul-escuro);">Configurar acesso</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">Clique no ícone do plugin → <strong>Abrir dashboard</strong> → faça login com seu usuário e senha → conecte sua conta Google para autorizar o salvamento das reuniões.</div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:12px;align-items:flex-start;">
+        <div style="min-width:32px;height:32px;border-radius:50%;background:#1D9E75;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;">✓</div>
+        <div>
+          <div style="font-size:13px;font-weight:600;color:#1D9E75;">Pronto para usar!</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">Ao entrar em uma reunião no Google Meet, o plugin captura automaticamente. <strong>Importante:</strong> mantenha as <strong>legendas ativadas</strong> na reunião — é através delas que o plugin captura o conteúdo.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Desinstalar -->
+    <div style="background:var(--branco);border:1px solid var(--border);border-radius:12px;padding:16px;margin-top:16px;">
+      <div style="font-size:13px;font-weight:600;color:var(--azul-escuro);margin-bottom:8px;">🗑️ Como desinstalar</div>
+      <div style="font-size:12px;color:var(--text-muted);">
+        Acesse <code style="background:var(--azul-pale);padding:2px 6px;border-radius:4px;font-size:11px;">chrome://extensions</code>, encontre o plugin da Outtax e clique em <strong>Remover</strong>. Depois delete a pasta <strong>Outtax Plugin Chrome</strong> do seu computador.
+      </div>
     </div>
   </div>
 
@@ -2366,6 +2462,12 @@ async function executarCriarEmpresaRD(){
 // ── INICIALIZAÇÃO ─────────────────────────────────────────
 async function inicializar(){
   document.getElementById('td').textContent=new Date().toLocaleDateString('pt-BR',{weekday:'short',day:'numeric',month:'short'});
+  // Exibe nome do usuário logado na sidebar
+  const _cfg=getCfg();
+  if(_cfg.nomeUsuario){
+    document.getElementById('sidebar-user-nome').textContent=_cfg.nomeUsuario;
+    document.getElementById('sidebar-user').style.display='block';
+  }
   const btnAdmin=document.getElementById('btn-admin-usuarios');if(btnAdmin)btnAdmin.style.display=getCfg().isAdmin?'flex':'none';
   const params=new URLSearchParams(window.location.search);const temRetornoGoogle=params.get('google_access_token')||params.get('google_error');
   if(temRetornoGoogle)capturarTokenGoogle();
