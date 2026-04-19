@@ -782,6 +782,7 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
       </div>
       <div id="nu-erro" style="display:none;font-size:12px;color:#791F1F;background:#FCEBEB;padding:8px 12px;border-radius:8px;margin-bottom:8px;"></div>
       <button class="btn btn-p" style="width:100%;" onclick="adicionarUsuario()">✅ Adicionar usuário</button>
+      <button class="btn" style="width:100%;margin-top:8px;background:#FFF0E0;color:#8B5E00;border:1px solid #E8C97A;font-size:11px;padding:8px;border-radius:8px;cursor:pointer;" onclick="migrarSenhasParaHash()">🔒 Migrar senhas para hash seguro</button>
     </div>
     <div class="modal-ft"><button class="btn-cancel" onclick="fecharGerenciarUsuarios()">Fechar</button></div>
   </div>
@@ -817,6 +818,7 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 const K='otx_cfg';
 const getCfg=()=>{try{return JSON.parse(localStorage.getItem(K))||{};}catch{return{};}};
 function getSessionToken(){return getCfg().sessionToken||'';}
+function getCSRFToken(){return getCfg().csrfToken||'';}
 function verificarSessao(){const t=getSessionToken();if(!t){mostrarLogin();return false;}return true;}
 
 // FASE 2: Valida sessão no servidor antes de mostrar UI
@@ -828,14 +830,15 @@ async function validarSessaoNoServidor(){
     const r=await fetch('/api/auth/me',{headers:{'X-Session-Token':t}});
     if(r.ok){
       const d=await r.json();
-      // Atualiza dados do usuário com o que o servidor retornou (fonte da verdade)
+      // FASE 3: Atualiza dados + csrfToken do servidor (fonte da verdade)
       const c=getCfg();
       c.nomeUsuario=d.nome||d.usuario;
       c.isAdmin=d.admin===true;
+      if(d.csrfToken)c.csrfToken=d.csrfToken;
       localStorage.setItem(K,JSON.stringify(c));
       return true;
     }
-    // Token inválido: limpa e mostra login
+    // Token inválido ou expirado: limpa e mostra login
     fazerLogout();
     return false;
   }catch(e){
@@ -860,11 +863,12 @@ async function fazerLogin(){
     if(!r.ok||!data.sessionToken){errEl.textContent=data.erro||'Usuário ou senha incorretos.';errEl.classList.add('show');return;}
     const c=getCfg();c.sessionToken=data.sessionToken;
     c.nomeUsuario=data.nome||usuario;c.isAdmin=data.admin===true;
+    if(data.csrfToken)c.csrfToken=data.csrfToken;
     localStorage.setItem(K,JSON.stringify(c));
     ocultarLogin();inicializar();
   }catch(e){errEl.textContent='Erro ao conectar. Tente novamente.';errEl.classList.add('show');}
 }
-function fazerLogout(){const c=getCfg();delete c.sessionToken;localStorage.setItem(K,JSON.stringify(c));mostrarLogin();}
+function fazerLogout(){const c=getCfg();delete c.sessionToken;delete c.csrfToken;localStorage.setItem(K,JSON.stringify(c));mostrarLogin();}
 document.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('login-senha').addEventListener('keydown',e=>{if(e.key==='Enter')fazerLogin();});
   document.getElementById('login-usuario').addEventListener('keydown',e=>{if(e.key==='Enter')fazerLogin();});
@@ -939,7 +943,7 @@ const fmtBRL=v=>v!=null&&v>0?'R$ '+Number(v).toLocaleString('pt-BR',{minimumFrac
 async function crmFetch(path,params={},method='GET',body=null){
   const qs=Object.keys(params).length?'&'+new URLSearchParams(params):'';
   const url=`/api/rdcrm?path=${encodeURIComponent(path)}${qs}`;
-  const opts={method,headers:{'Content-Type':'application/json','X-Session-Token':getSessionToken()}};
+  const opts={method,headers:{'Content-Type':'application/json','X-Session-Token':getSessionToken(),'X-CSRF-Token':getCSRFToken()}};
   if(body)opts.body=JSON.stringify(body);
   const r=await fetch(url,opts);
   const data=await r.json();
@@ -1129,7 +1133,7 @@ async function excluirTranscricao(fileId,btn){
   const cfg=getCfg();
   btn.textContent='⏳';btn.disabled=true;
   try{
-    const r=await fetch('/api/transcricoes?id='+fileId,{method:'DELETE',headers:{'X-Session-Token':getSessionToken(),'X-Google-Token':cfg.googleToken||'','X-Google-Refresh-Token':cfg.googleRefreshToken||''}});
+    const r=await fetch('/api/transcricoes?id='+fileId,{method:'DELETE',headers:{'X-Session-Token':getSessionToken(),'X-CSRF-Token':getCSRFToken(),'X-Google-Token':cfg.googleToken||'','X-Google-Refresh-Token':cfg.googleRefreshToken||''}});
     const data=await r.json();
     if(!r.ok)throw new Error(data.erro||'Erro ao excluir');
     btn.closest('.card')?.remove();
@@ -1203,7 +1207,7 @@ async function salvarTranscricao(btn){
   try{
     const r=await fetch('/api/transcricoes',{
       method:'POST',
-      headers:{'Content-Type':'application/json','X-Session-Token':getSessionToken(),'X-Google-Token':cfg.googleToken||'','X-Google-Refresh-Token':cfg.googleRefreshToken||''},
+      headers:{'Content-Type':'application/json','X-Session-Token':getSessionToken(),'X-CSRF-Token':getCSRFToken(),'X-Google-Token':cfg.googleToken||'','X-Google-Refresh-Token':cfg.googleRefreshToken||''},
       body:JSON.stringify({titulo,participantes,conteudo})
     });
     const data=await r.json();
@@ -2246,7 +2250,7 @@ async function gravarNoRD(btnEl){
   const nota='📊 ANÁLISE TRIBUTÁRIA — '+new Date().toLocaleDateString('pt-BR')+'\n\n'+analise+'\n\n—\nGerado pelo Outtax Dashboard';
   if(btn){btn.textContent='⏳ Gravando...';btn.disabled=true;}
   try{
-    const r=await fetch('/api/rdcrm',{method:'POST',headers:{'Content-Type':'application/json','X-Session-Token':getSessionToken()},body:JSON.stringify({path:'activities',deal_id:dealId,text:nota})});
+    const r=await fetch('/api/rdcrm',{method:'POST',headers:{'Content-Type':'application/json','X-Session-Token':getSessionToken(),'X-CSRF-Token':getCSRFToken()},body:JSON.stringify({path:'activities',deal_id:dealId,text:nota})});
     const data=await r.json();
     if(r.ok&&!data.erro){if(btn){btn.textContent='✅ Gravado!';btn.style.background='#1D9E75';}setTimeout(()=>fecharTelaImportacao(),2000);}
     else{throw new Error(data.erro||'Erro ao gravar');}
@@ -2255,6 +2259,16 @@ async function gravarNoRD(btnEl){
 
 // ── GERENCIAR USUÁRIOS ────────────────────────────────────
 function abrirGerenciarUsuarios(){carregarListaUsuarios();document.getElementById('m-usuarios').classList.add('open');}
+async function migrarSenhasParaHash(){
+  if(!confirm('Isso vai converter todas as senhas de texto puro para hash seguro.\n\nTodos os usuários precisarão fazer login novamente após ~30s.\n\nContinuar?'))return;
+  try{
+    const r=await fetch('/api/admin-migrate-senhas',{method:'POST',headers:{'X-Session-Token':getSessionToken(),'X-CSRF-Token':getCSRFToken()}});
+    const d=await r.json();
+    if(!r.ok)throw new Error(d.erro||'Erro');
+    alert(d.mensagem||'Migração concluída!');
+    carregarListaUsuarios();
+  }catch(e){alert('Erro: '+e.message);}
+}
 function fecharGerenciarUsuarios(){document.getElementById('m-usuarios').classList.remove('open');}
 async function carregarListaUsuarios(){
   const el=document.getElementById('lista-usuarios');el.innerHTML=load('Carregando usuários...');
@@ -2268,7 +2282,7 @@ async function carregarListaUsuarios(){
 </div>
 ${usuarios.map(u=>`
 <div style="display:grid;grid-template-columns:1.2fr 1.2fr 80px 1fr;padding:10px 12px;border-top:1px solid var(--border);background:var(--branco);align-items:center;gap:4px;">
-  <div style="font-size:12px;font-weight:600;color:var(--azul-escuro);">${u.usuario}</div>
+  <div style="font-size:12px;font-weight:600;color:var(--azul-escuro);">${u.usuario} ${u.hashAtivo?'<span style="background:#EAF3DE;color:#27500A;padding:1px 5px;border-radius:10px;font-size:9px;">🔒</span>':'<span style="background:#FFF0E0;color:#8B5E00;padding:1px 5px;border-radius:10px;font-size:9px;">⚠️</span>'}</div>
   <div style="font-size:12px;color:var(--text-muted);">${u.nome||''}</div>
   <div style="font-size:11px;">${u.admin?'<span style="background:var(--azul-claro);color:var(--azul-escuro);padding:2px 8px;border-radius:20px;font-weight:600;">Admin</span>':'<span style="background:#f0f0f0;color:#6b6b6b;padding:2px 8px;border-radius:20px;">Usuário</span>'}</div>
   <div style="display:flex;gap:4px;">
@@ -2282,17 +2296,17 @@ ${usuarios.map(u=>`
 async function adicionarUsuario(){
   const usuario=document.getElementById('nu-usuario').value.trim();const nome=document.getElementById('nu-nome').value.trim();const senha=document.getElementById('nu-senha').value.trim();const admin=document.getElementById('nu-admin').value==='true';const erroEl=document.getElementById('nu-erro');erroEl.style.display='none';
   if(!usuario||!senha){erroEl.textContent='Usuário e senha obrigatórios.';erroEl.style.display='block';return;}
-  try{const r=await fetch('/api/admin-users',{method:'POST',headers:{'Content-Type':'application/json','X-Session-Token':getSessionToken()},body:JSON.stringify({usuario,senha,nome:nome||usuario,admin})});const d=await r.json();if(!r.ok)throw new Error(d.erro||'Erro ao adicionar');document.getElementById('nu-usuario').value='';document.getElementById('nu-nome').value='';document.getElementById('nu-senha').value='';carregarListaUsuarios();alert('✅ Usuário adicionado!');}
+  try{const r=await fetch('/api/admin-users',{method:'POST',headers:{'Content-Type':'application/json','X-Session-Token':getSessionToken(),'X-CSRF-Token':getCSRFToken()},body:JSON.stringify({usuario,senha,nome:nome||usuario,admin})});const d=await r.json();if(!r.ok)throw new Error(d.erro||'Erro ao adicionar');document.getElementById('nu-usuario').value='';document.getElementById('nu-nome').value='';document.getElementById('nu-senha').value='';carregarListaUsuarios();alert('✅ Usuário adicionado!');}
   catch(e){document.getElementById('nu-erro').textContent=e.message;document.getElementById('nu-erro').style.display='block';}
 }
-async function removerUsuario(usuario){if(!confirm(`Remover "${usuario}"?`))return;try{const r=await fetch('/api/admin-users',{method:'DELETE',headers:{'Content-Type':'application/json','X-Session-Token':getSessionToken()},body:JSON.stringify({usuario})});const d=await r.json();if(!r.ok)throw new Error(d.erro||'Erro');carregarListaUsuarios();alert('✅ Usuário removido!');}catch(e){alert('Erro: '+e.message);}}
+async function removerUsuario(usuario){if(!confirm(`Remover "${usuario}"?`))return;try{const r=await fetch('/api/admin-users',{method:'DELETE',headers:{'Content-Type':'application/json','X-Session-Token':getSessionToken(),'X-CSRF-Token':getCSRFToken()},body:JSON.stringify({usuario})});const d=await r.json();if(!r.ok)throw new Error(d.erro||'Erro');carregarListaUsuarios();alert('✅ Usuário removido!');}catch(e){alert('Erro: '+e.message);}}
 // FASE 2: função toggleSenha removida — backend não retorna mais senhas
 async function editarSenha(usuario){
   const novaSenha=prompt(`Nova senha para "${usuario}":`);
   if(!novaSenha||!novaSenha.trim())return;
   if(novaSenha.trim().length<4){alert('Senha muito curta (mínimo 4 caracteres).');return;}
   try{
-    const r=await fetch('/api/admin-users',{method:'PATCH',headers:{'Content-Type':'application/json','X-Session-Token':getSessionToken()},body:JSON.stringify({usuario,novaSenha:novaSenha.trim()})});
+    const r=await fetch('/api/admin-users',{method:'PATCH',headers:{'Content-Type':'application/json','X-Session-Token':getSessionToken(),'X-CSRF-Token':getCSRFToken()},body:JSON.stringify({usuario,novaSenha:novaSenha.trim()})});
     const d=await r.json();
     if(!r.ok)throw new Error(d.erro||'Erro');
     carregarListaUsuarios();
@@ -2336,7 +2350,7 @@ async function executarCriarEmpresaRD(){
     if(n.municipio)orgBody.organization.city=n.municipio;
     if(n.uf)orgBody.organization.state=n.uf;
     if(n.cep)orgBody.organization.zip_code=n.cep;
-    const r=await fetch('/api/rdcrm',{method:'POST',headers:{'Content-Type':'application/json','X-Session-Token':getSessionToken()},body:JSON.stringify({path:'organizations',...orgBody})});
+    const r=await fetch('/api/rdcrm',{method:'POST',headers:{'Content-Type':'application/json','X-Session-Token':getSessionToken(),'X-CSRF-Token':getCSRFToken()},body:JSON.stringify({path:'organizations',...orgBody})});
     const data=await r.json();
     if(!r.ok||data.erro)throw new Error(data.erro||data.message||'Erro ao criar empresa');
     const orgId=data._id||data.id||'';const orgUrl=orgId?('https://crm.rdstation.com/app/organizations/'+orgId):'';
