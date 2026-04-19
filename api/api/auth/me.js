@@ -1,12 +1,8 @@
 // ============================================================
 // api/auth/me.js — Valida a sessão atual do usuário no servidor
-// FASE 2: Fim do bypass visual da tela de login (#5 do relatório)
+// FASE 3: Suporta tokens novos (otx3-) e legados (otx-)
 // ============================================================
-// O frontend chama este endpoint no carregamento da página.
-// Se retornar 401, mostra a tela de login.
-// Se retornar 200, mostra a UI normalmente.
-// ============================================================
-import { aplicarCORS, validarSessao } from '../_lib/auth.js';
+import { aplicarCORS, validarSessao, gerarCSRFToken } from '../_lib/auth.js';
 
 export default async function handler(req, res) {
   aplicarCORS(req, res, 'GET, OPTIONS');
@@ -18,11 +14,15 @@ export default async function handler(req, res) {
     return res.status(401).json({ ok: false, erro: 'Sessão inválida.' });
   }
 
-  // Não retorna informação sensível — só o que o frontend precisa
+  // Retorna CSRF token atualizado para o frontend
+  const sessionToken = (req.headers['x-session-token'] || '').trim();
+  const csrfToken = gerarCSRFToken(sessionToken);
+
   return res.status(200).json({
     ok: true,
     usuario: usuario.usuario,
     nome: usuario.nome,
     admin: usuario.admin,
+    csrfToken,
   });
 }
