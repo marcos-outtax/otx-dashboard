@@ -2282,7 +2282,7 @@ async function carregarListaUsuarios(){
 </div>
 ${usuarios.map(u=>`
 <div style="display:grid;grid-template-columns:1.2fr 1.2fr 80px 1fr;padding:10px 12px;border-top:1px solid var(--border);background:var(--branco);align-items:center;gap:4px;">
-  <div style="font-size:12px;font-weight:600;color:var(--azul-escuro);">${u.usuario} ${u.hashAtivo?'<span style="background:#EAF3DE;color:#27500A;padding:1px 5px;border-radius:10px;font-size:9px;">🔒</span>':'<span style="background:#FFF0E0;color:#8B5E00;padding:1px 5px;border-radius:10px;font-size:9px;">⚠️</span>'}</div>
+  <div style="font-size:12px;font-weight:600;color:var(--azul-escuro);">${u.usuario} ${u.hashAtivo?'<span style="background:#EAF3DE;color:#27500A;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:500;">🔒 seguro</span>':'<span style="background:#FFF0E0;color:#8B5E00;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:500;">⚠️ migrar</span>'}</div>
   <div style="font-size:12px;color:var(--text-muted);">${u.nome||''}</div>
   <div style="font-size:11px;">${u.admin?'<span style="background:var(--azul-claro);color:var(--azul-escuro);padding:2px 8px;border-radius:20px;font-weight:600;">Admin</span>':'<span style="background:#f0f0f0;color:#6b6b6b;padding:2px 8px;border-radius:20px;">Usuário</span>'}</div>
   <div style="display:flex;gap:4px;">
