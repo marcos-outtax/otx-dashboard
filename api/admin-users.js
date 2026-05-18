@@ -1,5 +1,3 @@
-import { createHmac } from 'crypto';
-
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, PATCH, OPTIONS');
@@ -23,12 +21,11 @@ export default async function handler(req, res) {
   const sessionToken = req.headers['x-session-token'] || '';
   const secret = (process.env.SESSION_SECRET || 'otx-secret-2024').trim();
 
-  const adminUser = usuarios.find(u => {
-    if (u.admin !== true) return false;
-    const token = 'otx-' + createHmac('sha256', secret).update(u.usuario).digest('hex').substring(0, 32);
-    return token === sessionToken;
-  });
+  function gerarToken(nomeUsuario) {
+    return 'otx-' + Buffer.from(secret + '|' + nomeUsuario).toString('base64').replace(/[^a-z0-9]/gi, '').substring(0, 32);
+  }
 
+  const adminUser = usuarios.find(u => u.admin === true && gerarToken(u.usuario) === sessionToken);
   if (!adminUser) return res.status(403).json({ erro: 'Acesso negado. Apenas administradores.' });
 
   if (req.method === 'GET') {
