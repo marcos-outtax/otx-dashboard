@@ -1,5 +1,3 @@
-import { createHmac } from 'crypto';
-
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -29,9 +27,9 @@ export default async function handler(req, res) {
   const user = usuarios.find(u => u.usuario.trim() === usuario.trim() && u.senha.trim() === senha.trim());
   if (!user) return res.status(401).json({ erro: 'Usuário ou senha incorretos.' });
 
-  // Token baseado em SECRET + usuario — não muda quando senha muda
+  // Token fixo baseado em SECRET + usuario — não muda quando senha muda
   const secret = (process.env.SESSION_SECRET || 'otx-secret-2024').trim();
-  const sessionToken = 'otx-' + createHmac('sha256', secret).update(user.usuario).digest('hex').substring(0, 32);
+  const sessionToken = 'otx-' + Buffer.from(secret + '|' + user.usuario).toString('base64').replace(/[^a-z0-9]/gi, '').substring(0, 32);
 
   return res.status(200).json({ ok: true, sessionToken, nome: user.nome || user.usuario, admin: user.admin === true });
 }
