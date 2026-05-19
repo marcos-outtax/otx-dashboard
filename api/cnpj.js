@@ -21,6 +21,12 @@ export default async function handler(req, res) {
     if (r.ok) {
       const data = await r.json();
       if (data.status !== 'ERROR') {
+        // ReceitaWS pode retornar simples em data.simples.optante_simples_nacional
+        // ou simplesmente não retornar o campo — verificamos ambos
+        const simplesOptante = data.simples?.optante_simples_nacional === 'Sim'
+          || data.simples?.optante === true
+          || data.simples === 'Sim';
+
         return res.status(200).json({
           razao_social: data.nome,
           nome_fantasia: data.fantasia,
@@ -38,9 +44,11 @@ export default async function handler(req, res) {
             codigo: a.code?.replace(/\D/g, ''),
             descricao: a.text,
           })),
-          // ReceitaWS retorna data.simples.optante_simples_nacional
-          opcao_pelo_simples: data.simples?.optante_simples_nacional === 'Sim',
-          opcao_pelo_mei: data.porte === 'MEI',
+          opcao_pelo_simples: simplesOptante,
+          opcao_pelo_mei: data.porte === 'MEI' || data.simei?.optante === true,
+          // Campo debug para identificar origem dos dados
+          _fonte: 'receitaws',
+          _simples_raw: data.simples,
         });
       }
     }
@@ -72,9 +80,10 @@ export default async function handler(req, res) {
           codigo: a.id,
           descricao: a.descricao,
         })),
-        // CNPJ.ws retorna data.simples (não data.simei) para Simples Nacional
         opcao_pelo_simples: data.simples?.optante === true,
         opcao_pelo_mei: data.simei?.optante === true,
+        _fonte: 'cnpjws',
+        _simples_raw: data.simples,
       });
     }
   } catch (_) { /* falha geral abaixo */ }
