@@ -1,29 +1,17 @@
-// ============================================================
-// api/cnpj.js — Consulta de CNPJ (ReceitaWS + CNPJ.ws)
-// CORREÇÕES:
-//  - EXIGE sessão válida (era aberto: poderia ser usado como
-//    relay anônimo para consumir as quotas das APIs externas)
-//  - CORS restrito por allowlist
-//  - Validação rigorosa do CNPJ
-// ============================================================
 import { aplicarCORS, exigirSessao } from './_lib/auth.js';
 
 export default async function handler(req, res) {
   aplicarCORS(req, res, 'GET, OPTIONS');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  // ── 🔒 EXIGE SESSÃO VÁLIDA ────────────────────────────────
   const usuario = exigirSessao(req, res);
   if (!usuario) return;
 
   const { cnpj } = req.query;
-  if (typeof cnpj !== 'string') {
-    return res.status(400).json({ erro: 'CNPJ inválido' });
-  }
+  if (typeof cnpj !== 'string') return res.status(400).json({ erro: 'CNPJ inválido' });
+
   const raw = cnpj.replace(/\D/g, '');
-  if (raw.length !== 14) {
-    return res.status(400).json({ erro: 'CNPJ inválido' });
-  }
+  if (raw.length !== 14) return res.status(400).json({ erro: 'CNPJ inválido' });
 
   // Tenta ReceitaWS primeiro
   try {
@@ -50,6 +38,7 @@ export default async function handler(req, res) {
             codigo: a.code?.replace(/\D/g, ''),
             descricao: a.text,
           })),
+          // ReceitaWS retorna data.simples.optante_simples_nacional
           opcao_pelo_simples: data.simples?.optante_simples_nacional === 'Sim',
           opcao_pelo_mei: data.porte === 'MEI',
         });
@@ -83,7 +72,8 @@ export default async function handler(req, res) {
           codigo: a.id,
           descricao: a.descricao,
         })),
-        opcao_pelo_simples: data.simei?.optante === true,
+        // CNPJ.ws retorna data.simples (não data.simei) para Simples Nacional
+        opcao_pelo_simples: data.simples?.optante === true,
         opcao_pelo_mei: data.simei?.optante === true,
       });
     }
