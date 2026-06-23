@@ -1080,12 +1080,15 @@ async function carregarFBMkt(){
   const loadBar=document.getElementById('fb-loading-bar');
   const loadTxt=document.getElementById('fb-loading-txt');
   const loadProg=document.getElementById('fb-loading-progress');
-  if(loadBar){loadBar.style.display='block';}
+  if(loadBar)loadBar.style.display='block';
   const setProgresso=(pct,txt)=>{
-    if(loadTxt)loadTxt.textContent=txt||'Buscando...';
-    if(loadProg)loadProg.style.width=pct+'%';
+    try{
+      if(loadTxt)loadTxt.textContent=txt||'Buscando...';
+      if(loadProg)loadProg.style.width=pct+'%';
+    }catch(e){}
   };
   setProgresso(10,'Conectando à API do Facebook Ads...');
+  console.log('[OTX] Iniciando busca. De:', de, 'Até:', ate);
 
   document.getElementById('fb-aviso-config').style.display='none';
 
@@ -1114,7 +1117,9 @@ async function carregarFBMkt(){
     setProgresso(25,'Buscando campanhas e funis...');
     const[funis,fbRes]=await Promise.all([carregarFunis(),fetch(`/api/meta-ads?dateStart=${de}&dateEnd=${ate}`,{headers:{'X-Session-Token':getSessionToken()}})]);
     setProgresso(55,'Processando métricas do Facebook Ads...');
-    const fbData=await fbRes.json();if(!fbRes.ok)throw new Error(fbData.erro||'Erro no Facebook Ads');
+    const fbData=await fbRes.json();
+    console.log('[OTX] FB API status:', fbRes.status, 'dados:', fbData?.ativas?.length, 'ativas');
+    if(!fbRes.ok)throw new Error(fbData.erro||'Erro no Facebook Ads');
 
     const ativas=fbData.ativas||[];const pausadas=fbData.pausadas||[];const totais=fbData.totais||{};
     _fbDadosAtual={ativas,pausadas,totais,periodo:fbData.periodo,conta:fbData.conta};
@@ -1278,10 +1283,12 @@ async function carregarFBMkt(){
     setProgresso(100,'Concluído!');
     setTimeout(()=>{if(loadBar)loadBar.style.display='none';},600);
   }catch(e){
+    console.error('[OTX] Erro em carregarFBMkt:', e.message, e.stack);
     document.getElementById('cards-fb').innerHTML=`<div class="empty" style="color:#791F1F;">Erro: ${e.message}</div>`;
     ['fb-investimento','fb-leads','fb-cpl','fb-alcance','fb-impressoes','fb-ctr','fb-cpc','fb-taxa-conv','fb-media-diaria'].forEach(id=>{document.getElementById(id).textContent='—';});
     document.getElementById('mk-loading').style.display='none';document.getElementById('mk-empty').style.display='block';document.getElementById('mk-empty').innerHTML=`<div style="color:#791F1F;">Erro: ${e.message}</div>`;
     if(loadBar)loadBar.style.display='none';
+    abrirAcc('acc-campanhas');abrirAcc('acc-analise');
   }finally{
     const btnBuscar=document.querySelector('#page-fbmkt .btn-p');
     if(btnBuscar){btnBuscar.disabled=false;btnBuscar.innerHTML='🔍 Buscar';}
