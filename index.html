@@ -1088,7 +1088,13 @@ async function carregarFBMkt(){
     }catch(e){}
   };
   setProgresso(10,'Conectando à API do Facebook Ads...');
-  console.log('[OTX] Iniciando busca. De:', de, 'Até:', ate);
+
+  // Mostra erro na tela para debug
+  const mostrarErroDebug=(msg)=>{
+    const el=document.getElementById('fb-aviso-config');
+    if(el){el.style.display='block';el.innerHTML='<strong>⚠ Erro:</strong> '+msg;}
+    if(loadBar)loadBar.style.display='none';
+  };
 
   document.getElementById('fb-aviso-config').style.display='none';
 
@@ -1100,6 +1106,7 @@ async function carregarFBMkt(){
     de=document.getElementById('fb-de').value;
     ate=document.getElementById('fb-ate').value;
   }
+  console.log('[OTX] Iniciando busca. De:', de, 'Até:', ate);
   const filtroStatus=document.getElementById('fb-filtro-status')?.value||'todas';
   _mkPeriodoLabel=`${new Date(de+'T12:00:00').toLocaleDateString('pt-BR')} → ${new Date(ate+'T12:00:00').toLocaleDateString('pt-BR')}`;
 
