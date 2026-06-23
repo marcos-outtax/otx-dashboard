@@ -538,6 +538,17 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
     </div>
 
     <div id="fb-aviso-config" style="display:none;background:#FFF0E0;border:1px solid var(--laranja);border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:12px;color:#a85000;"></div>
+    <div id="fb-loading-bar" style="display:none;background:var(--branco);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:16px;display:none;">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div style="display:flex;gap:4px;">
+          <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+        </div>
+        <span id="fb-loading-txt" style="font-size:13px;font-weight:600;color:var(--azul-escuro);">Buscando dados...</span>
+      </div>
+      <div style="margin-top:10px;height:3px;background:var(--azul-pale);border-radius:99px;overflow:hidden;">
+        <div id="fb-loading-progress" style="height:100%;background:var(--azul-medio);border-radius:99px;width:0%;transition:width .4s;"></div>
+      </div>
+    </div>
 
     <!-- ── ACCORDION 1: SALDO DA CONTA ── -->
     <div class="sec-accordion" id="acc-saldo">
@@ -1061,10 +1072,31 @@ function limparFiltrosFBMkt(){
 
 // Função principal unificada — busca FB + análise RD em uma única chamada
 async function carregarFBMkt(){
+  // Feedback visual no botão
+  const btnBuscar=document.querySelector('#page-fbmkt .btn-p');
+  if(btnBuscar){btnBuscar.disabled=true;btnBuscar.innerHTML='⏳ Buscando...';}
+
+  // Loading bar
+  const loadBar=document.getElementById('fb-loading-bar');
+  const loadTxt=document.getElementById('fb-loading-txt');
+  const loadProg=document.getElementById('fb-loading-progress');
+  if(loadBar){loadBar.style.display='block';}
+  const setProgresso=(pct,txt)=>{
+    if(loadTxt)loadTxt.textContent=txt||'Buscando...';
+    if(loadProg)loadProg.style.width=pct+'%';
+  };
+  setProgresso(10,'Conectando à API do Facebook Ads...');
+
   document.getElementById('fb-aviso-config').style.display='none';
 
-  let de=document.getElementById('fb-de').value;let ate=document.getElementById('fb-ate').value;
-  if(!de||!ate){aplicarPeriodoFB('30');de=document.getElementById('fb-de').value;ate=document.getElementById('fb-ate').value;}
+  // Garante que o período está preenchido
+  let de=document.getElementById('fb-de').value;
+  let ate=document.getElementById('fb-ate').value;
+  if(!de||!ate){
+    aplicarPeriodoFB(document.getElementById('fb-periodo').value||'30');
+    de=document.getElementById('fb-de').value;
+    ate=document.getElementById('fb-ate').value;
+  }
   const filtroStatus=document.getElementById('fb-filtro-status')?.value||'todas';
   _mkPeriodoLabel=`${new Date(de+'T12:00:00').toLocaleDateString('pt-BR')} → ${new Date(ate+'T12:00:00').toLocaleDateString('pt-BR')}`;
 
@@ -1079,7 +1111,9 @@ async function carregarFBMkt(){
   try{
     const ini2=new Date(de+'T00:00:00');const fim=new Date(ate+'T23:59:59');
     _funisCacheados=null;
+    setProgresso(25,'Buscando campanhas e funis...');
     const[funis,fbRes]=await Promise.all([carregarFunis(),fetch(`/api/meta-ads?dateStart=${de}&dateEnd=${ate}`,{headers:{'X-Session-Token':getSessionToken()}})]);
+    setProgresso(55,'Processando métricas do Facebook Ads...');
     const fbData=await fbRes.json();if(!fbRes.ok)throw new Error(fbData.erro||'Erro no Facebook Ads');
 
     const ativas=fbData.ativas||[];const pausadas=fbData.pausadas||[];const totais=fbData.totais||{};
@@ -1136,6 +1170,7 @@ async function carregarFBMkt(){
 
     if(!funis||funis.length===0){mkLoading.style.display='none';mkEmpty.style.display='block';mkEmpty.innerHTML='<div style="color:var(--text-muted);">RD CRM não disponível para análise de funis.</div>';return;}
 
+    setProgresso(75,'Buscando deals do RD CRM...');
     // Busca todos os deals dos funis
     const todosDealsRaw=[];
     const todasRespostas=await Promise.all(funis.map(f=>crmFetch('deals',{deal_pipeline_id:f._id||f.id}).catch(()=>({deals:[]}))));
@@ -1240,10 +1275,16 @@ async function carregarFBMkt(){
     }else{tbBody.innerHTML='<div style="padding:16px;text-align:center;font-size:12px;color:var(--text-muted);">Nenhuma campanha com investimento no período.</div>';}
     document.getElementById('mk-tabela').style.display='block';
     mkLoading.style.display='none';
+    setProgresso(100,'Concluído!');
+    setTimeout(()=>{if(loadBar)loadBar.style.display='none';},600);
   }catch(e){
     document.getElementById('cards-fb').innerHTML=`<div class="empty" style="color:#791F1F;">Erro: ${e.message}</div>`;
     ['fb-investimento','fb-leads','fb-cpl','fb-alcance','fb-impressoes','fb-ctr','fb-cpc','fb-taxa-conv','fb-media-diaria'].forEach(id=>{document.getElementById(id).textContent='—';});
     document.getElementById('mk-loading').style.display='none';document.getElementById('mk-empty').style.display='block';document.getElementById('mk-empty').innerHTML=`<div style="color:#791F1F;">Erro: ${e.message}</div>`;
+    if(loadBar)loadBar.style.display='none';
+  }finally{
+    const btnBuscar=document.querySelector('#page-fbmkt .btn-p');
+    if(btnBuscar){btnBuscar.disabled=false;btnBuscar.innerHTML='🔍 Buscar';}
   }
 }
 
@@ -1855,7 +1896,7 @@ async function inicializar(){
   const hoje=dataHoje();
   document.getElementById('r-de').value=hoje;document.getElementById('r-ate').value=hoje;
   document.getElementById('f-st').value='aberta';
-  aplicarPeriodoFB('30');
+  aplicarPeriodoFB(document.getElementById('fb-periodo')?.value||'30');
   await carregarFunis();
 }
 (async function(){
