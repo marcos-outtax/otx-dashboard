@@ -1013,7 +1013,7 @@ function limparFiltrosFBMkt(){
 // Função principal unificada — busca FB + análise RD em uma única chamada
 async function carregarFBMkt(){
   document.getElementById('fb-aviso-config').style.display='none';
-  document.getElementById('fb-saldo-wrap').style.display='none';
+
   let de=document.getElementById('fb-de').value;let ate=document.getElementById('fb-ate').value;
   if(!de||!ate){aplicarPeriodoFB('30');de=document.getElementById('fb-de').value;ate=document.getElementById('fb-ate').value;}
   const filtroStatus=document.getElementById('fb-filtro-status')?.value||'todas';
