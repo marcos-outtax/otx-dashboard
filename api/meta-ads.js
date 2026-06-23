@@ -238,6 +238,7 @@ export default async function handler(req, res) {
       pausadas,
       totais,
       periodo: { since, until, diasPeriodo },
+      accountId: actId,
       conta: {
         saldoInicial,
         saldoFinal,
