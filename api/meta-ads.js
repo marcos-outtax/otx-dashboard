@@ -73,23 +73,64 @@ export default async function handler(req, res) {
       paginas++;
     }
 
-    // 3. Ads (criativos) — status + criativo
-    const adsUrl = `https://graph.facebook.com/v19.0/${actId}/ads?fields=id,name,status,effective_status,campaign_id,adset_id,creative{id,name,title,body,image_url,thumbnail_url,object_story_spec}&limit=500&access_token=${token}`;
+    // 3. Ads (criativos) — status + criativo com imagem em alta resolução
+    const adsUrl = `https://graph.facebook.com/v19.0/${actId}/ads?fields=id,name,status,effective_status,campaign_id,adset_id,creative{id,name,title,body,image_url,thumbnail_url,image_hash,object_story_spec,effective_object_story_id,asset_feed_spec}&limit=500&access_token=${token}`;
     const adsRes = await fetch(adsUrl);
     const adsData = await adsRes.json();
     const adsPorCampanha = {};
+
+    // Coleta image_hashes para buscar URLs em alta resolução
+    const imageHashes = new Set();
+    if (!adsData.error) {
+      (adsData.data || []).forEach(ad => {
+        const hash = ad.creative?.image_hash;
+        if (hash) imageHashes.add(hash);
+      });
+    }
+
+    // Busca URLs em alta resolução pelos hashes
+    const imageUrlPorHash = {};
+    if (imageHashes.size > 0) {
+      try {
+        const hashList = [...imageHashes].join(',');
+        const imgRes = await fetch(
+          `https://graph.facebook.com/v19.0/${actId}/adimages?hashes=${encodeURIComponent(hashList)}&fields=hash,url,url_128&access_token=${token}`
+        );
+        const imgData = await imgRes.json();
+        if (!imgData.error && imgData.data) {
+          imgData.data.forEach(img => {
+            if (img.hash && img.url) imageUrlPorHash[img.hash] = img.url;
+          });
+        }
+      } catch (e) { /* fallback silencioso */ }
+    }
+
     if (!adsData.error) {
       (adsData.data || []).forEach(ad => {
         const cid = ad.campaign_id;
         if (!adsPorCampanha[cid]) adsPorCampanha[cid] = [];
+
+        const cr = ad.creative || {};
+        const hash = cr.image_hash;
+
+        // Prioridade: URL alta resolução via hash > image_url > object_story_spec > thumbnail
+        const imageUrl =
+          (hash && imageUrlPorHash[hash]) ||
+          cr.image_url ||
+          cr.object_story_spec?.link_data?.image_url ||
+          cr.object_story_spec?.video_data?.image_url ||
+          cr.asset_feed_spec?.images?.[0]?.url ||
+          cr.thumbnail_url ||
+          '';
+
         adsPorCampanha[cid].push({
           id: ad.id,
           nome: ad.name,
           status: ad.effective_status || ad.status,
           criativo: {
-            titulo: ad.creative?.title || ad.creative?.object_story_spec?.link_data?.name || ad.creative?.name || '',
-            corpo: ad.creative?.body || ad.creative?.object_story_spec?.link_data?.message || '',
-            thumbnail: ad.creative?.thumbnail_url || ad.creative?.image_url || '',
+            titulo: cr.title || cr.object_story_spec?.link_data?.name || cr.name || '',
+            corpo: cr.body || cr.object_story_spec?.link_data?.message || '',
+            thumbnail: imageUrl,
           },
           investimento: 0, leads: 0, impressoes: 0, alcance: 0,
           cliques: 0, ctr: '0', cpc: '0', cpl: null, taxaConversao: null,
