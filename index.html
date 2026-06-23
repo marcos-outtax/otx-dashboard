@@ -231,10 +231,17 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 .fb-progress-header{display:flex;justify-content:space-between;font-size:12px;color:var(--text-muted);margin-bottom:8px;}
 .fb-progress-track{height:8px;background:var(--azul-pale);border-radius:99px;overflow:hidden;}
 .fb-progress-fill{height:100%;border-radius:99px;transition:width .6s ease;}
-/* ── SEÇÃO DIVISÓRIA ── */
-.section-divider{display:flex;align-items:center;gap:12px;margin:24px 0 16px;}
-.section-divider-line{flex:1;height:1px;background:var(--border);}
-.section-divider-label{font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;white-space:nowrap;background:var(--bg);padding:0 4px;}
+/* ── ACCORDION SEÇÕES ── */
+.sec-accordion{border:1px solid var(--border);border-radius:12px;margin-bottom:10px;overflow:hidden;background:var(--branco);}
+.sec-accordion-hdr{display:flex;align-items:center;justify-content:space-between;padding:13px 18px;cursor:pointer;user-select:none;background:var(--branco);transition:background .15s;}
+.sec-accordion-hdr:hover{background:var(--azul-pale);}
+.sec-accordion-hdr.open{background:var(--azul-pale);border-bottom:1px solid var(--border);}
+.sec-accordion-title{display:flex;align-items:center;gap:10px;font-size:13px;font-weight:700;color:var(--azul-escuro);}
+.sec-accordion-title span.sec-icon{font-size:16px;}
+.sec-accordion-meta{font-size:11px;color:var(--text-muted);font-weight:400;margin-left:4px;}
+.sec-accordion-chev{font-size:11px;color:var(--text-muted);transition:transform .22s;}
+.sec-accordion-body{display:none;padding:16px 18px;}
+.sec-accordion-body.open{display:block;}
 @media(max-width:600px){.two-col,.three-col{grid-template-columns:1fr}.stats{grid-template-columns:repeat(3,1fr)}.filtros{flex-direction:column;align-items:stretch}.fa{margin-left:0}.fb-saldo-grid{grid-template-columns:1fr}}
 .modal-rd-ov{display:none;position:fixed;inset:0;background:rgba(21,44,107,.55);z-index:3000;align-items:flex-start;justify-content:center;padding:24px 16px;overflow-y:auto;}
 .modal-rd-ov.open{display:flex;}
@@ -509,82 +516,91 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 
     <div id="fb-aviso-config" style="display:none;background:#FFF0E0;border:1px solid var(--laranja);border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:12px;color:#a85000;"></div>
 
-    <!-- ── SEÇÃO 1: SALDO DA CONTA ── -->
-    <div id="fb-saldo-wrap" style="display:none;">
-      <div class="section-divider">
-        <div class="section-divider-line"></div>
-        <div class="section-divider-label">💰 Saldo da conta Facebook Ads</div>
-        <div class="section-divider-line"></div>
+    <!-- ── ACCORDION 1: SALDO DA CONTA ── -->
+    <div class="sec-accordion" id="acc-saldo">
+      <div class="sec-accordion-hdr" onclick="toggleAcc('acc-saldo')">
+        <div class="sec-accordion-title"><span class="sec-icon">💰</span> Saldo da conta Facebook Ads <span class="sec-accordion-meta" id="acc-saldo-meta"></span></div>
+        <span class="sec-accordion-chev">▼</span>
       </div>
-      <div class="fb-saldo-grid">
-        <div class="fb-saldo-card inicial"><div class="fb-saldo-lbl">Saldo inicial do período</div><div class="fb-saldo-val" id="fb-saldo-inicial">—</div><div class="fb-saldo-fonte">● balance + amount_spent via API</div></div>
-        <div class="fb-saldo-card investido"><div class="fb-saldo-lbl">Total investido no período</div><div class="fb-saldo-val" id="fb-saldo-investido">—</div><div class="fb-saldo-sub">soma de todas as campanhas</div></div>
-        <div class="fb-saldo-card" id="fb-saldo-final-card"><div class="fb-saldo-lbl">Saldo final</div><div class="fb-saldo-val" id="fb-saldo-final">—</div><div class="fb-saldo-sub">saldo inicial − total investido</div></div>
-      </div>
-      <div class="fb-progress-wrap">
-        <div class="fb-progress-header"><span>Consumo do orçamento da conta</span><span id="fb-saldo-pct" style="font-weight:600;color:var(--azul-escuro);">—</span></div>
-        <div class="fb-progress-track"><div class="fb-progress-fill" id="fb-progress-bar" style="width:0%"></div></div>
-      </div>
-    </div>
-
-    <!-- ── SEÇÃO 2: MÉTRICAS FACEBOOK ADS ── -->
-    <div class="section-divider">
-      <div class="section-divider-line"></div>
-      <div class="section-divider-label">📣 Métricas Facebook Ads</div>
-      <div class="section-divider-line"></div>
-    </div>
-    <div class="stats" style="grid-template-columns:repeat(3,1fr);margin-bottom:8px">
-      <div class="stat"><div class="num" id="fb-investimento">—</div><div class="lbl">Investimento</div></div>
-      <div class="stat"><div class="num" id="fb-leads">—</div><div class="lbl">Leads gerados</div></div>
-      <div class="stat"><div class="num" id="fb-cpl">—</div><div class="lbl">CPL médio</div></div>
-    </div>
-    <div class="stats" style="grid-template-columns:repeat(3,1fr);margin-bottom:8px">
-      <div class="stat"><div class="num" id="fb-alcance">—</div><div class="lbl">Alcance</div></div>
-      <div class="stat"><div class="num" id="fb-impressoes">—</div><div class="lbl">Impressões</div></div>
-      <div class="stat"><div class="num" id="fb-ctr">—</div><div class="lbl">CTR</div></div>
-    </div>
-    <div class="stats" style="grid-template-columns:repeat(3,1fr);margin-bottom:16px">
-      <div class="stat"><div class="num" id="fb-cpc">—</div><div class="lbl">CPC médio</div></div>
-      <div class="stat"><div class="num" id="fb-taxa-conv">—</div><div class="lbl">Taxa conversão</div></div>
-      <div class="stat"><div class="num" id="fb-media-diaria">—</div><div class="lbl">Média diária</div></div>
-    </div>
-
-    <!-- ── SEÇÃO 3: CAMPANHAS ── -->
-    <div class="section-divider">
-      <div class="section-divider-line"></div>
-      <div class="section-divider-label">📋 Campanhas</div>
-      <div class="section-divider-line"></div>
-    </div>
-    <div id="cards-fb"><div class="empty">Selecione o período e clique em Buscar.</div></div>
-
-    <!-- ── SEÇÃO 4: ANÁLISE MARKETING (FB × RD CRM) ── -->
-    <div class="section-divider" style="margin-top:28px;">
-      <div class="section-divider-line"></div>
-      <div class="section-divider-label">📊 Análise Marketing — Facebook Ads × RD CRM</div>
-      <div class="section-divider-line"></div>
-    </div>
-
-    <div id="mk-loading" style="display:none"></div>
-    <div id="mk-empty" style="display:none" class="empty">Clique em Buscar para carregar a análise.</div>
-
-    <div id="mk-stats" style="display:none;margin-bottom:16px">
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:10px;">
-        <div class="stat"><div class="num" id="mk-investimento">—</div><div class="lbl">Investimento FB</div></div>
-        <div class="stat"><div class="num" id="mk-leads-fb">—</div><div class="lbl">Leads FB</div></div>
-        <div class="stat"><div class="num" id="mk-cpl">—</div><div class="lbl">CPL</div></div>
-      </div>
-      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;">
-        <div class="stat" style="border-top-color:#7C3AED"><div class="num" id="mk-cpm" style="color:#7C3AED">—</div><div class="lbl">CPM</div></div>
-        <div class="stat" style="border-top-color:#1D9E75"><div class="num" id="mk-roas" style="color:#1D9E75">—</div><div class="lbl">ROAS</div></div>
-        <div class="stat stat-clickable" id="card-mk-vendido" style="border-top-color:#1D9E75;cursor:pointer;" onclick="abrirModalLeads('vendido')"><div class="num" id="mk-valor-vendido" style="color:#1D9E75">—</div><div class="lbl">Valor Vendido RD</div></div>
-        <div class="stat stat-clickable" id="card-mk-perdido" style="border-top-color:#E24B4A;cursor:pointer;" onclick="abrirModalLeads('perdido')"><div class="num" id="mk-valor-perdido" style="color:#E24B4A">—</div><div class="lbl">Valor Perdido RD</div></div>
-        <div class="stat stat-clickable" id="card-mk-aberto" style="border-top-color:var(--laranja);cursor:pointer;" onclick="abrirModalLeads('aberto')"><div class="num" id="mk-valor-aberto" style="color:var(--laranja)">—</div><div class="lbl">Valor em Aberto RD</div></div>
+      <div class="sec-accordion-body">
+        <div id="fb-saldo-wrap">
+          <div class="fb-saldo-grid">
+            <div class="fb-saldo-card inicial"><div class="fb-saldo-lbl">Saldo inicial do período</div><div class="fb-saldo-val" id="fb-saldo-inicial">—</div><div class="fb-saldo-fonte">● balance + amount_spent via API</div></div>
+            <div class="fb-saldo-card investido"><div class="fb-saldo-lbl">Total investido no período</div><div class="fb-saldo-val" id="fb-saldo-investido">—</div><div class="fb-saldo-sub">soma de todas as campanhas</div></div>
+            <div class="fb-saldo-card" id="fb-saldo-final-card"><div class="fb-saldo-lbl">Saldo final</div><div class="fb-saldo-val" id="fb-saldo-final">—</div><div class="fb-saldo-sub">saldo inicial − total investido</div></div>
+          </div>
+          <div class="fb-progress-wrap">
+            <div class="fb-progress-header"><span>Consumo do orçamento da conta</span><span id="fb-saldo-pct" style="font-weight:600;color:var(--azul-escuro);">—</span></div>
+            <div class="fb-progress-track"><div class="fb-progress-fill" id="fb-progress-bar" style="width:0%"></div></div>
+          </div>
+        </div>
       </div>
     </div>
 
-    <div id="mk-tabela" style="display:none;margin-bottom:16px;">
-      <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;">Campanhas × Pipeline</div>
-      <div id="mk-table-body"></div>
+    <!-- ── ACCORDION 2: MÉTRICAS FACEBOOK ADS ── -->
+    <div class="sec-accordion" id="acc-metricas">
+      <div class="sec-accordion-hdr" onclick="toggleAcc('acc-metricas')">
+        <div class="sec-accordion-title"><span class="sec-icon">📣</span> Métricas Facebook Ads <span class="sec-accordion-meta" id="acc-metricas-meta"></span></div>
+        <span class="sec-accordion-chev">▼</span>
+      </div>
+      <div class="sec-accordion-body">
+        <div class="stats" style="grid-template-columns:repeat(3,1fr);margin-bottom:8px">
+          <div class="stat"><div class="num" id="fb-investimento">—</div><div class="lbl">Investimento</div></div>
+          <div class="stat"><div class="num" id="fb-leads">—</div><div class="lbl">Leads gerados</div></div>
+          <div class="stat"><div class="num" id="fb-cpl">—</div><div class="lbl">CPL médio</div></div>
+        </div>
+        <div class="stats" style="grid-template-columns:repeat(3,1fr);margin-bottom:8px">
+          <div class="stat"><div class="num" id="fb-alcance">—</div><div class="lbl">Alcance</div></div>
+          <div class="stat"><div class="num" id="fb-impressoes">—</div><div class="lbl">Impressões</div></div>
+          <div class="stat"><div class="num" id="fb-ctr">—</div><div class="lbl">CTR</div></div>
+        </div>
+        <div class="stats" style="grid-template-columns:repeat(3,1fr)">
+          <div class="stat"><div class="num" id="fb-cpc">—</div><div class="lbl">CPC médio</div></div>
+          <div class="stat"><div class="num" id="fb-taxa-conv">—</div><div class="lbl">Taxa conversão</div></div>
+          <div class="stat"><div class="num" id="fb-media-diaria">—</div><div class="lbl">Média diária</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── ACCORDION 3: CAMPANHAS ── -->
+    <div class="sec-accordion" id="acc-campanhas">
+      <div class="sec-accordion-hdr" onclick="toggleAcc('acc-campanhas')">
+        <div class="sec-accordion-title"><span class="sec-icon">📋</span> Campanhas <span class="sec-accordion-meta" id="acc-campanhas-meta"></span></div>
+        <span class="sec-accordion-chev">▼</span>
+      </div>
+      <div class="sec-accordion-body">
+        <div id="cards-fb"><div class="empty">Selecione o período e clique em Buscar.</div></div>
+      </div>
+    </div>
+
+    <!-- ── ACCORDION 4: ANÁLISE MARKETING ── -->
+    <div class="sec-accordion" id="acc-analise">
+      <div class="sec-accordion-hdr" onclick="toggleAcc('acc-analise')">
+        <div class="sec-accordion-title"><span class="sec-icon">📊</span> Análise Marketing — Facebook Ads × RD CRM <span class="sec-accordion-meta" id="acc-analise-meta"></span></div>
+        <span class="sec-accordion-chev">▼</span>
+      </div>
+      <div class="sec-accordion-body">
+        <div id="mk-loading" style="display:none"></div>
+        <div id="mk-empty" style="display:none" class="empty">Clique em Buscar para carregar a análise.</div>
+        <div id="mk-stats" style="display:none;margin-bottom:16px">
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:10px;">
+            <div class="stat"><div class="num" id="mk-investimento">—</div><div class="lbl">Investimento FB</div></div>
+            <div class="stat"><div class="num" id="mk-leads-fb">—</div><div class="lbl">Leads FB</div></div>
+            <div class="stat"><div class="num" id="mk-cpl">—</div><div class="lbl">CPL</div></div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;">
+            <div class="stat" style="border-top-color:#7C3AED"><div class="num" id="mk-cpm" style="color:#7C3AED">—</div><div class="lbl">CPM</div></div>
+            <div class="stat" style="border-top-color:#1D9E75"><div class="num" id="mk-roas" style="color:#1D9E75">—</div><div class="lbl">ROAS</div></div>
+            <div class="stat stat-clickable" id="card-mk-vendido" style="border-top-color:#1D9E75;cursor:pointer;" onclick="abrirModalLeads('vendido')"><div class="num" id="mk-valor-vendido" style="color:#1D9E75">—</div><div class="lbl">Valor Vendido RD</div></div>
+            <div class="stat stat-clickable" id="card-mk-perdido" style="border-top-color:#E24B4A;cursor:pointer;" onclick="abrirModalLeads('perdido')"><div class="num" id="mk-valor-perdido" style="color:#E24B4A">—</div><div class="lbl">Valor Perdido RD</div></div>
+            <div class="stat stat-clickable" id="card-mk-aberto" style="border-top-color:var(--laranja);cursor:pointer;" onclick="abrirModalLeads('aberto')"><div class="num" id="mk-valor-aberto" style="color:var(--laranja)">—</div><div class="lbl">Valor em Aberto RD</div></div>
+          </div>
+        </div>
+        <div id="mk-tabela" style="display:none;margin-bottom:16px;">
+          <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;">Campanhas × Pipeline</div>
+          <div id="mk-table-body"></div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -952,6 +968,24 @@ async function carregarFunis(){
 }
 
 // ════════════════════════════════════════════════════════════
+// ── ACCORDION SEÇÕES ─────────────────────────────────────
+function toggleAcc(id){
+  const acc=document.getElementById(id);if(!acc)return;
+  const hdr=acc.querySelector('.sec-accordion-hdr');
+  const body=acc.querySelector('.sec-accordion-body');
+  const chev=acc.querySelector('.sec-accordion-chev');
+  const isOpen=body.classList.contains('open');
+  body.classList.toggle('open',!isOpen);
+  hdr.classList.toggle('open',!isOpen);
+  chev.style.transform=isOpen?'':'rotate(180deg)';
+}
+function abrirAcc(id){
+  const acc=document.getElementById(id);if(!acc)return;
+  acc.querySelector('.sec-accordion-body').classList.add('open');
+  acc.querySelector('.sec-accordion-hdr').classList.add('open');
+  acc.querySelector('.sec-accordion-chev').style.transform='rotate(180deg)';
+}
+
 // FACEBOOK ADS & MARKETING — ABA UNIFICADA
 // ════════════════════════════════════════════════════════════
 let _fbDadosAtual=null;
@@ -1014,7 +1048,8 @@ async function carregarFBMkt(){
       document.getElementById('fb-saldo-final-card').className='fb-saldo-card '+(neg?'final-neg':'final-pos');
       document.getElementById('fb-saldo-pct').textContent=pct+'% consumido';
       const bar=document.getElementById('fb-progress-bar');bar.style.width=pct+'%';bar.style.background=barColor;
-      document.getElementById('fb-saldo-wrap').style.display='block';
+      const metaSaldo=document.getElementById('acc-saldo-meta');if(metaSaldo)metaSaldo.textContent='· Saldo: '+fmtBRL(c.saldoFinal)+' · '+pct+'% consumido';
+      abrirAcc('acc-saldo');
     }
 
     // ── MÉTRICAS FB ──
@@ -1028,6 +1063,8 @@ async function carregarFBMkt(){
     document.getElementById('fb-cpc').textContent=totais.cliques&&totais.investimento?fmtBRL(totais.investimento/totais.cliques):'-';
     document.getElementById('fb-taxa-conv').textContent=totais.taxaConversao?totais.taxaConversao+'%':'-';
     document.getElementById('fb-media-diaria').textContent=totais.mediaDiaria?fmtBRL(totais.mediaDiaria)+'/dia':'-';
+    const metaMet=document.getElementById('acc-metricas-meta');if(metaMet)metaMet.textContent='· '+fmtBRL(totais.investimento)+' · '+(totais.leads||0)+' leads · CPL '+( totais.cpl?fmtBRL(totais.cpl):'-');
+    abrirAcc('acc-metricas');
 
     // ── CAMPANHAS ──
     let html='';
@@ -1036,6 +1073,8 @@ async function carregarFBMkt(){
     if(mostrarAtivas){html+=`<div style="font-size:11px;font-weight:700;color:#1D9E75;text-transform:uppercase;letter-spacing:.06em;margin:4px 0 10px;display:flex;align-items:center;gap:8px;"><span style="width:8px;height:8px;border-radius:50%;background:#1D9E75;display:inline-block;"></span>Campanhas ativas — ${ativas.length}</div>`;html+=ativas.length?ativas.map(c=>cardFacebook(c,de,ate)).join(''):`<div class="empty" style="padding:1rem;">Nenhuma campanha ativa.</div>`;}
     if(mostrarPausadas){html+=`<div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin:${mostrarAtivas?'20px':'4px'} 0 10px;display:flex;align-items:center;gap:8px;"><span style="width:8px;height:8px;border-radius:50%;background:#9e9e9e;display:inline-block;"></span>Campanhas pausadas — ${pausadas.length}</div>`;html+=pausadas.length?pausadas.map(c=>cardFacebook(c,de,ate)).join(''):`<div class="empty" style="padding:1rem;">Nenhuma campanha pausada.</div>`;}
     document.getElementById('cards-fb').innerHTML=html||'<div class="empty">Nenhuma campanha encontrada.</div>';
+    const metaCamp=document.getElementById('acc-campanhas-meta');if(metaCamp)metaCamp.textContent='· '+ativas.length+' ativas · '+pausadas.length+' pausadas';
+    abrirAcc('acc-campanhas');
 
     // ── ANÁLISE MARKETING (FB × RD) ──
     const todasCampanhas=[...ativas,...pausadas].filter(c=>c.investimento>0);
@@ -1087,6 +1126,8 @@ async function carregarFBMkt(){
     document.getElementById('mk-valor-perdido').textContent=valPerdido>0?fmtBRL(valPerdido):'R$ 0,00';
     document.getElementById('mk-valor-aberto').textContent=valAberto>0?fmtBRL(valAberto):'R$ 0,00';
     document.getElementById('mk-stats').style.display='block';
+    abrirAcc('acc-analise');
+    const metaAn=document.getElementById('acc-analise-meta');if(metaAn)metaAn.textContent='· ROAS '+(roas?roas.toFixed(2)+'x':'-')+' · Vendido '+fmtBRL(valVendido);
 
     // ── TABELA CAMPANHAS × PIPELINE ──
     function corEstagio(e){const n=e.toLowerCase();if(n.includes('perdid'))return'#E24B4A';if(n.includes('proposta fechada'))return'#1D9E75';if(n.includes('follow')||n.includes('prov.')||n.includes('[t]')||n.includes('[c]')||n.includes('[m]'))return'#94A3B8';if(n.includes('reuni')||n.includes('enviar proposta')||n.includes('proposta enviada')||n.includes('apresentaç'))return'#EF9F27';if(n.includes('proposta'))return'#7C3AED';if(n.includes('em atend')||n.includes('interesse'))return'#92400E';if(n.includes('contato feito')||n.includes('contactad'))return'#378ADD';if(n.includes('reagend')||n.includes('tentativa'))return'#D97706';return'#9e9e9e';}
