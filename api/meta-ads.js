@@ -73,62 +73,48 @@ export default async function handler(req, res) {
       paginas++;
     }
 
-    // 3. Ads (criativos) — busca com timeout para não travar
-    let adsPorCampanha = {};
-    try {
-      const adsController = new AbortController();
-      const adsTimeout = setTimeout(() => adsController.abort(), 8000);
-      const adsUrl = `https://graph.facebook.com/v19.0/${actId}/ads?fields=id,name,status,effective_status,campaign_id,creative{id,name,title,body,image_url,thumbnail_url,object_story_spec}&limit=500&access_token=${token}`;
-      const adsRes = await fetch(adsUrl, { signal: adsController.signal });
-      clearTimeout(adsTimeout);
-      const adsData = await adsRes.json();
-      if (!adsData.error) {
-        (adsData.data || []).forEach(ad => {
-          const cid = ad.campaign_id;
-          if (!adsPorCampanha[cid]) adsPorCampanha[cid] = [];
-          const cr = ad.creative || {};
-          const imageUrl =
-            cr.image_url ||
-            cr.object_story_spec?.link_data?.image_url ||
-            cr.object_story_spec?.video_data?.image_url ||
-            cr.thumbnail_url || '';
-          adsPorCampanha[cid].push({
-            id: ad.id, nome: ad.name,
-            status: ad.effective_status || ad.status,
-            criativo: {
-              titulo: cr.title || cr.object_story_spec?.link_data?.name || cr.name || '',
-              corpo: cr.body || cr.object_story_spec?.link_data?.message || '',
-              thumbnail: imageUrl,
-            },
-            investimento: 0, leads: 0, impressoes: 0, alcance: 0,
-            cliques: 0, ctr: '0', cpc: '0', cpl: null, taxaConversao: null,
-          });
+    // 3. Ads (criativos) — busca simples sem timeout
+    const adsPorCampanha = {};
+    const adsUrl = `https://graph.facebook.com/v19.0/${actId}/ads?fields=id,name,status,effective_status,campaign_id,creative{id,name,title,body,image_url,thumbnail_url,object_story_spec}&limit=500&access_token=${token}`;
+    const adsRes = await fetch(adsUrl);
+    const adsData = await adsRes.json();
+    if (!adsData.error) {
+      (adsData.data || []).forEach(ad => {
+        const cid = ad.campaign_id;
+        if (!adsPorCampanha[cid]) adsPorCampanha[cid] = [];
+        const cr = ad.creative || {};
+        const imageUrl =
+          cr.image_url ||
+          (cr.object_story_spec && cr.object_story_spec.link_data && cr.object_story_spec.link_data.image_url) ||
+          (cr.object_story_spec && cr.object_story_spec.video_data && cr.object_story_spec.video_data.image_url) ||
+          cr.thumbnail_url || '';
+        adsPorCampanha[cid].push({
+          id: ad.id,
+          nome: ad.name,
+          status: ad.effective_status || ad.status,
+          criativo: {
+            titulo: cr.title || (cr.object_story_spec && cr.object_story_spec.link_data && cr.object_story_spec.link_data.name) || cr.name || '',
+            corpo: cr.body || (cr.object_story_spec && cr.object_story_spec.link_data && cr.object_story_spec.link_data.message) || '',
+            thumbnail: imageUrl,
+          },
+          investimento: 0, leads: 0, impressoes: 0, alcance: 0,
+          cliques: 0, ctr: '0', cpc: '0', cpl: null, taxaConversao: null,
         });
-      }
-    } catch (adsErr) {
-      console.warn('Ads fetch timeout ou erro:', adsErr.message);
-      // Continua sem criativos — não quebra o resto
+      });
     }
 
-    // 4. Insights nível ad — com timeout
+    // 4. Insights nível ad
     const adInsightsFields = 'ad_id,campaign_id,impressions,clicks,spend,reach,cpc,ctr,actions';
     let adInsightsUrl = `https://graph.facebook.com/v19.0/${actId}/insights?fields=${encodeURIComponent(adInsightsFields)}&time_range=${encodeURIComponent(timeRange)}&level=ad&limit=200&access_token=${token}`;
     let todosAdInsights = [];
     let pgAd = 0;
-    try {
-      while (adInsightsUrl && pgAd < 10) {
-        const ctrl = new AbortController();
-        const t = setTimeout(() => ctrl.abort(), 8000);
-        const r = await fetch(adInsightsUrl, { signal: ctrl.signal });
-        clearTimeout(t);
-        const d = await r.json();
-        if (d.error) break;
-        todosAdInsights = [...todosAdInsights, ...(d.data || [])];
-        adInsightsUrl = d.paging?.next || null;
-        pgAd++;
-      }
-    } catch (e) {
-      console.warn('Ad insights timeout:', e.message);
+    while (adInsightsUrl && pgAd < 10) {
+      const r = await fetch(adInsightsUrl);
+      const d = await r.json();
+      if (d.error) break;
+      todosAdInsights = [...todosAdInsights, ...(d.data || [])];
+      adInsightsUrl = (d.paging && d.paging.next) || null;
+      pgAd++;
     }
 
     // Mapeia insights por ad_id
