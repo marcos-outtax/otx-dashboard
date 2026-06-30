@@ -1195,7 +1195,7 @@ async function carregarFBMkt(){
     funis.forEach((f,fi)=>{(todasRespostas[fi]?.deals||[]).forEach(d=>{d._pipeline_id=f._id||f.id;d._pipeline_name=f.name;todosDealsRaw.push(d);});});
 
     const nomesCampsFB=todasCampanhas.map(c=>c.nome.toLowerCase());
-    function dealVeioDoFacebook(d){const campDeal=(d.campaign?.name||'').toLowerCase().trim();if(!campDeal||campDeal==='sem campanha')return false;return nomesCampsFB.some(nomeFB=>{const palavrasFB=nomeFB.replace(/\[.*?\]/g,'').trim().split(/\s+/).filter(p=>p.length>3);return palavrasFB.some(p=>campDeal.includes(p));});}
+    function dealVeioDoFacebook(d){const campDeal=(d.campaign?.name||'').toLowerCase().trim();if(!campDeal||campDeal==='sem campanha')return false;return nomesCampsFB.some(nomeFB=>{const palavrasFB=nomeFB.replace(/\[.*?\]/g,'').trim().split(/\s+/).filter(p=>p.length>=3);return palavrasFB.some(p=>campDeal.includes(p));});}
     function prioridadeFunil(d){return funis.findIndex(f=>(f._id||f.id)===d._pipeline_id);}
 
     const dealsFBPeriodo=todosDealsRaw.filter(d=>{if(!dealVeioDoFacebook(d))return false;const criado=new Date(d.created_at);return criado>=ini2&&criado<=fim;});
@@ -1233,7 +1233,7 @@ async function carregarFBMkt(){
 
     // ── TABELA CAMPANHAS × PIPELINE ──
     function corEstagio(e){const n=e.toLowerCase();if(n.includes('perdid'))return'#E24B4A';if(n.includes('proposta fechada'))return'#1D9E75';if(n.includes('follow')||n.includes('prov.')||n.includes('[t]')||n.includes('[c]')||n.includes('[m]'))return'#94A3B8';if(n.includes('reuni')||n.includes('enviar proposta')||n.includes('proposta enviada')||n.includes('apresentaç'))return'#EF9F27';if(n.includes('proposta'))return'#7C3AED';if(n.includes('em atend')||n.includes('interesse'))return'#92400E';if(n.includes('contato feito')||n.includes('contactad'))return'#378ADD';if(n.includes('reagend')||n.includes('tentativa'))return'#D97706';return'#9e9e9e';}
-    function matchDealCampanha(d,campNome){const campDeal=(d.campaign?.name||'').toLowerCase().trim();if(!campDeal||campDeal==='sem campanha')return false;const palavras=campNome.toLowerCase().replace(/\[.*?\]/g,'').trim().split(/\s+/).filter(p=>p.length>3);return palavras.some(p=>campDeal.includes(p));}
+    function matchDealCampanha(d,campNome){const campDeal=(d.campaign?.name||'').toLowerCase().trim();if(!campDeal||campDeal==='sem campanha')return false;const palavras=campNome.toLowerCase().replace(/\[.*?\]/g,'').trim().split(/\s+/).filter(p=>p.length>=3);return palavras.some(p=>campDeal.includes(p));}
     const ordemFunis=funis.map(f=>f._id||f.id);
     let _eidx=Date.now()%100000;
     const tbBody=document.getElementById('mk-table-body');
