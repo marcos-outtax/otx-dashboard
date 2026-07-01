@@ -310,6 +310,14 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 .ad-filtro-btn{padding:4px 12px;font-size:11px;font-weight:600;border-radius:20px;border:1px solid var(--border);background:var(--branco);color:var(--text-muted);cursor:pointer;transition:all .15s;}
 .ad-filtro-btn.ativo{background:var(--azul-escuro);color:#fff;border-color:var(--azul-escuro);}
 .ad-filtro-btn:hover:not(.ativo){background:var(--azul-pale);border-color:var(--azul-medio);}
+
+/* ── RD CRM Iframe ── */
+.rdcrm-iframe-wrap{position:relative;width:100%;height:calc(100vh - 52px);border:none;overflow:hidden}
+.rdcrm-iframe-wrap iframe{width:100%;height:100%;border:none;display:block}
+.rdcrm-loading{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#f0f4fb;gap:14px;font-size:13px;color:#5a6e99;font-weight:500}
+.rdcrm-loading .spin{width:36px;height:36px;border:3px solid #d6e0f0;border-top-color:#152c6b;border-radius:50%;animation:rdSpin .7s linear infinite}
+@keyframes rdSpin{to{transform:rotate(360deg)}}
+#page-rdcrm{padding:0!important;overflow:hidden}
 </style>
 </head>
 <body>
@@ -366,6 +374,10 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
     </div>
     <div class="nav-item" id="nav-plugin" onclick="showPage('plugin',this)">
       <span class="nav-icon">🧩</span><span class="nav-label">Plugin Reuniões</span>
+    </div>
+    <div class="nav-item" id="nav-rdcrm" onclick="showPage('rdcrm',this)">
+      <span class="nav-icon">🤝</span>
+      <span class="nav-label">RD Station CRM</span>
     </div>
   </nav>
   <div class="sidebar-footer">
@@ -729,6 +741,25 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
     <div style="background:var(--branco);border:1px solid var(--border);border-radius:12px;padding:16px;margin-top:16px;">
       <div style="font-size:13px;font-weight:600;color:var(--azul-escuro);margin-bottom:8px;">🗑️ Como desinstalar</div>
       <div style="font-size:12px;color:var(--text-muted);">Acesse <code style="background:var(--azul-pale);padding:2px 6px;border-radius:4px;font-size:11px;">chrome://extensions</code>, encontre o plugin da Outtax e clique em <strong>Remover</strong>. Depois delete a pasta <strong>Outtax Plugin Chrome</strong> do seu computador.</div>
+    </div>
+  </div>
+
+
+  <!-- RD STATION CRM -->
+  <div class="page" id="page-rdcrm">
+    <div class="rdcrm-iframe-wrap">
+      <div class="rdcrm-loading" id="rdcrm-loading">
+        <div class="spin"></div>
+        Carregando RD Station CRM...
+      </div>
+      <iframe
+        id="rdcrm-iframe"
+        src="https://rd-station-crm-drab.vercel.app"
+        title="RD Station CRM — Outtax"
+        allow="clipboard-read; clipboard-write"
+        style="width:100%;height:100%;border:none;opacity:0;transition:opacity .3s;"
+        onload="document.getElementById('rdcrm-loading').style.display='none';this.style.opacity='1';"
+      ></iframe>
     </div>
   </div>
 
