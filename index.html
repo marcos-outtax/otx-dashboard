@@ -311,13 +311,11 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 .ad-filtro-btn.ativo{background:var(--azul-escuro);color:#fff;border-color:var(--azul-escuro);}
 .ad-filtro-btn:hover:not(.ativo){background:var(--azul-pale);border-color:var(--azul-medio);}
 
-/* ── RD CRM Iframe ── */
-.rdcrm-iframe-wrap{position:relative;width:100%;height:calc(100vh - 52px);border:none;overflow:hidden}
-.rdcrm-iframe-wrap iframe{width:100%;height:100%;border:none;display:block}
-.rdcrm-loading{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#f0f4fb;gap:14px;font-size:13px;color:#5a6e99;font-weight:500}
-.rdcrm-loading .spin{width:36px;height:36px;border:3px solid #d6e0f0;border-top-color:#152c6b;border-radius:50%;animation:rdSpin .7s linear infinite}
-@keyframes rdSpin{to{transform:rotate(360deg)}}
+/* ── RD CRM ── */
 #page-rdcrm{padding:0!important;overflow:hidden}
+.rdcrm-btn-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;height:calc(100vh - 100px);gap:20px;}
+.rdcrm-btn-open{display:inline-flex;align-items:center;gap:10px;padding:16px 32px;background:#152c6b;color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;text-decoration:none;transition:background .15s;}
+.rdcrm-btn-open:hover{background:#285199;}
 </style>
 </head>
 <body>
@@ -376,8 +374,7 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
       <span class="nav-icon">🧩</span><span class="nav-label">Plugin Reuniões</span>
     </div>
     <div class="nav-item" id="nav-rdcrm" onclick="showPage('rdcrm',this)">
-      <span class="nav-icon">🤝</span>
-      <span class="nav-label">RD Station CRM</span>
+      <span class="nav-icon">🤝</span><span class="nav-label">RD Station CRM</span>
     </div>
   </nav>
   <div class="sidebar-footer">
@@ -747,19 +744,14 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 
   <!-- RD STATION CRM -->
   <div class="page" id="page-rdcrm">
-    <div class="rdcrm-iframe-wrap">
-      <div class="rdcrm-loading" id="rdcrm-loading">
-        <div class="spin"></div>
-        Carregando RD Station CRM...
-      </div>
-      <iframe
-        id="rdcrm-iframe"
-        src="https://rd-station-crm-drab.vercel.app"
-        title="RD Station CRM — Outtax"
-        allow="clipboard-read; clipboard-write"
-        style="width:100%;height:100%;border:none;opacity:0;transition:opacity .3s;"
-        onload="document.getElementById('rdcrm-loading').style.display='none';this.style.opacity='1';"
-      ></iframe>
+    <div class="rdcrm-btn-wrap">
+      <div style="font-size:48px;">🤝</div>
+      <div style="font-size:20px;font-weight:700;color:#152c6b;">RD Station CRM</div>
+      <div style="font-size:13px;color:#5a6e99;margin-bottom:8px;">Ferramenta de integração Outtax</div>
+      <a href="https://rd-station-crm-drab.vercel.app" target="_blank" class="rdcrm-btn-open">
+        🚀 Abrir RD Station CRM
+      </a>
+      <div style="font-size:11px;color:#9aabb9;margin-top:8px;">Abre em nova aba</div>
     </div>
   </div>
 
