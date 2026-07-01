@@ -311,13 +311,11 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 .ad-filtro-btn.ativo{background:var(--azul-escuro);color:#fff;border-color:var(--azul-escuro);}
 .ad-filtro-btn:hover:not(.ativo){background:var(--azul-pale);border-color:var(--azul-medio);}
 
-/* ── RD Station CRM ── */
-#page-rdcrm { padding: 0 !important; overflow: hidden; }
-.rdcrm-wrap { position: relative; width: 100%; height: calc(100vh - 52px); }
-.rdcrm-wrap iframe { width: 100%; height: 100%; border: none; display: block; opacity: 0; transition: opacity .4s; }
-.rdcrm-spinner { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #f0f4fb; gap: 14px; font-size: 13px; color: #5a6e99; pointer-events: none; }
-.rdcrm-spinner .sp { width: 36px; height: 36px; border: 3px solid #d6e0f0; border-top-color: #152c6b; border-radius: 50%; animation: rdSpin .7s linear infinite; }
-@keyframes rdSpin { to { transform: rotate(360deg); } }
+/* ── RD CRM ── */
+#page-rdcrm{padding:0!important;overflow:hidden}
+.rdcrm-btn-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;height:calc(100vh - 100px);gap:20px;}
+.rdcrm-btn-open{display:inline-flex;align-items:center;gap:10px;padding:16px 32px;background:#152c6b;color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;text-decoration:none;transition:background .15s;}
+.rdcrm-btn-open:hover{background:#285199;}
 </style>
 </head>
 <body>
@@ -375,7 +373,7 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
     <div class="nav-item" id="nav-plugin" onclick="showPage('plugin',this)">
       <span class="nav-icon">🧩</span><span class="nav-label">Plugin Reuniões</span>
     </div>
-    <div class="nav-item" id="nav-rdcrm" onclick="showPage('rdcrm',this);iniciarRDCRM()">
+    <div class="nav-item" id="nav-rdcrm" onclick="showPage('rdcrm',this)">
       <span class="nav-icon">🤝</span><span class="nav-label">RD Station CRM</span>
     </div>
   </nav>
@@ -746,14 +744,14 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 
   <!-- RD STATION CRM -->
   <div class="page" id="page-rdcrm">
-    <div class="rdcrm-wrap">
-      <div class="rdcrm-spinner" id="rdcrm-spinner">
-        <div class="sp"></div>
-        Carregando RD Station CRM...
-      </div>
-      <iframe id="rdcrm-iframe" src="about:blank" title="RD Station CRM"
-        onload="if(this.src!=='about:blank'){document.getElementById('rdcrm-spinner').style.display='none';this.style.opacity='1';}">
-      </iframe>
+    <div class="rdcrm-btn-wrap">
+      <div style="font-size:48px;">🤝</div>
+      <div style="font-size:20px;font-weight:700;color:#152c6b;">RD Station CRM</div>
+      <div style="font-size:13px;color:#5a6e99;margin-bottom:8px;">Ferramenta de integração Outtax</div>
+      <a href="https://rd-station-crm-drab.vercel.app" target="_blank" class="rdcrm-btn-open">
+        🚀 Abrir RD Station CRM
+      </a>
+      <div style="font-size:11px;color:#9aabb9;margin-top:8px;">Abre em nova aba</div>
     </div>
   </div>
 
@@ -1576,18 +1574,7 @@ function exportarPDFFacebook(){
   const css=`*{margin:0;padding:0;box-sizing:border-box;}body{font-family:'Segoe UI',Arial,sans-serif;font-size:12px;color:#1a1a2e;background:#fff;padding:0;}.page{width:210mm;min-height:297mm;padding:16mm 18mm;background:#fff;}.header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #152c6b;padding-bottom:12px;margin-bottom:20px;}.logo-area h1{font-size:22px;font-weight:800;color:#152c6b;letter-spacing:.04em;line-height:1;}.logo-area p{font-size:10px;color:#5a6e99;margin-top:3px;}.header-right{text-align:right;font-size:10px;color:#5a6e99;}.header-right strong{display:block;font-size:13px;color:#152c6b;margin-bottom:2px;}.section-title{font-size:10px;font-weight:700;color:#5a6e99;text-transform:uppercase;letter-spacing:.08em;margin:18px 0 8px;padding-bottom:4px;border-bottom:1px solid #d6e0f0;}.cards-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:6px;}.card{background:#f0f4fb;border-radius:8px;padding:10px 12px;border-top:3px solid #285199;}.card.verde{border-top-color:#1D9E75;}.card.laranja{border-top-color:#FF8E2A;}.card .lbl{font-size:9px;color:#5a6e99;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;}.card .val{font-size:18px;font-weight:700;color:#152c6b;}.saldo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:6px;}.saldo-card{border-radius:8px;padding:10px 12px;border-top:3px solid #285199;}.saldo-card.ini{background:#e8eef8;border-top-color:#285199;}.saldo-card.inv{background:#fff0e0;border-top-color:#FF8E2A;}.saldo-card.fin{background:#eaf3de;border-top-color:#1D9E75;}.saldo-card.fin-neg{background:#fcebeb;border-top-color:#E24B4A;}.saldo-card .lbl{font-size:9px;color:#5a6e99;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;}.saldo-card .val{font-size:17px;font-weight:700;color:#152c6b;}.saldo-card .sub{font-size:9px;color:#5a6e99;margin-top:2px;}.progress-wrap{background:#f0f4fb;border-radius:8px;padding:10px 14px;margin-bottom:16px;}.progress-label{display:flex;justify-content:space-between;font-size:10px;color:#5a6e99;margin-bottom:6px;}.progress-track{height:8px;background:#d6e0f0;border-radius:99px;overflow:hidden;}.progress-fill{height:100%;border-radius:99px;}table{width:100%;border-collapse:collapse;margin-bottom:14px;font-size:10px;}thead tr{background:#152c6b;color:#fff;}thead th{padding:7px 10px;text-align:left;font-weight:600;font-size:9px;text-transform:uppercase;letter-spacing:.05em;}thead th:not(:first-child){text-align:right;}tbody tr{border-bottom:1px solid #e8eef8;}tbody tr:nth-child(even){background:#f8fafc;}tbody td{padding:7px 10px;color:#152c6b;}tbody td:not(:first-child){text-align:right;}.badge-ativa{display:inline-block;background:#eaf3de;color:#27500A;border-radius:20px;padding:1px 7px;font-size:9px;font-weight:700;}.badge-pausada{display:inline-block;background:#f0f0f0;color:#6b6b6b;border-radius:20px;padding:1px 7px;font-size:9px;font-weight:700;}.footer{margin-top:24px;padding-top:10px;border-top:1px solid #d6e0f0;display:flex;justify-content:space-between;font-size:9px;color:#5a6e99;}@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}`;
   const ativasRows=ativas.map(c=>`<tr><td><strong>${c.nome}</strong> <span class="badge-ativa">Ativa</span></td><td>${fmtBRL(c.investimento)}</td><td>${c.leads||0}</td><td>${c.cpl?fmtBRL(c.cpl):'-'}</td><td>${c.ctr?c.ctr+'%':'-'}</td><td>${c.cpc?fmtBRL(c.cpc):'-'}</td><td>${c.taxaConversao?c.taxaConversao+'%':'-'}</td></tr>`).join('');
   const pausadasRows=pausadas.filter(c=>c.investimento>0).map(c=>`<tr><td><strong>${c.nome}</strong> <span class="badge-pausada">Pausada</span></td><td>${fmtBRL(c.investimento)}</td><td>${c.leads||0}</td><td>${c.cpl?fmtBRL(c.cpl):'-'}</td><td>${c.ctr?c.ctr+'%':'-'}</td><td>${c.cpc?fmtBRL(c.cpc):'-'}</td><td>${c.taxaConversao?c.taxaConversao+'%':'-'}</td></tr>`).join('');
-  const html=`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Relatório Facebook Ads — Outtax</title><style>${css}</style></head><body><div class="page"><div class="header"><div class="logo-area"><h1>OUTTAX</h1><p>Dashboard de Marketing</p></div><div class="header-right"><strong>Relatório — Facebook Ads & Marketing</strong><span>Período: ${periodo}</span><br><span>Gerado em: ${agora}</span></div></div><div class="section-title">Saldo da conta Facebook Ads</div><div class="saldo-grid"><div class="saldo-card ini"><div class="lbl">Saldo inicial</div><div class="val">${fmtBRL(conta.saldoInicial)}</div></div><div class="saldo-card inv"><div class="lbl">Total investido</div><div class="val">${fmtBRL(conta.investidoPeriodo)}</div></div><div class="saldo-card ${negSaldo?'fin-neg':'fin'}"><div class="lbl">Saldo final</div><div class="val">${fmtBRL(conta.saldoFinal)}</div></div></div><div class="progress-wrap"><div class="progress-label"><span>Consumo do orçamento</span><span style="font-weight:700;color:${barColor}">${pct}% consumido</span></div><div class="progress-track"><div class="progress-fill" style="width:${pct}%;background:${barColor}"></div></div></div><div class="section-title">Métricas do período</div><div class="cards-grid"><div class="card"><div class="lbl">Investimento</div><div class="val">${fmtBRL(totais.investimento)}</div></div><div class="card verde"><div class="lbl">Leads gerados</div><div class="val">${fmtNum(totais.leads)}</div></div><div class="card"><div class="lbl">CPL médio</div><div class="val">${totais.cpl?fmtBRL(totais.cpl):'-'}</div></div></div><div class="cards-grid"><div class="card"><div class="lbl">Alcance</div><div class="val">${fmtNum(totais.alcance)}</div></div><div class="card"><div class="lbl">Impressões</div><div class="val">${fmtNum(totais.impressoes)}</div></div><div class="card"><div class="lbl">CTR</div><div class="val">${totais.ctr?Number(totais.ctr).toFixed(2)+'%':'-'}</div></div></div><div class="cards-grid"><div class="card laranja"><div class="lbl">CPC médio</div><div class="val">${totais.cliques&&totais.investimento?fmtBRL(totais.investimento/totais.cliques):'-'}</div></div><div class="card laranja"><div class="lbl">Taxa de conversão</div><div class="val">${totais.taxaConversao?totais.taxaConversao+'%':'-'}</div></div><div class="card"><div class="lbl">Média diária</div><div class="val">${totais.mediaDiaria?fmtBRL(totais.mediaDiaria)+'/dia':'-'}</div></div></div>${ativas.length?`<div class="section-title">Campanhas ativas (${ativas.length})</div><table><thead><tr><th>Campanha</th><th>Investimento</th><th>Leads</th><th>CPL</th><th>CTR</th><th>CPC</th><th>Conv.</th></tr></thead><tbody>${ativasRows}</tbody></table>`:''}${pausadasRows?`<div class="section-title">Campanhas pausadas com gasto</div><table><thead><tr><th>Campanha</th><th>Investimento</th><th>Leads</th><th>CPL</th><th>CTR</th><th>CPC</th><th>Conv.</th></tr></thead><tbody>${pausadasRows}</tbody></table>`:''}<div class="footer"><span>Outtax Dashboard</span><span>Fonte: API Graph Facebook Ads v19.0</span><span>${agora}</span></div></div><script>
-function iniciarRDCRM() {
-  var iframe = document.getElementById('rdcrm-iframe');
-  var spinner = document.getElementById('rdcrm-spinner');
-  if (iframe && iframe.src === 'about:blank') {
-    spinner.style.display = 'flex';
-    iframe.style.opacity = '0';
-    iframe.src = 'https://rd-station-crm-drab.vercel.app/?embed=true';
-  }
-}
-</script>
-</body></html>`;
+  const html=`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Relatório Facebook Ads — Outtax</title><style>${css}</style></head><body><div class="page"><div class="header"><div class="logo-area"><h1>OUTTAX</h1><p>Dashboard de Marketing</p></div><div class="header-right"><strong>Relatório — Facebook Ads & Marketing</strong><span>Período: ${periodo}</span><br><span>Gerado em: ${agora}</span></div></div><div class="section-title">Saldo da conta Facebook Ads</div><div class="saldo-grid"><div class="saldo-card ini"><div class="lbl">Saldo inicial</div><div class="val">${fmtBRL(conta.saldoInicial)}</div></div><div class="saldo-card inv"><div class="lbl">Total investido</div><div class="val">${fmtBRL(conta.investidoPeriodo)}</div></div><div class="saldo-card ${negSaldo?'fin-neg':'fin'}"><div class="lbl">Saldo final</div><div class="val">${fmtBRL(conta.saldoFinal)}</div></div></div><div class="progress-wrap"><div class="progress-label"><span>Consumo do orçamento</span><span style="font-weight:700;color:${barColor}">${pct}% consumido</span></div><div class="progress-track"><div class="progress-fill" style="width:${pct}%;background:${barColor}"></div></div></div><div class="section-title">Métricas do período</div><div class="cards-grid"><div class="card"><div class="lbl">Investimento</div><div class="val">${fmtBRL(totais.investimento)}</div></div><div class="card verde"><div class="lbl">Leads gerados</div><div class="val">${fmtNum(totais.leads)}</div></div><div class="card"><div class="lbl">CPL médio</div><div class="val">${totais.cpl?fmtBRL(totais.cpl):'-'}</div></div></div><div class="cards-grid"><div class="card"><div class="lbl">Alcance</div><div class="val">${fmtNum(totais.alcance)}</div></div><div class="card"><div class="lbl">Impressões</div><div class="val">${fmtNum(totais.impressoes)}</div></div><div class="card"><div class="lbl">CTR</div><div class="val">${totais.ctr?Number(totais.ctr).toFixed(2)+'%':'-'}</div></div></div><div class="cards-grid"><div class="card laranja"><div class="lbl">CPC médio</div><div class="val">${totais.cliques&&totais.investimento?fmtBRL(totais.investimento/totais.cliques):'-'}</div></div><div class="card laranja"><div class="lbl">Taxa de conversão</div><div class="val">${totais.taxaConversao?totais.taxaConversao+'%':'-'}</div></div><div class="card"><div class="lbl">Média diária</div><div class="val">${totais.mediaDiaria?fmtBRL(totais.mediaDiaria)+'/dia':'-'}</div></div></div>${ativas.length?`<div class="section-title">Campanhas ativas (${ativas.length})</div><table><thead><tr><th>Campanha</th><th>Investimento</th><th>Leads</th><th>CPL</th><th>CTR</th><th>CPC</th><th>Conv.</th></tr></thead><tbody>${ativasRows}</tbody></table>`:''}${pausadasRows?`<div class="section-title">Campanhas pausadas com gasto</div><table><thead><tr><th>Campanha</th><th>Investimento</th><th>Leads</th><th>CPL</th><th>CTR</th><th>CPC</th><th>Conv.</th></tr></thead><tbody>${pausadasRows}</tbody></table>`:''}<div class="footer"><span>Outtax Dashboard</span><span>Fonte: API Graph Facebook Ads v19.0</span><span>${agora}</span></div></div></body></html>`;
   const win=window.open('','_blank','width=900,height=700');win.document.write(html);win.document.close();win.focus();setTimeout(()=>{win.print();},600);
 }
 
@@ -1983,17 +1970,6 @@ async function inicializar(){
   const sessaoOk=await validarSessaoNoServidor();if(!sessaoOk)return;
   ocultarLogin();inicializar();
 })();
-</script>
-<script>
-function iniciarRDCRM() {
-  var iframe = document.getElementById('rdcrm-iframe');
-  var spinner = document.getElementById('rdcrm-spinner');
-  if (iframe && iframe.src === 'about:blank') {
-    spinner.style.display = 'flex';
-    iframe.style.opacity = '0';
-    iframe.src = 'https://rd-station-crm-drab.vercel.app/?embed=true';
-  }
-}
 </script>
 </body>
 </html>
