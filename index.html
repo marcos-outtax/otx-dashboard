@@ -82,14 +82,29 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
   .fa{margin-left:0}
 }
 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
-.stat{background:var(--branco);border:1px solid var(--border);border-radius:12px;padding:14px 16px;border-top:3px solid var(--azul-medio)}
+.stat{background:var(--branco);border:1px solid var(--border);border-radius:14px;padding:14px 16px;border-top:3px solid var(--azul-medio);box-shadow:0 2px 10px rgba(21,44,107,.04)}
 .stat .num{font-size:24px;font-weight:700;margin-bottom:2px;color:var(--azul-escuro)}
 .stat .lbl{font-size:11px;color:var(--text-muted)}
 .stat-clickable{cursor:pointer;transition:all .18s;position:relative;}
 .stat-clickable:hover{transform:translateY(-2px);box-shadow:0 4px 16px rgba(21,44,107,.13);border-color:var(--azul-medio);}
 .stat-clickable::after{content:'▼';position:absolute;bottom:8px;right:10px;font-size:9px;color:var(--text-muted);opacity:.6;}
 .stat-clickable:hover::after{opacity:1;}
-.filtros{background:var(--branco);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:16px;display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap}
+.filtros{background:var(--branco);border:1px solid var(--border);border-radius:14px;padding:16px 18px;margin-bottom:18px;display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;box-shadow:0 2px 10px rgba(21,44,107,.04)}
+/* ── CABEÇALHO DE PÁGINA (padrão em todas as abas) ── */
+.pg-header{display:flex;align-items:center;gap:14px;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border)}
+.pg-header-icon{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,var(--azul-claro),var(--azul-pale));display:flex;align-items:center;justify-content:center;font-size:21px;flex-shrink:0}
+.pg-header-text{flex:1;min-width:0}
+.pg-header-title{font-size:18px;font-weight:700;color:var(--azul-escuro)}
+.pg-header-sub{font-size:12px;color:var(--text-muted);margin-top:2px}
+.pg-header-action{flex-shrink:0}
+/* ── PASSOS NUMERADOS (usado no Plugin) ── */
+.step-box{background:var(--branco);border:1px solid var(--border);border-radius:14px;padding:20px;box-shadow:0 2px 10px rgba(21,44,107,.04)}
+.step-row{display:flex;gap:12px;align-items:flex-start;padding-bottom:16px;margin-bottom:16px;border-bottom:1px solid var(--border)}
+.step-row:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
+.step-num{min-width:32px;height:32px;border-radius:50%;background:var(--azul-escuro);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0}
+.step-num.done{background:#1D9E75}
+.step-title{font-size:13px;font-weight:600;color:var(--azul-escuro)}
+.step-desc{font-size:12px;color:var(--text-muted);margin-top:4px;line-height:1.5}
 .fg{display:flex;flex-direction:column;gap:4px}
 .fg label{font-size:11px;color:var(--text-muted);font-weight:500}
 .fg input[type="date"],.fg select{padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:12px;background:var(--branco);color:var(--text);cursor:pointer;min-width:140px}
@@ -97,7 +112,8 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 .fa{display:flex;gap:8px;align-items:flex-end;margin-left:auto}
 .sec-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
 .cards{display:flex;flex-direction:column;gap:10px}
-.card{background:var(--branco);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.card{background:var(--branco);border:1px solid var(--border);border-radius:14px;overflow:hidden;transition:box-shadow .2s ease}
+.card:hover{box-shadow:0 3px 14px rgba(21,44,107,.07)}
 .card.marketing{border-left:4px solid var(--azul-medio)}
 .card.direto{border-left:4px solid var(--laranja)}
 .card.urgente{border-left:4px solid #E24B4A}
@@ -162,14 +178,14 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 .nb{background:var(--azul-pale);border-radius:8px;padding:10px 12px;font-size:12px;line-height:1.65}
 .divl{height:1px;background:var(--border);margin:14px 0}
 .act-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-.btn{display:inline-flex;align-items:center;gap:5px;padding:8px 16px;font-size:12px;font-weight:500;border-radius:8px;cursor:pointer;border:1px solid var(--border);background:var(--branco);color:var(--azul-escuro);text-decoration:none;transition:all .15s}
+.btn{display:inline-flex;align-items:center;gap:5px;padding:8px 16px;font-size:12px;font-weight:500;border-radius:9px;cursor:pointer;border:1px solid var(--border);background:var(--branco);color:var(--azul-escuro);text-decoration:none;transition:all .15s}
 .btn:hover{background:var(--azul-pale);border-color:var(--azul-medio)}
-.btn-p{background:var(--azul-escuro);color:#fff;border-color:var(--azul-escuro)}
+.btn-p{background:var(--azul-escuro);color:#fff;border-color:var(--azul-escuro);box-shadow:0 2px 8px rgba(21,44,107,.18)}
 .btn-p:hover{background:var(--azul-medio);border-color:var(--azul-medio)}
 .btn-s{background:var(--laranja);color:#fff;border:none}
 .btn-s:hover{opacity:.88}
 .btn-sm{padding:5px 12px;font-size:11px;font-weight:500;border-radius:6px;border:1px solid var(--laranja);background:transparent;color:var(--laranja);cursor:pointer}
-.cnpj-row{display:flex;gap:6px;margin-bottom:10px}
+.cnpj-row{display:flex;gap:8px;margin-bottom:10px;background:var(--branco);border:1px solid var(--border);border-radius:14px;padding:10px;box-shadow:0 2px 10px rgba(21,44,107,.04)}
 .cnpj-row input{flex:1;padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:12px;background:var(--branco);color:var(--text)}
 .loading{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-muted);padding:10px 0}
 .dot{width:5px;height:5px;border-radius:50%;background:var(--azul-medio);animation:pulse 1.2s infinite}
@@ -184,7 +200,8 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 .prazo-num{font-size:24px;font-weight:700;line-height:1;color:var(--azul-escuro)}
 .prazo-lbl{font-size:11px;color:var(--text-muted);margin-top:2px}
 .funil-tag{display:inline-block;font-size:10px;padding:2px 8px;border-radius:20px;background:var(--azul-claro);color:var(--azul-escuro);font-weight:600;margin-left:6px;vertical-align:middle}
-.tarefa-card{background:var(--branco);border:1px solid var(--border);border-radius:10px;padding:14px 16px;display:flex;align-items:flex-start;gap:12px}
+.tarefa-card{background:var(--branco);border:1px solid var(--border);border-radius:12px;padding:14px 16px;display:flex;align-items:flex-start;gap:12px;transition:box-shadow .2s ease}
+.tarefa-card:hover{box-shadow:0 3px 14px rgba(21,44,107,.07)}
 .tarefa-card.atrasada{border-left:4px solid #E24B4A}
 .tarefa-card.hoje{border-left:4px solid var(--laranja)}
 .tarefa-card.futura{border-left:4px solid var(--azul-medio)}
@@ -256,7 +273,7 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 .fb-progress-track{height:8px;background:var(--azul-pale);border-radius:99px;overflow:hidden;}
 .fb-progress-fill{height:100%;border-radius:99px;transition:width .6s ease;}
 /* ── ACCORDION SEÇÕES ── */
-.sec-accordion{border:1px solid var(--border);border-radius:12px;margin-bottom:10px;overflow:hidden;background:var(--branco);}
+.sec-accordion{border:1px solid var(--border);border-radius:14px;margin-bottom:10px;overflow:hidden;background:var(--branco);box-shadow:0 2px 10px rgba(21,44,107,.04);}
 .sec-accordion-hdr{display:flex;align-items:center;justify-content:space-between;padding:13px 18px;cursor:pointer;user-select:none;background:var(--branco);transition:background .15s;}
 .sec-accordion-hdr:hover{background:var(--azul-pale);}
 .sec-accordion-hdr.open{background:var(--azul-pale);border-bottom:1px solid var(--border);}
@@ -403,9 +420,12 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 
   <!-- REUNIÕES -->
   <div class="page active" id="page-reunioes">
-    <div class="sec-hdr" style="margin-bottom:16px">
-      <div><div style="font-size:18px;font-weight:700;color:var(--azul-escuro)">📅 Reuniões</div>
-      <div style="font-size:12px;color:var(--text-muted);margin-top:2px">Agenda Google integrada</div></div>
+    <div class="pg-header">
+      <div class="pg-header-icon">📅</div>
+      <div class="pg-header-text">
+        <div class="pg-header-title">Reuniões</div>
+        <div class="pg-header-sub">Agenda Google integrada</div>
+      </div>
     </div>
     <div class="filtros">
       <div class="fg"><label>De</label><input type="date" id="r-de"></div>
@@ -420,9 +440,12 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 
   <!-- PROPOSTAS -->
   <div class="page" id="page-propostas">
-    <div class="sec-hdr" style="margin-bottom:16px">
-      <div><div style="font-size:18px;font-weight:700;color:var(--azul-escuro)">📋 Propostas</div>
-      <div style="font-size:12px;color:var(--text-muted);margin-top:2px">Negociações do RD CRM</div></div>
+    <div class="pg-header">
+      <div class="pg-header-icon">📋</div>
+      <div class="pg-header-text">
+        <div class="pg-header-title">Propostas</div>
+        <div class="pg-header-sub">Negociações do RD CRM</div>
+      </div>
     </div>
     <div class="filtros">
       <div class="fg"><label>Funil</label><select id="f-funil"><option value="all">Carregando funis...</option></select></div>
@@ -471,9 +494,12 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 
   <!-- TAREFAS -->
   <div class="page" id="page-tarefas">
-    <div class="sec-hdr" style="margin-bottom:16px">
-      <div><div style="font-size:18px;font-weight:700;color:var(--azul-escuro)">✅ Tarefas</div>
-      <div style="font-size:12px;color:var(--text-muted);margin-top:2px">Tarefas do RD CRM</div></div>
+    <div class="pg-header">
+      <div class="pg-header-icon">✅</div>
+      <div class="pg-header-text">
+        <div class="pg-header-title">Tarefas</div>
+        <div class="pg-header-sub">Tarefas do RD CRM</div>
+      </div>
     </div>
     <div class="filtros">
       <div class="fg"><label>De</label><input type="date" id="ft-de"></div>
@@ -512,10 +538,11 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
        FACEBOOK ADS & MARKETING (ABA UNIFICADA)
        ══════════════════════════════════════════════════════ -->
   <div class="page" id="page-fbmkt">
-    <div class="sec-hdr" style="margin-bottom:16px">
-      <div>
-        <div style="font-size:18px;font-weight:700;color:var(--azul-escuro)">📊 Facebook Ads & Marketing</div>
-        <div style="font-size:12px;color:var(--text-muted);margin-top:2px">Campanhas · Métricas · Análise RD CRM</div>
+    <div class="pg-header">
+      <div class="pg-header-icon">📊</div>
+      <div class="pg-header-text">
+        <div class="pg-header-title">Facebook Ads &amp; Marketing</div>
+        <div class="pg-header-sub">Campanhas · Métricas · Análise RD CRM</div>
       </div>
     </div>
 
@@ -660,9 +687,12 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 
   <!-- CONSULTA CNPJ -->
   <div class="page" id="page-cnpj">
-    <div class="sec-hdr" style="margin-bottom:16px">
-      <div><div style="font-size:18px;font-weight:700;color:var(--azul-escuro)">🏢 Consulta CNPJ</div>
-      <div style="font-size:12px;color:var(--text-muted);margin-top:2px">Dados da Receita Federal</div></div>
+    <div class="pg-header">
+      <div class="pg-header-icon">🏢</div>
+      <div class="pg-header-text">
+        <div class="pg-header-title">Consulta CNPJ</div>
+        <div class="pg-header-sub">Dados da Receita Federal</div>
+      </div>
     </div>
     <div class="cnpj-row">
       <input type="text" id="cnpj-input" placeholder="00.000.000/0000-00" maxlength="18" oninput="this.value=fc(this.value)" onkeydown="if(event.key==='Enter')buscarCNPJ()">
@@ -673,12 +703,13 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 
   <!-- TRANSCRIÇÕES -->
   <div class="page" id="page-transcricoes">
-    <div class="sec-hdr" style="margin-bottom:16px">
-      <div>
-        <div style="font-size:18px;font-weight:700;color:var(--azul-escuro)">🎙️ Transcrições de Reuniões</div>
-        <div style="font-size:12px;color:var(--text-muted);margin-top:2px">Resumos salvos no Google Drive</div>
+    <div class="pg-header">
+      <div class="pg-header-icon">🎙️</div>
+      <div class="pg-header-text">
+        <div class="pg-header-title">Transcrições de Reuniões</div>
+        <div class="pg-header-sub">Resumos salvos no Google Drive</div>
       </div>
-      <button class="btn btn-p" onclick="abrirModalNovaTranscricao()">➕ Nova Transcrição</button>
+      <button class="btn btn-p pg-header-action" onclick="abrirModalNovaTranscricao()">➕ Nova Transcrição</button>
     </div>
     <div class="filtros">
       <div class="fg"><label>De</label><input type="date" id="tr-de"></div>
@@ -700,53 +731,56 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 
   <!-- PLUGIN REUNIÕES -->
   <div class="page" id="page-plugin">
-    <div style="margin-bottom:20px;">
-      <div style="font-size:18px;font-weight:700;color:var(--azul-escuro);">🧩 Plugin de Captura de Reuniões</div>
-      <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">Instale a extensão para capturar reuniões automaticamente no Google Meet</div>
+    <div class="pg-header">
+      <div class="pg-header-icon">🧩</div>
+      <div class="pg-header-text">
+        <div class="pg-header-title">Plugin de Captura de Reuniões</div>
+        <div class="pg-header-sub">Instale a extensão para capturar reuniões automaticamente no Google Meet</div>
+      </div>
     </div>
-    <div style="background:var(--branco);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:16px;text-align:center;">
+    <div class="step-box" style="text-align:center;margin-bottom:16px;">
       <div style="font-size:48px;margin-bottom:12px;">📦</div>
       <div style="font-size:15px;font-weight:700;color:var(--azul-escuro);margin-bottom:4px;">Outtax Plugin Chrome</div>
       <div style="font-size:12px;color:var(--text-muted);margin-bottom:16px;">Versão atual — extensão para Google Meet</div>
       <a href="/plugin/outtax-plugin.zip" download="outtax-plugin.zip"
-         style="display:inline-flex;align-items:center;gap:8px;background:var(--azul-escuro);color:#fff;padding:12px 28px;border-radius:8px;font-size:13px;font-weight:600;text-decoration:none;cursor:pointer;transition:background .2s;"
+         style="display:inline-flex;align-items:center;gap:8px;background:var(--azul-escuro);color:#fff;padding:12px 28px;border-radius:10px;font-size:13px;font-weight:600;text-decoration:none;cursor:pointer;transition:background .2s;box-shadow:0 4px 14px rgba(21,44,107,.2);"
          onmouseover="this.style.background='var(--azul-medio)'" onmouseout="this.style.background='var(--azul-escuro)'">
         ⬇️ Baixar Plugin (.zip)
       </a>
       <div style="font-size:11px;color:var(--text-muted);margin-top:10px;">Após baixar, siga as instruções abaixo para instalar</div>
     </div>
-    <div style="background:var(--branco);border:1px solid var(--border);border-radius:12px;padding:20px;">
+    <div class="step-box">
       <div style="font-size:14px;font-weight:700;color:var(--azul-escuro);margin-bottom:16px;">📋 Passo a passo de instalação</div>
-      <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--border);">
-        <div style="min-width:32px;height:32px;border-radius:50%;background:var(--azul-escuro);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;">1</div>
-        <div><div style="font-size:13px;font-weight:600;color:var(--azul-escuro);">Baixar e descompactar</div><div style="font-size:12px;color:var(--text-muted);margin-top:4px;">Clique no botão acima para baixar o arquivo <strong>.zip</strong>. Crie uma pasta no seu computador chamada <strong>Outtax Plugin Chrome</strong> e extraia o conteúdo do .zip dentro dela.</div></div>
+      <div class="step-row">
+        <div class="step-num">1</div>
+        <div><div class="step-title">Baixar e descompactar</div><div class="step-desc">Clique no botão acima para baixar o arquivo <strong>.zip</strong>. Crie uma pasta no seu computador chamada <strong>Outtax Plugin Chrome</strong> e extraia o conteúdo do .zip dentro dela.</div></div>
       </div>
-      <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--border);">
-        <div style="min-width:32px;height:32px;border-radius:50%;background:var(--azul-escuro);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;">2</div>
-        <div><div style="font-size:13px;font-weight:600;color:var(--azul-escuro);">Abrir extensões do Chrome</div><div style="font-size:12px;color:var(--text-muted);margin-top:4px;">No Chrome, clique nos <strong>três pontinhos</strong> (⋮) → <strong>Extensões</strong> → <strong>Gerenciar extensões</strong>. Ou acesse: <code style="background:var(--azul-pale);padding:2px 6px;border-radius:4px;font-size:11px;">chrome://extensions</code></div></div>
+      <div class="step-row">
+        <div class="step-num">2</div>
+        <div><div class="step-title">Abrir extensões do Chrome</div><div class="step-desc">No Chrome, clique nos <strong>três pontinhos</strong> (⋮) → <strong>Extensões</strong> → <strong>Gerenciar extensões</strong>. Ou acesse: <code style="background:var(--azul-pale);padding:2px 6px;border-radius:4px;font-size:11px;">chrome://extensions</code></div></div>
       </div>
-      <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--border);">
-        <div style="min-width:32px;height:32px;border-radius:50%;background:var(--azul-escuro);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;">3</div>
-        <div><div style="font-size:13px;font-weight:600;color:var(--azul-escuro);">Ativar Modo Desenvolvedor</div><div style="font-size:12px;color:var(--text-muted);margin-top:4px;">No canto <strong>superior direito</strong> da tela de extensões, ative o botão <strong>Modo do desenvolvedor</strong>.</div></div>
+      <div class="step-row">
+        <div class="step-num">3</div>
+        <div><div class="step-title">Ativar Modo Desenvolvedor</div><div class="step-desc">No canto <strong>superior direito</strong> da tela de extensões, ative o botão <strong>Modo do desenvolvedor</strong>.</div></div>
       </div>
-      <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--border);">
-        <div style="min-width:32px;height:32px;border-radius:50%;background:var(--azul-escuro);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;">4</div>
-        <div><div style="font-size:13px;font-weight:600;color:var(--azul-escuro);">Instalar o plugin</div><div style="font-size:12px;color:var(--text-muted);margin-top:4px;">Clique em <strong>Carregar sem compactação</strong> e selecione a pasta <strong>Outtax Plugin Chrome</strong> criada no passo 1.</div></div>
+      <div class="step-row">
+        <div class="step-num">4</div>
+        <div><div class="step-title">Instalar o plugin</div><div class="step-desc">Clique em <strong>Carregar sem compactação</strong> e selecione a pasta <strong>Outtax Plugin Chrome</strong> criada no passo 1.</div></div>
       </div>
-      <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--border);">
-        <div style="min-width:32px;height:32px;border-radius:50%;background:var(--azul-escuro);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;">5</div>
-        <div><div style="font-size:13px;font-weight:600;color:var(--azul-escuro);">Fixar a extensão</div><div style="font-size:12px;color:var(--text-muted);margin-top:4px;">Clique no ícone de <strong>extensões</strong> (🧩) na barra do Chrome e clique no <strong>alfinete</strong> ao lado do plugin da Outtax para deixá-lo visível.</div></div>
+      <div class="step-row">
+        <div class="step-num">5</div>
+        <div><div class="step-title">Fixar a extensão</div><div class="step-desc">Clique no ícone de <strong>extensões</strong> (🧩) na barra do Chrome e clique no <strong>alfinete</strong> ao lado do plugin da Outtax para deixá-lo visível.</div></div>
       </div>
-      <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--border);">
-        <div style="min-width:32px;height:32px;border-radius:50%;background:var(--azul-escuro);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;">6</div>
-        <div><div style="font-size:13px;font-weight:600;color:var(--azul-escuro);">Configurar acesso</div><div style="font-size:12px;color:var(--text-muted);margin-top:4px;">Clique no ícone do plugin → <strong>Abrir dashboard</strong> → faça login com seu usuário e senha → conecte sua conta Google.</div></div>
+      <div class="step-row">
+        <div class="step-num">6</div>
+        <div><div class="step-title">Configurar acesso</div><div class="step-desc">Clique no ícone do plugin → <strong>Abrir dashboard</strong> → faça login com seu usuário e senha → conecte sua conta Google.</div></div>
       </div>
-      <div style="display:flex;gap:12px;align-items:flex-start;">
-        <div style="min-width:32px;height:32px;border-radius:50%;background:#1D9E75;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;">✓</div>
-        <div><div style="font-size:13px;font-weight:600;color:#1D9E75;">Pronto para usar!</div><div style="font-size:12px;color:var(--text-muted);margin-top:4px;">Ao entrar em uma reunião no Google Meet, o plugin captura automaticamente. <strong>Importante:</strong> mantenha as <strong>legendas ativadas</strong>.</div></div>
+      <div class="step-row">
+        <div class="step-num done">✓</div>
+        <div><div class="step-title" style="color:#1D9E75;">Pronto para usar!</div><div class="step-desc">Ao entrar em uma reunião no Google Meet, o plugin captura automaticamente. <strong>Importante:</strong> mantenha as <strong>legendas ativadas</strong>.</div></div>
       </div>
     </div>
-    <div style="background:var(--branco);border:1px solid var(--border);border-radius:12px;padding:16px;margin-top:16px;">
+    <div class="step-box" style="margin-top:16px;">
       <div style="font-size:13px;font-weight:600;color:var(--azul-escuro);margin-bottom:8px;">🗑️ Como desinstalar</div>
       <div style="font-size:12px;color:var(--text-muted);">Acesse <code style="background:var(--azul-pale);padding:2px 6px;border-radius:4px;font-size:11px;">chrome://extensions</code>, encontre o plugin da Outtax e clique em <strong>Remover</strong>. Depois delete a pasta <strong>Outtax Plugin Chrome</strong> do seu computador.</div>
     </div>
