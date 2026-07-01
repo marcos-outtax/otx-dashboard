@@ -21,7 +21,7 @@
   --text-muted:#5a6e99;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;}
+body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:block;}
 .login-screen{position:fixed;inset:0;background:linear-gradient(135deg,var(--azul-escuro) 0%,var(--azul-medio) 100%);display:flex;align-items:center;justify-content:center;z-index:9999;}
 .login-screen.hidden{display:none;}
 .login-box{background:#fff;border-radius:16px;padding:36px 32px;width:100%;max-width:380px;margin:16px;box-shadow:0 20px 60px rgba(21,44,107,.3);}
@@ -37,20 +37,26 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 .login-btn:hover{background:var(--azul-medio);}
 .login-err{display:none;font-size:12px;color:#791F1F;background:#FCEBEB;border-radius:8px;padding:8px 12px;margin-top:12px;text-align:center;}
 .login-err.show{display:block;}
-.sidebar{width:220px;min-height:100vh;background:linear-gradient(180deg,var(--azul-escuro) 0%,var(--azul-medio) 100%);display:flex;flex-direction:column;position:fixed;left:0;top:0;z-index:100;box-shadow:3px 0 16px rgba(21,44,107,.25);transition:transform .3s}
-.sidebar-logo{padding:20px 16px 16px;border-bottom:1px solid rgba(255,255,255,.12);text-align:center}
-.sidebar-logo img{width:160px;max-width:100%;height:auto;object-fit:contain;display:block;margin:0 auto}
-.sidebar-date{padding:8px 16px;font-size:11px;color:rgba(255,255,255,.6);border-bottom:1px solid rgba(255,255,255,.08);text-align:center}
-.sidebar-nav{flex:1;padding:12px 0;overflow-y:auto}
-.nav-item{display:flex;align-items:center;gap:10px;padding:12px 20px;font-size:13px;font-weight:500;color:rgba(255,255,255,.65);cursor:pointer;transition:all .2s;border-left:3px solid transparent}
-.nav-item:hover{color:#fff;background:rgba(255,255,255,.08);border-left-color:rgba(255,255,255,.3)}
-.nav-item.active{color:#fff;background:rgba(255,255,255,.12);border-left-color:var(--laranja)}
-.nav-item .nav-icon{font-size:16px;width:20px;text-align:center;flex-shrink:0}
+.topbar{width:100%;background:linear-gradient(135deg,var(--azul-escuro) 0%,var(--azul-medio) 100%);display:flex;flex-direction:column;position:sticky;top:0;z-index:100;box-shadow:0 3px 16px rgba(21,44,107,.25)}
+.topbar-main{display:flex;align-items:center;padding:0 20px;height:56px;gap:16px}
+.topbar-logo img{height:36px;width:auto;object-fit:contain;display:block}
+.topbar-nav{display:flex;align-items:center;gap:2px;flex:1;overflow-x:auto;scrollbar-width:none}
+.topbar-nav::-webkit-scrollbar{display:none}
+.nav-item{display:flex;align-items:center;gap:6px;padding:7px 12px;font-size:12px;font-weight:500;color:rgba(255,255,255,.65);cursor:pointer;transition:all .2s;border-radius:8px;white-space:nowrap;border-bottom:2px solid transparent}
+.nav-item:hover{color:#fff;background:rgba(255,255,255,.08)}
+.nav-item.active{color:#fff;background:rgba(255,255,255,.12);border-bottom-color:var(--laranja)}
+.nav-item .nav-icon{font-size:14px}
 .nav-item .nav-label{flex:1}
-.sidebar-footer{padding:16px;border-top:1px solid rgba(255,255,255,.12)}
-.btn-cfg{display:flex;align-items:center;gap:8px;padding:10px 12px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:8px;color:#fff;font-size:12px;font-weight:500;cursor:pointer;width:100%;transition:all .2s}
+.topbar-actions{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.topbar-date{font-size:11px;color:rgba(255,255,255,.55);white-space:nowrap}
+.topbar-user{font-size:11px;color:rgba(255,255,255,.85);background:rgba(255,255,255,.12);padding:4px 10px;border-radius:20px;white-space:nowrap;display:none}
+.btn-cfg{display:inline-flex;align-items:center;gap:6px;padding:7px 12px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:8px;color:#fff;font-size:11px;font-weight:500;cursor:pointer;transition:all .2s;white-space:nowrap}
 .btn-cfg:hover{background:rgba(255,255,255,.18)}
-.main-content{margin-left:220px;flex:1;min-height:100vh;display:flex;flex-direction:column}
+.main-content{flex:1;min-height:calc(100vh - 56px);display:flex;flex-direction:column;margin-left:0!important}
+/* sidebar mantida oculta para mobile */
+.sidebar{display:none}
+.sidebar-overlay{display:none!important}
+.mobile-topbar{display:none!important}
 .banner{background:#FFF0E0;border-bottom:2px solid var(--laranja);padding:10px 24px;display:flex;align-items:center;justify-content:space-between;font-size:12px;color:var(--azul-escuro)}
 .banner.hidden{display:none}
 .page{display:none;padding:24px 16px;max-width:960px;margin:0 auto;width:100%}
@@ -61,11 +67,11 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 .sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99}
 @media(max-width:768px){
   body{display:block}
-  .sidebar{transform:translateX(-100%)}
-  .sidebar.open{transform:translateX(0)}
-  .sidebar-overlay.open{display:block}
-  .main-content{margin-left:0}
-  .mobile-topbar{display:flex}
+  .topbar-nav{gap:0}
+  .nav-item{padding:6px 8px;font-size:11px}
+  .nav-item .nav-label{display:none}
+  .nav-item .nav-icon{font-size:16px}
+  .topbar-date{display:none}
   .two-col,.three-col{grid-template-columns:1fr}
   .stats{grid-template-columns:repeat(2,1fr)}
   .filtros{flex-direction:column;align-items:stretch}
@@ -310,12 +316,6 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 .ad-filtro-btn{padding:4px 12px;font-size:11px;font-weight:600;border-radius:20px;border:1px solid var(--border);background:var(--branco);color:var(--text-muted);cursor:pointer;transition:all .15s;}
 .ad-filtro-btn.ativo{background:var(--azul-escuro);color:#fff;border-color:var(--azul-escuro);}
 .ad-filtro-btn:hover:not(.ativo){background:var(--azul-pale);border-color:var(--azul-medio);}
-
-/* ── RD Station CRM ── */
-#page-rdcrm{padding:0!important;overflow:hidden}
-.rdcrm-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;height:calc(100vh - 100px);gap:20px;}
-.rdcrm-btn-open{display:inline-flex;align-items:center;gap:10px;padding:16px 32px;background:#152c6b;color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;text-decoration:none;transition:background .15s;}
-.rdcrm-btn-open:hover{background:#285199;}
 </style>
 </head>
 <body>
@@ -338,49 +338,42 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
   </div>
 </div>
 
-<div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
-<div class="mobile-topbar">
-  <button class="mobile-menu-btn" onclick="toggleSidebar()">☰</button>
-  <img src="/logo-outtax.png" alt="Outtax">
-  <div style="width:32px"></div>
-</div>
-
-<div class="sidebar" id="sidebar">
-  <div class="sidebar-logo"><img src="/logo-outtax.png" alt="Outtax"></div>
-  <div class="sidebar-date" id="td"></div>
-  <div id="sidebar-user" style="padding:6px 16px 10px;font-size:11px;color:rgba(255,255,255,.85);text-align:center;border-bottom:1px solid rgba(255,255,255,.08);display:none;">
-    <span style="background:rgba(255,255,255,.12);padding:4px 12px;border-radius:20px;font-weight:500;">👤 <span id="sidebar-user-nome"></span></span>
-  </div>
-  <nav class="sidebar-nav">
-    <div class="nav-item active" id="nav-reunioes" onclick="showPage('reunioes',this)">
-      <span class="nav-icon">📅</span><span class="nav-label">Reuniões</span>
+<div class="topbar" id="topbar">
+  <div class="topbar-main">
+    <div class="topbar-logo"><img src="/logo-outtax.png" alt="Outtax"></div>
+    <nav class="topbar-nav">
+      <div class="nav-item active" id="nav-reunioes" onclick="showPage('reunioes',this)">
+        <span class="nav-icon">📅</span><span class="nav-label">Reuniões</span>
+      </div>
+      <div class="nav-item" id="nav-propostas" onclick="showPage('propostas',this)">
+        <span class="nav-icon">📋</span><span class="nav-label">Propostas</span>
+      </div>
+      <div class="nav-item" id="nav-tarefas" onclick="showPage('tarefas',this)">
+        <span class="nav-icon">✅</span><span class="nav-label">Tarefas</span>
+      </div>
+      <div class="nav-item" id="nav-fbmkt" onclick="showPage('fbmkt',this)">
+        <span class="nav-icon">📊</span><span class="nav-label">Facebook Ads</span>
+      </div>
+      <div class="nav-item" id="nav-cnpj" onclick="showPage('cnpj',this)">
+        <span class="nav-icon">🏢</span><span class="nav-label">CNPJ</span>
+      </div>
+      <div class="nav-item" id="nav-transcricoes" onclick="showPage('transcricoes',this)">
+        <span class="nav-icon">🎙️</span><span class="nav-label">Transcrições</span>
+      </div>
+      <div class="nav-item" id="nav-plugin" onclick="showPage('plugin',this)">
+        <span class="nav-icon">🧩</span><span class="nav-label">Plugin</span>
+      </div>
+      <div class="nav-item" id="nav-rdcrm" onclick="showPage('rdcrm',this)">
+        <span class="nav-icon">🤝</span><span class="nav-label">RD Station CRM</span>
+      </div>
+    </nav>
+    <div class="topbar-actions">
+      <div class="topbar-date" id="td"></div>
+      <div class="topbar-user" id="sidebar-user"><span>👤 <span id="sidebar-user-nome"></span></span></div>
+      <button class="btn-cfg" onclick="abrirCfg()" title="Configurações">⚙</button>
+      <button id="btn-admin-usuarios" class="btn-cfg" style="display:none;" onclick="abrirGerenciarUsuarios()" title="Usuários">👥</button>
+      <button class="btn-cfg" style="background:rgba(255,100,100,.15);border-color:rgba(255,100,100,.3)" onclick="fazerLogout()" title="Sair">🚪</button>
     </div>
-    <div class="nav-item" id="nav-propostas" onclick="showPage('propostas',this)">
-      <span class="nav-icon">📋</span><span class="nav-label">Propostas</span>
-    </div>
-    <div class="nav-item" id="nav-tarefas" onclick="showPage('tarefas',this)">
-      <span class="nav-icon">✅</span><span class="nav-label">Tarefas</span>
-    </div>
-    <div class="nav-item" id="nav-fbmkt" onclick="showPage('fbmkt',this)">
-      <span class="nav-icon">📊</span><span class="nav-label">Facebook Ads & Marketing</span>
-    </div>
-    <div class="nav-item" id="nav-cnpj" onclick="showPage('cnpj',this)">
-      <span class="nav-icon">🏢</span><span class="nav-label">Consulta CNPJ</span>
-    </div>
-    <div class="nav-item" id="nav-transcricoes" onclick="showPage('transcricoes',this)">
-      <span class="nav-icon">🎙️</span><span class="nav-label">Transcrições</span>
-    </div>
-    <div class="nav-item" id="nav-plugin" onclick="showPage('plugin',this)">
-      <span class="nav-icon">🧩</span><span class="nav-label">Plugin Reuniões</span>
-    </div>
-    <div class="nav-item" id="nav-rdcrm" onclick="showPage('rdcrm',this)">
-      <span class="nav-icon">🤝</span><span class="nav-label">RD Station CRM</span>
-    </div>
-  </nav>
-  <div class="sidebar-footer">
-    <button class="btn-cfg" onclick="abrirCfg()">⚙ Configurações</button>
-    <button id="btn-admin-usuarios" class="btn-cfg" style="margin-top:8px;display:none;" onclick="abrirGerenciarUsuarios()">👥 Usuários</button>
-    <button class="btn-cfg" style="margin-top:8px;background:rgba(255,100,100,.15);border-color:rgba(255,100,100,.3)" onclick="fazerLogout()">🚪 Sair</button>
   </div>
 </div>
 
@@ -741,20 +734,6 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
     </div>
   </div>
 
-
-  <!-- RD STATION CRM -->
-  <div class="page" id="page-rdcrm">
-    <div class="rdcrm-wrap">
-      <div style="font-size:48px;">🤝</div>
-      <div style="font-size:20px;font-weight:700;color:#152c6b;">RD Station CRM</div>
-      <div style="font-size:13px;color:#5a6e99;margin-bottom:8px;">Ferramenta de integração Outtax</div>
-      <a href="https://rd-station-crm-drab.vercel.app/login?auto=MarcosOuttax2024SecretToken" target="_blank" class="rdcrm-btn-open">
-        🚀 Abrir RD Station CRM
-      </a>
-      <div style="font-size:11px;color:#9aabb9;margin-top:8px;">Abre já logado como Marcos Xavier</div>
-    </div>
-  </div>
-
 </div><!-- /main-content -->
 
 <!-- LIGHTBOX CRIATIVO -->
@@ -1015,13 +994,13 @@ function capturarTokenGoogle(){
 }
 
 // ── NAV ──────────────────────────────────────────────────
-function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open');document.getElementById('sidebar-overlay').classList.toggle('open');}
+function toggleSidebar(){}
 function showPage(n,el){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(x=>x.classList.remove('active'));
   document.getElementById('page-'+n).classList.add('active');
   const navEl=document.getElementById('nav-'+n)||el;if(navEl)navEl.classList.add('active');
-  document.getElementById('sidebar').classList.remove('open');document.getElementById('sidebar-overlay').classList.remove('open');
+  
 }
 
 // ── UTILS ─────────────────────────────────────────────────
@@ -1948,7 +1927,7 @@ async function executarCriarEmpresaRD(){
 async function inicializar(){
   document.getElementById('td').textContent=new Date().toLocaleDateString('pt-BR',{weekday:'short',day:'numeric',month:'short'});
   const _cfg=getCfg();
-  if(_cfg.nomeUsuario){document.getElementById('sidebar-user-nome').textContent=_cfg.nomeUsuario;document.getElementById('sidebar-user').style.display='block';}
+  if(_cfg.nomeUsuario){document.getElementById('sidebar-user-nome').textContent=_cfg.nomeUsuario;const su=document.getElementById('sidebar-user');if(su)su.style.display='inline-flex';}
   const btnAdmin=document.getElementById('btn-admin-usuarios');if(btnAdmin)btnAdmin.style.display=getCfg().isAdmin?'flex':'none';
   const params=new URLSearchParams(window.location.search);const temRetornoGoogle=params.get('google_access_token')||params.get('google_error');
   if(temRetornoGoogle)capturarTokenGoogle();
