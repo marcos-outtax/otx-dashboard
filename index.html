@@ -38,23 +38,25 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 .login-err{display:none;font-size:12px;color:#791F1F;background:#FCEBEB;border-radius:8px;padding:8px 12px;margin-top:12px;text-align:center;}
 .login-err.show{display:block;}
 .topbar{width:100%;background:linear-gradient(135deg,var(--azul-escuro) 0%,var(--azul-medio) 100%);display:flex;flex-direction:column;position:sticky;top:0;z-index:100;box-shadow:0 3px 16px rgba(21,44,107,.25);transition:box-shadow .25s ease}
-.topbar-main{display:flex;align-items:center;padding:0 22px;height:64px;gap:16px;transition:height .25s ease,padding .25s ease}
+.topbar-main{display:flex;align-items:center;flex-wrap:nowrap;padding:0 22px;height:64px;gap:16px;transition:height .25s ease,padding .25s ease;max-width:1800px;margin:0 auto;width:100%}
 .topbar:hover .topbar-main{height:84px;padding:0 30px}
+.topbar-logo{flex-shrink:0}
 .topbar-logo img{height:40px;width:auto;object-fit:contain;display:block;transition:height .25s ease}
 .topbar:hover .topbar-logo img{height:52px}
-.topbar-nav{display:flex;align-items:center;gap:2px;flex:1;overflow-x:auto;scrollbar-width:none}
+/* min-width:0 é o que permite a nav encolher e rolar internamente em vez de empurrar os botões da direita para fora da tela */
+.topbar-nav{display:flex;align-items:center;gap:2px;flex:1 1 auto;min-width:0;overflow-x:auto;-webkit-overflow-scrolling:touch;scroll-behavior:smooth;scrollbar-width:none}
 .topbar-nav::-webkit-scrollbar{display:none}
-.nav-item{display:flex;align-items:center;gap:6px;padding:8px 13px;font-size:12px;font-weight:500;color:rgba(255,255,255,.65);cursor:pointer;transition:all .2s;border-radius:8px;white-space:nowrap;border-bottom:2px solid transparent}
+.nav-item{display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 13px;font-size:12px;font-weight:500;color:rgba(255,255,255,.65);cursor:pointer;transition:all .2s;border-radius:8px;white-space:nowrap;border-bottom:2px solid transparent;flex-shrink:0}
 .topbar:hover .nav-item{padding:11px 17px;font-size:13px}
 .nav-item:hover{color:#fff;background:rgba(255,255,255,.08)}
 .nav-item.active{color:#fff;background:rgba(255,255,255,.12);border-bottom-color:var(--laranja)}
 .nav-item .nav-icon{font-size:14px;transition:font-size .25s ease}
 .topbar:hover .nav-item .nav-icon{font-size:16px}
 .nav-item .nav-label{flex:1}
-.topbar-actions{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.topbar-actions{display:flex;align-items:center;gap:8px;flex-shrink:0;margin-left:auto}
 .topbar-date{font-size:11px;color:rgba(255,255,255,.55);white-space:nowrap}
 .topbar-user{font-size:11px;color:rgba(255,255,255,.85);background:rgba(255,255,255,.12);padding:4px 10px;border-radius:20px;white-space:nowrap;display:none}
-.btn-cfg{display:inline-flex;align-items:center;gap:6px;padding:7px 12px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:8px;color:#fff;font-size:11px;font-weight:500;cursor:pointer;transition:all .2s;white-space:nowrap}
+.btn-cfg{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:7px 12px;min-width:34px;min-height:34px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:8px;color:#fff;font-size:11px;font-weight:500;cursor:pointer;transition:all .2s;white-space:nowrap;flex-shrink:0}
 .btn-cfg:hover{background:rgba(255,255,255,.18)}
 .main-content{flex:1;min-height:calc(100vh - 64px);display:flex;flex-direction:column;margin-left:0!important}
 /* sidebar mantida oculta para mobile */
@@ -71,15 +73,47 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 .sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99}
 @media(max-width:768px){
   body{display:block}
-  .topbar-nav{gap:0}
-  .nav-item{padding:6px 8px;font-size:11px}
+  .topbar-main{padding:0 8px;gap:6px;height:56px}
+  .topbar:hover .topbar-main{height:56px;padding:0 8px}
+  .topbar-logo img{height:30px}
+  .topbar:hover .topbar-logo img{height:30px}
+  .topbar-nav{gap:2px}
+  .nav-item{padding:8px;min-width:40px;min-height:40px;font-size:11px}
+  .topbar:hover .nav-item{padding:8px;font-size:11px}
   .nav-item .nav-label{display:none}
-  .nav-item .nav-icon{font-size:16px}
+  .nav-item .nav-icon{font-size:18px}
+  .topbar:hover .nav-item .nav-icon{font-size:18px}
   .topbar-date{display:none}
+  .topbar-user{display:none!important}
+  .topbar-actions{gap:4px}
+  .btn-cfg{padding:8px;min-width:38px;min-height:38px;font-size:13px}
   .two-col,.three-col{grid-template-columns:1fr}
   .stats{grid-template-columns:repeat(2,1fr)}
   .filtros{flex-direction:column;align-items:stretch}
   .fa{margin-left:0}
+}
+/* Telefones bem pequenos (largura <= 380px) */
+@media(max-width:380px){
+  .topbar-main{padding:0 6px;gap:4px}
+  .topbar-logo img{height:26px}
+  .nav-item{padding:6px;min-width:36px;min-height:36px}
+  .nav-item .nav-icon{font-size:16px}
+  .btn-cfg{padding:6px;min-width:34px;min-height:34px;font-size:12px}
+  .page{padding:16px 10px}
+}
+/* Tablets (portrait/landscape) */
+@media(min-width:481px) and (max-width:1024px){
+  .page{padding:20px 20px;max-width:100%}
+  .stats{grid-template-columns:repeat(3,1fr)}
+}
+/* Monitores grandes e TVs — evita que o conteúdo fique excessivamente esticado */
+@media(min-width:1400px){
+  .topbar-main{padding:0 40px}
+  .page{max-width:1100px}
+}
+@media(min-width:1920px){
+  .topbar-main{padding:0 60px}
+  .page{max-width:1280px}
 }
 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
 .stat{background:var(--branco);border:1px solid var(--border);border-radius:14px;padding:14px 16px;border-top:3px solid var(--azul-medio);box-shadow:0 2px 10px rgba(21,44,107,.04)}
