@@ -37,28 +37,25 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 .login-btn:hover{background:var(--azul-medio);}
 .login-err{display:none;font-size:12px;color:#791F1F;background:#FCEBEB;border-radius:8px;padding:8px 12px;margin-top:12px;text-align:center;}
 .login-err.show{display:block;}
-.topbar{width:100%;background:linear-gradient(135deg,var(--azul-escuro) 0%,var(--azul-medio) 100%);display:flex;flex-direction:column;position:sticky;top:0;z-index:100;box-shadow:0 3px 16px rgba(21,44,107,.25);transition:box-shadow .25s ease}
-.topbar-main{display:flex;align-items:center;flex-wrap:nowrap;padding:0 22px;height:64px;gap:16px;transition:height .25s ease,padding .25s ease;max-width:1800px;margin:0 auto;width:100%}
-.topbar:hover .topbar-main{height:84px;padding:0 30px}
+.topbar{width:100%;background:linear-gradient(135deg,var(--azul-escuro) 0%,var(--azul-medio) 100%);display:flex;flex-direction:column;position:sticky;top:0;z-index:100;box-shadow:0 3px 16px rgba(21,44,107,.25)}
+.topbar-main{display:flex;align-items:center;flex-wrap:nowrap;padding:0 26px;height:72px;gap:16px;max-width:1800px;margin:0 auto;width:100%}
 .topbar-logo{flex-shrink:0}
-.topbar-logo img{height:40px;width:auto;object-fit:contain;display:block;transition:height .25s ease}
-.topbar:hover .topbar-logo img{height:52px}
+.topbar-logo img{height:46px;width:auto;object-fit:contain;display:block}
 /* min-width:0 é o que permite a nav encolher e rolar internamente em vez de empurrar os botões da direita para fora da tela */
 .topbar-nav{display:flex;align-items:center;gap:2px;flex:1 1 auto;min-width:0;overflow-x:auto;-webkit-overflow-scrolling:touch;scroll-behavior:smooth;scrollbar-width:none}
 .topbar-nav::-webkit-scrollbar{display:none}
-.nav-item{display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 13px;font-size:12px;font-weight:500;color:rgba(255,255,255,.65);cursor:pointer;transition:all .2s;border-radius:8px;white-space:nowrap;border-bottom:2px solid transparent;flex-shrink:0}
-.topbar:hover .nav-item{padding:11px 17px;font-size:13px}
+/* padding/fonte fixos — sem crescer no hover, para não deslocar o botão embaixo do cursor */
+.nav-item{display:flex;align-items:center;justify-content:center;gap:6px;padding:11px 17px;font-size:13px;font-weight:500;color:rgba(255,255,255,.65);cursor:pointer;transition:background .15s ease,color .15s ease;border-radius:8px;white-space:nowrap;border-bottom:2px solid transparent;flex-shrink:0}
 .nav-item:hover{color:#fff;background:rgba(255,255,255,.08)}
 .nav-item.active{color:#fff;background:rgba(255,255,255,.12);border-bottom-color:var(--laranja)}
-.nav-item .nav-icon{font-size:14px;transition:font-size .25s ease}
-.topbar:hover .nav-item .nav-icon{font-size:16px}
+.nav-item .nav-icon{font-size:16px}
 .nav-item .nav-label{flex:1}
 .topbar-actions{display:flex;align-items:center;gap:8px;flex-shrink:0;margin-left:auto}
 .topbar-date{font-size:11px;color:rgba(255,255,255,.55);white-space:nowrap}
 .topbar-user{font-size:11px;color:rgba(255,255,255,.85);background:rgba(255,255,255,.12);padding:4px 10px;border-radius:20px;white-space:nowrap;display:none}
 .btn-cfg{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:7px 12px;min-width:34px;min-height:34px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:8px;color:#fff;font-size:11px;font-weight:500;cursor:pointer;transition:all .2s;white-space:nowrap;flex-shrink:0}
 .btn-cfg:hover{background:rgba(255,255,255,.18)}
-.main-content{flex:1;min-height:calc(100vh - 64px);display:flex;flex-direction:column;margin-left:0!important}
+.main-content{flex:1;min-height:calc(100vh - 72px);display:flex;flex-direction:column;margin-left:0!important}
 /* sidebar mantida oculta para mobile */
 .sidebar{display:none}
 .sidebar-overlay{display:none!important}
@@ -74,15 +71,11 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 @media(max-width:768px){
   body{display:block}
   .topbar-main{padding:0 8px;gap:6px;height:56px}
-  .topbar:hover .topbar-main{height:56px;padding:0 8px}
   .topbar-logo img{height:30px}
-  .topbar:hover .topbar-logo img{height:30px}
   .topbar-nav{gap:2px}
   .nav-item{padding:8px;min-width:40px;min-height:40px;font-size:11px}
-  .topbar:hover .nav-item{padding:8px;font-size:11px}
   .nav-item .nav-label{display:none}
   .nav-item .nav-icon{font-size:18px}
-  .topbar:hover .nav-item .nav-icon{font-size:18px}
   .topbar-date{display:none}
   .topbar-user{display:none!important}
   .topbar-actions{gap:4px}
