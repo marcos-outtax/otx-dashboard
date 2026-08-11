@@ -1231,9 +1231,9 @@ async function carregarFBMkt(){
     const[funis,fbRes]=await Promise.all([carregarFunis(),fetch(`/api/meta-ads?dateStart=${de}&dateEnd=${ate}`,{headers:{'X-Session-Token':getSessionToken()}})]);
     setProgresso(55,'Processando métricas do Facebook Ads...');
     const fbData=await fbRes.json();
-    console.log('[OTX] FB API ok. Ativas:', fbData?.ativas?.length, '| Ex ads:', fbData?.ativas?.[0]?.ads?.ativas?.length, fbData?.ativas?.[0]?.ads?.pausadas?.length);
-    console.log('[OTX] Primeira campanha ads:', JSON.stringify(fbData?.ativas?.[0]?.ads).slice(0,100));
     if(!fbRes.ok)throw new Error(fbData.erro||'Erro no Facebook Ads');
+    console.log('[OTX] FB API ok. Ativas:', fbData?.ativas?.length, '| Ex ads:', fbData?.ativas?.[0]?.ads?.ativas?.length, fbData?.ativas?.[0]?.ads?.pausadas?.length);
+    console.log('[OTX] Primeira campanha ads:', JSON.stringify(fbData?.ativas?.[0]?.ads||{})?.slice(0,100));
     // Salva accountId para links diretos
     window._metaAccountId=fbData.accountId||'';
 
