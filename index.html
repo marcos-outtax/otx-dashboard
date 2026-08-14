@@ -941,6 +941,35 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
   </div>
 </div>
 
+<!-- MODAL DUPLICAR/TRANSFERIR REUNIÃO -->
+<div class="modal-ov" id="m-clonar-reuniao" onclick="fecharModalClonar(event)">
+  <div class="modal" style="max-width:520px;" onclick="event.stopPropagation()">
+    <h3>🔁 Duplicar / Transferir Reunião</h3>
+    <p style="margin-bottom:14px;">A reunião original não será alterada. Isso cria uma <strong>nova</strong> reunião na sua Agenda Google, com os dados que você definir abaixo — ideal para agendar um retorno de proposta com o mesmo cliente.</p>
+
+    <div class="fg" style="margin-bottom:10px;"><label>Título da nova reunião *</label><input type="text" id="cr-titulo" placeholder="Ex: Retorno de Proposta — Cliente ABC" style="padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:12px;width:100%;color:var(--text);"></div>
+
+    <div style="display:flex;gap:10px;margin-bottom:10px;">
+      <div class="fg" style="flex:1;"><label>Data *</label><input type="date" id="cr-data" style="padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:12px;width:100%;color:var(--text);"></div>
+      <div class="fg" style="flex:1;"><label>Início *</label><input type="time" id="cr-hora-inicio" style="padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:12px;width:100%;color:var(--text);"></div>
+      <div class="fg" style="flex:1;"><label>Fim</label><input type="time" id="cr-hora-fim" style="padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:12px;width:100%;color:var(--text);"></div>
+    </div>
+
+    <div class="fg" style="margin-bottom:10px;"><label>E-mail do cliente</label><input type="email" id="cr-email" placeholder="cliente@empresa.com" style="padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:12px;width:100%;color:var(--text);"></div>
+
+    <div class="fg" style="margin-bottom:12px;"><label>Observações (opcional)</label><textarea id="cr-descricao" placeholder="Ex: Retorno referente à proposta enviada em..." style="width:100%;height:70px;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:12px;resize:vertical;color:var(--text);font-family:inherit;"></textarea></div>
+
+    <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text);margin-bottom:8px;cursor:pointer;"><input type="checkbox" id="cr-meet" checked style="width:15px;height:15px;cursor:pointer;"> Criar link do Google Meet</label>
+    <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text);margin-bottom:14px;cursor:pointer;"><input type="checkbox" id="cr-notificar" checked style="width:15px;height:15px;cursor:pointer;"> Notificar o cliente por e-mail sobre este novo convite</label>
+
+    <div id="cr-erro" style="display:none;font-size:12px;color:#791F1F;background:#FCEBEB;padding:8px 12px;border-radius:8px;margin-bottom:10px;"></div>
+    <div class="modal-ft">
+      <button class="btn-cancel" onclick="fecharModalClonar()">Cancelar</button>
+      <button class="btn btn-p" id="cr-btn-salvar" onclick="criarReuniaoClonada(this)">📅 Criar nova reunião</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL ANÁLISE IA -->
 <div id="modal-ai" class="modal-ai" style="display:none;">
   <div class="modal-ai-box">
@@ -1799,16 +1828,74 @@ async function carregarReunioes(){
     const data=await r.json();if(!r.ok)throw new Error(data.erro||'Erro ao buscar agenda');
     if(data.newAccessToken){const c=getCfg();c.googleToken=data.newAccessToken;localStorage.setItem(K,JSON.stringify(c));}
     const eventos=data.eventos||[];
+    _reunioesCache=eventos;
     if(!eventos.length){document.getElementById('cards-r').innerHTML='<div class="empty">Nenhuma reunião encontrada no período.</div>';return;}
     document.getElementById('cards-r').innerHTML=eventos.map((ev,i)=>cardReuniao(ev,i)).join('');
   }catch(e){document.getElementById('cards-r').innerHTML=`<div class="empty" style="color:#791F1F;">Erro: ${e.message}</div>`;}
 }
+let _reunioesCache=[];
 function cardReuniao(ev,i){
   const nm=ev.nome||ev.summary||'Reunião';const hora=ev.hora||'';const dataEvt=ev._data||'';
   const dtFmt=dataEvt?new Date(dataEvt+'T12:00:00').toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'short'}):'';
   const email=ev.email||'';const origem=ev.origem||'marketing';const meet=ev._link||ev.hangoutLink||ev.location||'';const dur=ev.dur||'1h';
   const orgClass=origem==='marketing'?'av-marketing':'av-direto';const cardClass=origem==='marketing'?'marketing':'direto';const idCard='ev-'+i;
-  return `<div class="card ${cardClass}" style="margin-bottom:8px;"><div class="card-head" onclick="toggle(this)"><div class="av ${orgClass}">${ini(nm)}</div><div class="card-info"><div class="card-name">${nm}</div><div class="card-sub">${dtFmt} ${hora} · ${dur}${email?' · '+email:''}</div></div><span class="chev">▼</span></div><div class="card-body"><div class="cbi"><div class="three-col"><div class="ib"><div class="l">Data</div><div class="v">${dtFmt}</div></div><div class="ib"><div class="l">Horário</div><div class="v">${hora}</div></div><div class="ib"><div class="l">Duração</div><div class="v">${dur}</div></div></div><div class="two-col"><div class="ib"><div class="l">Email do cliente</div><div class="v">${email||'—'}</div></div><div class="ib"><div class="l">Organizador</div><div class="v">${ev.org||'—'}</div></div></div><div class="orig-bar"><div class="orig-dot ${origem}"></div><span>${origem==='marketing'?'Lead de Marketing':'Indicação / Direto'}</span></div>${meet?`<div class="act-row" style="margin-bottom:12px;"><a href="${meet}" target="_blank" class="btn btn-p">🎥 Entrar na reunião ↗</a></div>`:''}${email?`<div style="border-top:1px solid var(--border);padding-top:12px;margin-top:4px;"><div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">Negociação no RD CRM</div><div id="rd-result-${idCard}"><button class="btn btn-p" style="font-size:11px;" onclick="buscarLeadPorEmail('${email}','${idCard}',this)">🔍 Buscar lead no RD</button></div></div>`:''}</div></div></div>`;
+  return `<div class="card ${cardClass}" style="margin-bottom:8px;"><div class="card-head" onclick="toggle(this)"><div class="av ${orgClass}">${ini(nm)}</div><div class="card-info"><div class="card-name">${nm}</div><div class="card-sub">${dtFmt} ${hora} · ${dur}${email?' · '+email:''}</div></div><span class="chev">▼</span></div><div class="card-body"><div class="cbi"><div class="three-col"><div class="ib"><div class="l">Data</div><div class="v">${dtFmt}</div></div><div class="ib"><div class="l">Horário</div><div class="v">${hora}</div></div><div class="ib"><div class="l">Duração</div><div class="v">${dur}</div></div></div><div class="two-col"><div class="ib"><div class="l">Email do cliente</div><div class="v">${email||'—'}</div></div><div class="ib"><div class="l">Organizador</div><div class="v">${ev.org||'—'}</div></div></div><div class="orig-bar"><div class="orig-dot ${origem}"></div><span>${origem==='marketing'?'Lead de Marketing':'Indicação / Direto'}</span></div><div class="act-row" style="margin-bottom:12px;gap:8px;flex-wrap:wrap;">${meet?`<a href="${meet}" target="_blank" class="btn btn-p">🎥 Entrar na reunião ↗</a>`:''}<button class="btn" onclick="abrirModalClonarReuniao(${i})">🔁 Duplicar / Transferir</button></div>${email?`<div style="border-top:1px solid var(--border);padding-top:12px;margin-top:4px;"><div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">Negociação no RD CRM</div><div id="rd-result-${idCard}"><button class="btn btn-p" style="font-size:11px;" onclick="buscarLeadPorEmail('${email}','${idCard}',this)">🔍 Buscar lead no RD</button></div></div>`:''}</div></div></div>`;
+}
+// ── DUPLICAR / TRANSFERIR REUNIÃO ────────────────────────
+let _cloneEventoOriginal=null;
+function _calcFimPorDuracao(horaInicio,dur){
+  let minutos=30;
+  if(dur){const mH=dur.match(/(\d+)h/);const mM=dur.match(/(\d+)min/);let total=0;if(mH)total+=parseInt(mH[1])*60;if(mM)total+=parseInt(mM[1]);if(total>0)minutos=total;}
+  const[h,m]=(horaInicio||'00:00').split(':').map(Number);
+  const d=new Date(2000,0,1,h,(m||0)+minutos);
+  return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+}
+function abrirModalClonarReuniao(i){
+  const ev=_reunioesCache[i];if(!ev){alert('Reunião não encontrada. Busque novamente.');return;}
+  const cfg=getCfg();if(!cfg.googleToken){alert('Conecte o Google Agenda nas configurações antes de criar reuniões.');return;}
+  _cloneEventoOriginal=ev;
+  document.getElementById('cr-erro').style.display='none';
+  document.getElementById('cr-titulo').value=ev.nome||ev.summary||'';
+  document.getElementById('cr-data').value=ev._data||'';
+  document.getElementById('cr-hora-inicio').value=ev.hora||'';
+  document.getElementById('cr-hora-fim').value=_calcFimPorDuracao(ev.hora,ev.dur);
+  document.getElementById('cr-email').value=ev.email||'';
+  document.getElementById('cr-descricao').value='';
+  document.getElementById('cr-meet').checked=true;
+  document.getElementById('cr-notificar').checked=true;
+  document.getElementById('m-clonar-reuniao').classList.add('open');
+}
+function fecharModalClonar(e){if(e&&e.target!==document.getElementById('m-clonar-reuniao'))return;document.getElementById('m-clonar-reuniao').classList.remove('open');}
+async function criarReuniaoClonada(btn){
+  const erroEl=document.getElementById('cr-erro');erroEl.style.display='none';
+  const titulo=document.getElementById('cr-titulo').value.trim();
+  const data=document.getElementById('cr-data').value;
+  const horaInicio=document.getElementById('cr-hora-inicio').value;
+  const horaFim=document.getElementById('cr-hora-fim').value;
+  const emailCliente=document.getElementById('cr-email').value.trim();
+  const descricao=document.getElementById('cr-descricao').value.trim();
+  const criarMeet=document.getElementById('cr-meet').checked;
+  const notificarConvidados=document.getElementById('cr-notificar').checked;
+
+  if(!titulo){erroEl.textContent='Informe o título da nova reunião.';erroEl.style.display='block';return;}
+  if(!data||!horaInicio){erroEl.textContent='Informe a data e o horário de início.';erroEl.style.display='block';return;}
+
+  const cfg=getCfg();
+  const txtOriginal=btn.innerHTML;btn.disabled=true;btn.innerHTML='⏳ Criando...';
+  try{
+    const r=await fetch('/api/google-calendar-create',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','X-Session-Token':getSessionToken(),'X-CSRF-Token':getCSRFToken(),'X-Google-Token':cfg.googleToken||'','X-Google-Refresh-Token':cfg.googleRefreshToken||''},
+      body:JSON.stringify({titulo,data,horaInicio,horaFim,emailCliente,descricao,criarMeet,notificarConvidados})
+    });
+    const d=await r.json();
+    if(!r.ok)throw new Error(d.erro||'Erro ao criar a nova reunião.');
+    if(d.newAccessToken){const c=getCfg();c.googleToken=d.newAccessToken;localStorage.setItem(K,JSON.stringify(c));}
+    fecharModalClonar();
+    alert('✅ Nova reunião criada na Agenda Google!'+(emailCliente&&notificarConvidados?'\n\nO cliente foi notificado por e-mail.':''));
+    await carregarReunioes();
+  }catch(e){erroEl.textContent='Erro: '+e.message;erroEl.style.display='block';}
+  finally{btn.disabled=false;btn.innerHTML=txtOriginal;}
 }
 async function buscarLeadPorEmail(email,idCard,btn){
   const container=document.getElementById('rd-result-'+idCard);container.innerHTML=load('Buscando no RD CRM...');
