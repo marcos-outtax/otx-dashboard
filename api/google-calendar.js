@@ -1,12 +1,10 @@
 // ============================================================
-// api/google-calendar.js — Lista eventos do Google Calendar
-// CORREÇÕES:
-//  - CLIENT_SECRET via env (era hardcoded!)
-//  - EXIGE sessão válida do dashboard (defesa em profundidade)
-//  - CORS restrito por allowlist
-//  - Lista de emails internos via env (era hardcoded no HTML)
+// api/google-calendar-create.js — Cria um novo evento no Google
+// Calendar. Usado para "duplicar/transferir" uma reunião já
+// existente sem alterar o evento original (ex: agendar um
+// "Retorno de Proposta" a partir de uma reunião anterior).
 // ============================================================
-import { aplicarCORS, exigirSessao } from './_lib/auth.js';
+import { aplicarCORS, exigirSessao, exigirCSRF } from './_lib/auth.js';
 
 async function refreshAccessToken(refreshToken) {
   const CLIENT_ID     = (process.env.GOOGLE_CLIENT_ID     || '').trim();
@@ -15,110 +13,130 @@ async function refreshAccessToken(refreshToken) {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({
-      client_id:     CLIENT_ID,
+      client_id: CLIENT_ID,
       client_secret: CLIENT_SECRET,
       refresh_token: refreshToken,
-      grant_type:    'refresh_token',
+      grant_type: 'refresh_token',
     }),
   });
   return res.json();
 }
 
-export default async function handler(req, res) {
-  aplicarCORS(req, res, 'GET, OPTIONS');
-  if (req.method === 'OPTIONS') return res.status(200).end();
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const TIMEZONE = 'America/Sao_Paulo';
 
-  // ── 🔒 EXIGE SESSÃO VÁLIDA ────────────────────────────────
+export default async function handler(req, res) {
+  aplicarCORS(req, res, 'POST, OPTIONS');
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method !== 'POST') return res.status(405).json({ erro: 'Método não permitido.' });
+
+  // ── 🔒 Sessão + CSRF (operação de escrita) ─────────────────
   const usuario = exigirSessao(req, res);
   if (!usuario) return;
+  if (!exigirCSRF(req, res)) return;
 
   let accessToken = req.headers['x-google-token'];
   const refreshToken = req.headers['x-google-refresh-token'];
-
   if (!accessToken || typeof accessToken !== 'string') {
-    return res.status(401).json({ erro: 'Token do Google não fornecido.' });
+    return res.status(401).json({ erro: 'Token do Google não fornecido. Reconecte o Google Agenda.' });
   }
 
-  const { timeMin, timeMax } = req.query;
-  if (typeof timeMin !== 'string' || typeof timeMax !== 'string') {
-    return res.status(400).json({ erro: 'Parâmetros timeMin e timeMax obrigatórios.' });
+  const { titulo, data, horaInicio, horaFim, emailCliente, descricao, criarMeet, notificarConvidados } = req.body || {};
+
+  // ── Validações ──────────────────────────────────────────
+  if (typeof titulo !== 'string' || !titulo.trim()) {
+    return res.status(400).json({ erro: 'Título da reunião é obrigatório.' });
+  }
+  if (titulo.trim().length > 200) return res.status(400).json({ erro: 'Título muito longo (máx. 200 caracteres).' });
+
+  if (typeof data !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(data)) {
+    return res.status(400).json({ erro: 'Data inválida.' });
+  }
+  if (typeof horaInicio !== 'string' || !/^\d{2}:\d{2}$/.test(horaInicio)) {
+    return res.status(400).json({ erro: 'Horário de início inválido.' });
   }
 
-  async function buscarEventos(token) {
-    const params = new URLSearchParams({
-      timeMin, timeMax,
-      singleEvents: 'true',
-      orderBy: 'startTime',
-      maxResults: '500',
-    });
+  let fim = (typeof horaFim === 'string' && /^\d{2}:\d{2}$/.test(horaFim)) ? horaFim : null;
+  if (!fim) {
+    const [h, m] = horaInicio.split(':').map(Number);
+    const d = new Date(2000, 0, 1, h, m + 30);
+    fim = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  }
+
+  const startDT = `${data}T${horaInicio}:00`;
+  const endDT = `${data}T${fim}:00`;
+  if (new Date(startDT) >= new Date(endDT)) {
+    return res.status(400).json({ erro: 'O horário de término deve ser depois do horário de início.' });
+  }
+
+  let emailLimpo = '';
+  if (typeof emailCliente === 'string' && emailCliente.trim()) {
+    emailLimpo = emailCliente.trim();
+    if (!EMAIL_RE.test(emailLimpo)) return res.status(400).json({ erro: 'E-mail do cliente inválido.' });
+  }
+
+  const descricaoLimpa = typeof descricao === 'string' ? descricao.slice(0, 5000) : '';
+
+  // ── Monta o evento ──────────────────────────────────────
+  const eventBody = {
+    summary: titulo.trim(),
+    start: { dateTime: startDT, timeZone: TIMEZONE },
+    end: { dateTime: endDT, timeZone: TIMEZONE },
+  };
+  if (descricaoLimpa) eventBody.description = descricaoLimpa;
+  if (emailLimpo) eventBody.attendees = [{ email: emailLimpo }];
+  if (criarMeet === true) {
+    eventBody.conferenceData = {
+      createRequest: { requestId: 'otx-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8) },
+    };
+  }
+
+  const sendUpdates = notificarConvidados === false ? 'none' : 'all';
+
+  async function criarEvento(token) {
+    const params = new URLSearchParams({ sendUpdates });
+    if (criarMeet === true) params.set('conferenceDataVersion', '1');
     return fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events?${params}`, {
-      headers: { Authorization: `Bearer ${token}` },
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(eventBody),
     });
   }
 
   try {
-    let calRes = await buscarEventos(accessToken);
+    let evRes = await criarEvento(accessToken);
 
-    if (calRes.status === 401 && refreshToken) {
+    if (evRes.status === 401 && refreshToken) {
       const newTokenData = await refreshAccessToken(refreshToken);
       if (newTokenData.access_token) {
         accessToken = newTokenData.access_token;
-        calRes = await buscarEventos(accessToken);
-        res.setHeader('X-New-Access-Token', accessToken);
+        evRes = await criarEvento(accessToken);
       } else {
         return res.status(401).json({ erro: 'Token expirado. Reconecte o Google Agenda.', reauth: true });
       }
     }
 
-    const data = await calRes.json();
-    if (!calRes.ok) {
-      return res.status(calRes.status).json({ erro: data.error?.message || 'Erro ao buscar agenda.' });
+    const ev = await evRes.json();
+    if (!evRes.ok) {
+      return res.status(evRes.status >= 400 && evRes.status < 500 ? evRes.status : 502)
+        .json({ erro: ev.error?.message || 'Erro ao criar evento na agenda.' });
     }
 
-    // Lista de emails internos via env (era hardcoded no frontend)
-    // Formato no Vercel: EMAILS_INTERNOS=email1@x.com,email2@y.com,outtax.com.br
-    const emailsInternos = (process.env.EMAILS_INTERNOS || 'outtax.com.br')
-      .split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+    const resp = {
+      ok: true,
+      evento: {
+        id: ev.id,
+        nome: ev.summary || titulo.trim(),
+        _data: data,
+        hora: horaInicio,
+        _link: ev.hangoutLink || '',
+        htmlLink: ev.htmlLink || '',
+      },
+    };
+    if (accessToken !== req.headers['x-google-token']) resp.newAccessToken = accessToken;
+    return res.status(200).json(resp);
 
-    const eventos = (data.items || []).map(ev => {
-      const start = ev.start?.dateTime || ev.start?.date || '';
-      const end = ev.end?.dateTime || ev.end?.date || '';
-      const data_evento = start.split('T')[0];
-      const hora = start.includes('T') ? start.split('T')[1].substring(0, 5) : '00:00';
-
-      let dur = '1h';
-      if (ev.start?.dateTime && ev.end?.dateTime) {
-        const diffMs = new Date(end) - new Date(start);
-        const diffMin = Math.round(diffMs / 60000);
-        if (diffMin < 60) dur = diffMin + 'min';
-        else if (diffMin % 60 === 0) dur = (diffMin / 60) + 'h';
-        else dur = Math.floor(diffMin / 60) + 'h' + (diffMin % 60) + 'min';
-      }
-
-      const organizer = ev.organizer?.email || '';
-      const origem = organizer.includes('midias') || organizer.includes('marketing') ? 'marketing' : 'direto';
-
-      const attendees = ev.attendees || [];
-      const convidadoCliente = attendees.find(a =>
-        !a.self &&
-        !emailsInternos.some(ei => (a.email || '').toLowerCase().includes(ei))
-      );
-      const convidado = convidadoCliente || attendees.find(a => !a.self);
-      const email = convidado?.email || '';
-
-      return {
-        nome: ev.summary || 'Sem título',
-        hora, dur, origem, email,
-        org: organizer,
-        dest: '',
-        _data: data_evento,
-        _googleId: ev.id,
-        _link: ev.hangoutLink || ev.location || '',
-      };
-    });
-
-    return res.status(200).json({ eventos });
   } catch (e) {
-    return res.status(500).json({ erro: e.message });
+    return res.status(500).json({ erro: 'Erro ao conectar com o Google Agenda: ' + e.message });
   }
 }
