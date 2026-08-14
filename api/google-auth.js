@@ -7,7 +7,9 @@
 // ============================================================
 
 const SCOPES = [
-  'https://www.googleapis.com/auth/calendar.readonly',
+  // calendar.events permite ler E criar/editar eventos (necessário para
+  // duplicar/transferir reuniões). Substitui o antigo calendar.readonly.
+  'https://www.googleapis.com/auth/calendar.events',
   'https://www.googleapis.com/auth/userinfo.email',
   'https://www.googleapis.com/auth/userinfo.profile',
   'https://www.googleapis.com/auth/drive.file',
